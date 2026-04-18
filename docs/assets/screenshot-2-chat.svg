@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff6600"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0d0d12"/></linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a1025"/><stop offset="100%" stop-color="#111217"/></linearGradient>
+    <linearGradient id="userBub" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1e3a5f"/><stop offset="100%" stop-color="#2563eb"/></linearGradient>
+    <filter id="shadow"><feGaussianBlur stdDeviation="12"/><feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.6 0"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+
+  <rect width="1000" height="600" fill="url(#bg)"/>
+  <!-- Dimmed grafana background -->
+  <rect x="0" y="0" width="1000" height="48" fill="#0b0e13"/>
+  <circle cx="28" cy="24" r="9" fill="#f05a28"/>
+  <text x="50" y="30" fill="#ccc" font-size="14" font-weight="600">Grafana</text>
+  <text x="120" y="30" fill="#666" font-size="13">/ Home</text>
+
+  <!-- Faded bg -->
+  <g opacity="0.3">
+    <rect x="80" y="85" width="420" height="100" rx="8" fill="#181b23"/>
+    <rect x="80" y="200" width="420" height="100" rx="8" fill="#181b23"/>
+    <rect x="80" y="315" width="420" height="230" rx="8" fill="#181b23"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       O11yBot Chat Panel (normal mode, open)
+       ═══════════════════════════════════════════════════════════ -->
+  <g filter="url(#shadow)">
+    <rect x="540" y="70" width="430" height="510" rx="14" fill="url(#panel)" stroke="#2a2a3e" stroke-width="1"/>
+  </g>
+  <rect x="540" y="70" width="430" height="510" rx="14" fill="url(#panel)" stroke="#2a2a3e" stroke-width="1"/>
+
+  <!-- Header -->
+  <rect x="540" y="70" width="430" height="56" rx="14" fill="#1a1025"/>
+  <rect x="540" y="110" width="430" height="16" fill="#1a1025"/>
+
+  <circle cx="575" cy="98" r="16" fill="url(#brand)"/>
+  <text x="575" y="104" fill="white" font-size="16" text-anchor="middle" font-weight="700">🤖</text>
+  <text x="603" y="94" fill="#fff" font-size="15" font-weight="600">O11yBot</text>
+  <text x="603" y="110" fill="#888" font-size="10">O11y Assistant · drag to move</text>
+
+  <!-- Window controls (actual button spec) -->
+  <g>
+    <!-- Clear -->
+    <rect x="830" y="85" width="26" height="26" rx="5" fill="transparent" stroke="#2a2a3e"/>
+    <path d="M 836 93 h 14 M 840 93 v -2 h 6 v 2 M 838 93 v 12 q 0 2 2 2 h 6 q 2 0 2 -2 v -12" stroke="#888" stroke-width="1.3" fill="none"/>
+    <!-- Minimize -->
+    <rect x="862" y="85" width="26" height="26" rx="5" fill="transparent" stroke="#2a2a3e"/>
+    <line x1="868" y1="99" x2="882" y2="99" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+    <!-- Maximize -->
+    <rect x="894" y="85" width="26" height="26" rx="5" fill="transparent" stroke="#2a2a3e"/>
+    <rect x="900" y="91" width="14" height="14" rx="1.5" stroke="#888" stroke-width="1.3" fill="none"/>
+    <!-- Fullscreen -->
+    <rect x="926" y="85" width="26" height="26" rx="5" fill="transparent" stroke="#2a2a3e"/>
+    <path d="M 932 95 v -4 h 4 M 946 95 v -4 h -4 M 932 101 v 4 h 4 M 946 101 v 4 h -4" stroke="#888" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Close (not shown — off-panel for space) -->
+  </g>
+
+  <!-- Chat body -->
+  <rect x="540" y="126" width="430" height="380" fill="#111217"/>
+
+  <!-- User message -->
+  <g>
+    <circle cx="938" cy="160" r="12" fill="#2563eb33" stroke="#2563eb"/>
+    <text x="938" y="164" fill="#60a5fa" font-size="11" text-anchor="middle" font-weight="700">A</text>
+    <rect x="720" y="146" width="206" height="30" rx="12" fill="url(#userBub)"/>
+    <text x="732" y="167" fill="#cfe2ff" font-size="12">list all Grafana dashboards</text>
+    <text x="924" y="190" fill="#444" font-size="10" text-anchor="end">9:32 AM</text>
+  </g>
+
+  <!-- Bot response -->
+  <g>
+    <circle cx="572" cy="218" r="12" fill="#ff660033" stroke="#f59e0b"/>
+    <text x="572" y="222" fill="#f59e0b" font-size="11" text-anchor="middle" font-weight="700">O</text>
+
+    <!-- Tool call indicator -->
+    <rect x="592" y="204" width="360" height="24" rx="6" fill="#0d0d12" stroke="#2a2a3e"/>
+    <circle cx="604" cy="216" r="3" fill="#22c55e"/>
+    <text x="616" y="220" fill="#f59e0b" font-size="10" font-family="monospace" font-weight="600">list_dashboards</text>
+    <text x="710" y="220" fill="#666" font-size="10" font-family="monospace">{} · 114ms · ✓ OK</text>
+
+    <!-- Response bubble -->
+    <rect x="592" y="236" width="360" height="250" rx="12" fill="#1a1a2e" stroke="#2a2a3e"/>
+    <text x="606" y="258" fill="#fff" font-size="12" font-weight="700">Found 113 dashboards:</text>
+
+    <!-- List items -->
+    <g font-size="11">
+      <circle cx="612" cy="280" r="2" fill="#f59e0b"/>
+      <text x="622" y="283" fill="#fff" font-weight="600">AKS — Cluster Overview &amp; Health</text>
+      <text x="622" y="295" fill="#888" font-size="10" font-style="italic">folder: Azure — Cloud Infrastructure</text>
+      <text x="622" y="308" fill="#60a5fa" font-size="9" text-decoration="underline" font-family="monospace">UID: aks-cluster-overview · Open ↗</text>
+
+      <circle cx="612" cy="326" r="2" fill="#f59e0b"/>
+      <text x="622" y="329" fill="#fff" font-weight="600">Azure — Application Insights (APM)</text>
+      <text x="622" y="341" fill="#888" font-size="10" font-style="italic">folder: Azure — Cloud Infrastructure</text>
+      <text x="622" y="354" fill="#60a5fa" font-size="9" text-decoration="underline" font-family="monospace">UID: azure-application-insights · Open ↗</text>
+
+      <circle cx="612" cy="372" r="2" fill="#f59e0b"/>
+      <text x="622" y="375" fill="#fff" font-weight="600">Albertsons — Home</text>
+      <text x="622" y="387" fill="#888" font-size="10" font-style="italic">folder: Platform &amp; Executive</text>
+      <text x="622" y="400" fill="#60a5fa" font-size="9" text-decoration="underline" font-family="monospace">UID: albertsons-home · Open ↗</text>
+
+      <circle cx="612" cy="418" r="2" fill="#f59e0b"/>
+      <text x="622" y="421" fill="#fff" font-weight="600">Advanced PostgreSQL Monitoring</text>
+      <text x="622" y="433" fill="#888" font-size="10" font-style="italic">folder: Grafana · 24 panels</text>
+      <text x="622" y="446" fill="#60a5fa" font-size="9" text-decoration="underline" font-family="monospace">UID: esobf-pg-advanced-v1 · Open ↗</text>
+
+      <text x="606" y="470" fill="#666" font-size="11" font-style="italic">… and 109 more dashboards</text>
+    </g>
+
+    <!-- Meta (tokens + cost) -->
+    <text x="606" y="495" fill="#555" font-size="10" font-family="monospace">54 tok</text>
+    <text x="640" y="495" fill="#f59e0b" font-size="10" font-family="monospace">$0.0002</text>
+    <text x="940" y="495" fill="#444" font-size="10" text-anchor="end">9:32 AM</text>
+  </g>
+
+  <!-- Footer -->
+  <rect x="540" y="506" width="430" height="28" fill="#0d0d12"/>
+  <circle cx="560" cy="520" r="4" fill="#60a5fa"/>
+  <rect x="568" y="513" width="80" height="14" rx="7" fill="#1e1e2e"/>
+  <text x="608" y="523" fill="#888" font-size="10" text-anchor="middle">admin</text>
+  <text x="950" y="523" fill="#555" font-size="10" text-anchor="end">2 msgs</text>
+
+  <!-- Input -->
+  <rect x="540" y="534" width="430" height="46" fill="#0d0d12"/>
+  <rect x="552" y="542" width="370" height="30" rx="8" fill="#181b23" stroke="#2a2a3e"/>
+  <text x="564" y="561" fill="#555" font-size="11">Ask about observability...</text>
+  <rect x="930" y="542" width="30" height="30" rx="8" fill="url(#brand)"/>
+  <text x="945" y="562" fill="white" font-size="14" text-anchor="middle">➤</text>
+
+  <!-- Callout label -->
+  <rect x="50" y="80" width="460" height="40" rx="8" fill="#0d0d12" stroke="#f59e0b"/>
+  <text x="70" y="105" fill="#f59e0b" font-size="14" font-weight="700">💬 Real response from real Grafana API</text>
+  <text x="320" y="105" fill="#ccc" font-size="12">· 114ms · streaming</text>
+
+  <rect x="50" y="132" width="460" height="100" rx="8" fill="#0d0d12" stroke="#2a2a3e"/>
+  <text x="70" y="155" fill="#888" font-size="12" font-weight="600">How it works:</text>
+  <text x="70" y="175" fill="#ccc" font-size="11">1. User query → Intent matcher → MCP tool routing</text>
+  <text x="70" y="193" fill="#ccc" font-size="11">2. list_dashboards called on Bifröst MCP (0 LLM cost)</text>
+  <text x="70" y="211" fill="#ccc" font-size="11">3. Bifröst → Grafana REST API → 113 dashboards</text>
+  <text x="70" y="228" fill="#ccc" font-size="11">4. Markdown formatted + streamed back as SSE</text>
+</svg>

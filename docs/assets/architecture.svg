@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" width="1100" height="700" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff6600"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0d0d12"/></linearGradient>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1e3a5f"/><stop offset="100%" stop-color="#2563eb"/></linearGradient>
+    <linearGradient id="greenGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#14532d"/><stop offset="100%" stop-color="#22c55e"/></linearGradient>
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <rect width="1100" height="700" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="550" y="36" fill="#fff" font-size="22" font-weight="700" text-anchor="middle">O11yBot — System Architecture</text>
+  <text x="550" y="58" fill="#888" font-size="13" text-anchor="middle">Request flow: Browser → Orchestrator → MCP → Grafana</text>
+
+  <!-- ═══════════ Layer 1: Browser / Grafana ═══════════ -->
+  <g>
+    <rect x="50" y="90" width="1000" height="120" rx="10" fill="#181b23" stroke="url(#brand)" stroke-width="2"/>
+    <text x="70" y="115" fill="#f59e0b" font-size="14" font-weight="700">🌐 Browser — Grafana UI</text>
+    <text x="70" y="133" fill="#888" font-size="11">Widget injected globally via custom index.html · works on ALL pages</text>
+
+    <!-- Widget visualization -->
+    <rect x="70" y="150" width="300" height="48" rx="6" fill="#0d0d12" stroke="#2a2a3e"/>
+    <circle cx="90" cy="174" r="12" fill="url(#brand)"/>
+    <text x="90" y="179" fill="#fff" font-size="11" text-anchor="middle" font-weight="700">🤖</text>
+    <text x="110" y="170" fill="#fff" font-size="11" font-weight="600">O11yBot Widget</text>
+    <text x="110" y="185" fill="#888" font-size="9">SSE parser (CRLF-safe) · localStorage per user</text>
+
+    <rect x="390" y="150" width="220" height="48" rx="6" fill="#0d0d12" stroke="#2a2a3e"/>
+    <text x="402" y="168" fill="#fff" font-size="11" font-weight="600">⚙️ 4 Modes</text>
+    <text x="402" y="184" fill="#888" font-size="9">FAB · Normal · Maximized · Fullscreen</text>
+
+    <rect x="630" y="150" width="200" height="48" rx="6" fill="#0d0d12" stroke="#2a2a3e"/>
+    <text x="642" y="168" fill="#fff" font-size="11" font-weight="600">👤 User Identity</text>
+    <text x="642" y="184" fill="#888" font-size="9">X-Grafana-User header forwarded</text>
+
+    <rect x="850" y="150" width="180" height="48" rx="6" fill="#0d0d12" stroke="#2a2a3e"/>
+    <text x="862" y="168" fill="#fff" font-size="11" font-weight="600">🎯 Drag &amp; Resize</text>
+    <text x="862" y="184" fill="#888" font-size="9">Position persisted per user</text>
+  </g>
+
+  <!-- Arrow down -->
+  <line x1="550" y1="210" x2="550" y2="250" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="570" y="235" fill="#888" font-size="11" font-family="monospace">POST /api/v1/chat (SSE)</text>
+
+  <!-- ═══════════ Layer 2: Orchestrator ═══════════ -->
+  <g>
+    <rect x="50" y="260" width="1000" height="180" rx="10" fill="#181b23" stroke="url(#blueGrad)" stroke-width="2"/>
+    <text x="70" y="285" fill="#60a5fa" font-size="14" font-weight="700">⚙️ Orchestrator — Python FastAPI (:8000)</text>
+    <text x="70" y="303" fill="#888" font-size="11">Request pipeline · 5 stages</text>
+
+    <!-- Pipeline stages -->
+    <g>
+      <rect x="70" y="320" width="175" height="105" rx="6" fill="#0d0d12" stroke="#2a2a3e"/>
+      <text x="80" y="340" fill="#f59e0b" font-size="11" font-weight="700">1. CORS + Auth</text>
+      <text x="80" y="358" fill="#ccc" font-size="10">Allow origin check</text>
+      <text x="80" y="373" fill="#ccc" font-size="10">Extract user/org</text>
+      <text x="80" y="388" fill="#ccc" font-size="10">Validate schema</text>
+      <text x="80" y="403" fill="#ccc" font-size="10">Emit OTEL span</text>
+      <text x="80" y="418" fill="#22c55e" font-size="10">✓</text>
+
+      <rect x="260" y="320" width="175" height="105" rx="6" fill="#0d0d12" stroke="#2a2a3e"/>
+      <text x="270" y="340" fill="#f59e0b" font-size="11" font-weight="700">2. PII Scan</text>
+      <text x="270" y="358" fill="#ccc" font-size="10">15 regex patterns</text>
+      <text x="270" y="373" fill="#ccc" font-size="10">Email · SSN · AWS</text>
+      <text x="270" y="388" fill="#ccc" font-size="10">Auto-redact</text>
+      <text x="270" y="403" fill="#ccc" font-size="10">Log PII events</text>
+      <text x="270" y="418" fill="#22c55e" font-size="10">✓</text>
+
+      <rect x="450" y="320" width="175" height="105" rx="6" fill="#0d0d12" stroke="url(#brand)" stroke-width="2"/>
+      <text x="460" y="340" fill="#f59e0b" font-size="11" font-weight="700">3. Intent Matcher ⚡</text>
+      <text x="460" y="358" fill="#ccc" font-size="10">12 regex patterns</text>
+      <text x="460" y="373" fill="#ccc" font-size="10">Priority-ordered</text>
+      <text x="460" y="388" fill="#ccc" font-size="10">Sub-second routing</text>
+      <text x="460" y="403" fill="#ccc" font-size="10">$0 cost</text>
+      <text x="460" y="418" fill="#22c55e" font-size="10">✓ killer feature</text>
+
+      <rect x="640" y="320" width="175" height="105" rx="6" fill="#0d0d12" stroke="#2a2a3e"/>
+      <text x="650" y="340" fill="#f59e0b" font-size="11" font-weight="700">4. Call MCP Tool</text>
+      <text x="650" y="358" fill="#ccc" font-size="10">HTTP bridge to Bifröst</text>
+      <text x="650" y="373" fill="#ccc" font-size="10">Role-enforced</text>
+      <text x="650" y="388" fill="#ccc" font-size="10">Format markdown</text>
+      <text x="650" y="403" fill="#ccc" font-size="10">OR LLM fallback</text>
+      <text x="650" y="418" fill="#22c55e" font-size="10">✓</text>
+
+      <rect x="830" y="320" width="200" height="105" rx="6" fill="#0d0d12" stroke="#2a2a3e"/>
+      <text x="840" y="340" fill="#f59e0b" font-size="11" font-weight="700">5. SSE Stream</text>
+      <text x="840" y="358" fill="#ccc" font-size="10">tool_start event</text>
+      <text x="840" y="373" fill="#ccc" font-size="10">tool_result event</text>
+      <text x="840" y="388" fill="#ccc" font-size="10">text deltas (chunked)</text>
+      <text x="840" y="403" fill="#ccc" font-size="10">usage + done</text>
+      <text x="840" y="418" fill="#22c55e" font-size="10">✓</text>
+    </g>
+  </g>
+
+  <!-- Branching arrows -->
+  <line x1="300" y1="440" x2="300" y2="490" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="130" y="475" fill="#888" font-size="10" font-family="monospace">MATCH → MCP tool call</text>
+
+  <line x1="800" y1="440" x2="800" y2="490" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="700" y="475" fill="#888" font-size="10" font-family="monospace">NO MATCH → LLM fallback</text>
+
+  <!-- ═══════════ Layer 3: MCP + LLM ═══════════ -->
+  <g>
+    <!-- Bifröst MCP -->
+    <rect x="50" y="500" width="500" height="140" rx="10" fill="#181b23" stroke="url(#greenGrad)" stroke-width="2"/>
+    <text x="70" y="525" fill="#22c55e" font-size="14" font-weight="700">🔌 Bifröst MCP Server (:8765)</text>
+    <text x="70" y="543" fill="#888" font-size="11">16 Grafana tools · RBAC enforced (viewer/editor/admin)</text>
+
+    <!-- Tool chips -->
+    <g font-size="9" fill="#22c55e">
+      <rect x="70" y="555" width="90" height="20" rx="10" fill="#0d0d12" stroke="#22c55e"/>
+      <text x="115" y="568" text-anchor="middle">list_dashboards</text>
+
+      <rect x="165" y="555" width="100" height="20" rx="10" fill="#0d0d12" stroke="#22c55e"/>
+      <text x="215" y="568" text-anchor="middle">search_dashboards</text>
+
+      <rect x="270" y="555" width="95" height="20" rx="10" fill="#0d0d12" stroke="#22c55e"/>
+      <text x="317" y="568" text-anchor="middle">list_datasources</text>
+
+      <rect x="370" y="555" width="80" height="20" rx="10" fill="#0d0d12" stroke="#22c55e"/>
+      <text x="410" y="568" text-anchor="middle">health_check</text>
+
+      <rect x="455" y="555" width="90" height="20" rx="10" fill="#0d0d12" stroke="#22c55e"/>
+      <text x="500" y="568" text-anchor="middle">list_alert_rules</text>
+
+      <rect x="70" y="580" width="100" height="20" rx="10" fill="#0d0d12" stroke="#22c55e"/>
+      <text x="120" y="593" text-anchor="middle">query_datasource</text>
+
+      <rect x="175" y="580" width="80" height="20" rx="10" fill="#0d0d12" stroke="#22c55e"/>
+      <text x="215" y="593" text-anchor="middle">list_folders</text>
+
+      <rect x="260" y="580" width="85" height="20" rx="10" fill="#0d0d12" stroke="#22c55e"/>
+      <text x="302" y="593" text-anchor="middle">silence_alert</text>
+
+      <rect x="350" y="580" width="70" height="20" rx="10" fill="#0d0d12" stroke="#ef4444"/>
+      <text x="385" y="593" text-anchor="middle" fill="#ef4444">list_users</text>
+
+      <rect x="425" y="580" width="120" height="20" rx="10" fill="#0d0d12" stroke="#2a2a3e" stroke-dasharray="2 2"/>
+      <text x="485" y="593" text-anchor="middle" fill="#888">+7 more tools</text>
+    </g>
+    <text x="70" y="625" fill="#888" font-size="10">Role-aware SA token · Pool of HTTP/2 clients · Tenacity retries</text>
+
+    <!-- LLM -->
+    <rect x="570" y="500" width="480" height="140" rx="10" fill="#181b23" stroke="url(#purpleGrad)" stroke-width="2"/>
+    <text x="590" y="525" fill="#a78bfa" font-size="14" font-weight="700">🧠 LLM Backend (swappable)</text>
+    <text x="590" y="543" fill="#888" font-size="11">Admin-configured via env · users never see the model</text>
+
+    <g>
+      <rect x="590" y="555" width="130" height="40" rx="6" fill="#0d0d12" stroke="#22c55e"/>
+      <text x="655" y="573" fill="#22c55e" font-size="11" font-weight="700" text-anchor="middle">🏠 Ollama</text>
+      <text x="655" y="588" fill="#888" font-size="9" text-anchor="middle">qwen2.5:0.5b · local</text>
+
+      <rect x="730" y="555" width="130" height="40" rx="6" fill="#0d0d12" stroke="#a78bfa"/>
+      <text x="795" y="573" fill="#a78bfa" font-size="11" font-weight="700" text-anchor="middle">🤖 OpenAI</text>
+      <text x="795" y="588" fill="#888" font-size="9" text-anchor="middle">gpt-4o · cloud</text>
+
+      <rect x="870" y="555" width="165" height="40" rx="6" fill="#0d0d12" stroke="#60a5fa"/>
+      <text x="952" y="573" fill="#60a5fa" font-size="11" font-weight="700" text-anchor="middle">📘 Anthropic</text>
+      <text x="952" y="588" fill="#888" font-size="9" text-anchor="middle">claude-sonnet-4-6 · cloud</text>
+    </g>
+    <text x="590" y="625" fill="#888" font-size="10">Switch by changing OLLYCHAT_DEFAULT_MODEL env var + restart</text>
+  </g>
+
+  <!-- Arrow from MCP to Grafana -->
+  <line x1="250" y1="640" x2="250" y2="665" stroke="#22c55e" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ═══════════ Layer 4: Grafana ═══════════ -->
+  <g>
+    <rect x="50" y="665" width="500" height="28" rx="6" fill="#181b23" stroke="#f05a28" stroke-width="2"/>
+    <circle cx="72" cy="679" r="7" fill="#f05a28"/>
+    <text x="88" y="683" fill="#fff" font-size="12" font-weight="700">Grafana (:3200)</text>
+    <text x="180" y="683" fill="#ccc" font-size="10">113 dashboards · Mimir · Loki · Tempo</text>
+  </g>
+</svg>

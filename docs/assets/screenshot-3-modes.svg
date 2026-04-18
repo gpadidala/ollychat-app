@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff6600"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#0d0d12"/></linearGradient>
+  </defs>
+
+  <rect width="1000" height="560" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="500" y="36" fill="#fff" font-size="20" font-weight="700" text-anchor="middle">4 Window Modes</text>
+  <text x="500" y="58" fill="#888" font-size="12" text-anchor="middle">FAB · Normal · Maximized · Fullscreen</text>
+
+  <!-- ═════════ LEFT: Maximized mode ═════════ -->
+  <g>
+    <rect x="30" y="90" width="460" height="440" rx="10" fill="#0b0e13"/>
+    <!-- Browser chrome -->
+    <rect x="30" y="90" width="460" height="28" rx="10" fill="#000"/>
+    <circle cx="50" cy="104" r="5" fill="#ef4444"/>
+    <circle cx="68" cy="104" r="5" fill="#f59e0b"/>
+    <circle cx="86" cy="104" r="5" fill="#22c55e"/>
+    <text x="260" y="108" fill="#666" font-size="10" text-anchor="middle">localhost:3200</text>
+
+    <!-- Dim Grafana background -->
+    <rect x="30" y="118" width="460" height="412" fill="#0d0d12" opacity="0.5"/>
+
+    <!-- Maximized overlay -->
+    <rect x="70" y="140" width="380" height="370" rx="10" fill="#111217" stroke="url(#brand)" stroke-width="2"/>
+
+    <!-- Header -->
+    <rect x="70" y="140" width="380" height="46" rx="10" fill="#1a1025"/>
+    <rect x="70" y="172" width="380" height="14" fill="#1a1025"/>
+    <circle cx="100" cy="163" r="12" fill="url(#brand)"/>
+    <text x="100" y="167" fill="white" font-size="12" text-anchor="middle" font-weight="700">🤖</text>
+    <text x="122" y="160" fill="#fff" font-size="13" font-weight="600">O11yBot</text>
+    <text x="122" y="175" fill="#f59e0b" font-size="9" font-weight="700">⚡ MAXIMIZED</text>
+
+    <g>
+      <rect x="384" y="153" width="20" height="20" rx="4" fill="transparent" stroke="#2a2a3e"/>
+      <line x1="389" y1="163" x2="399" y2="163" stroke="#888" stroke-width="1.5"/>
+      <rect x="408" y="153" width="20" height="20" rx="4" fill="url(#brand)" opacity="0.3"/>
+      <rect x="412" y="157" width="12" height="12" rx="1.5" stroke="#f59e0b" stroke-width="1.3" fill="none"/>
+    </g>
+
+    <!-- User msg -->
+    <rect x="240" y="210" width="200" height="28" rx="10" fill="#1e3a5f"/>
+    <text x="252" y="228" fill="#cfe2ff" font-size="11">check grafana health</text>
+
+    <!-- Bot response -->
+    <circle cx="92" cy="280" r="10" fill="#ff660033" stroke="#f59e0b"/>
+    <text x="92" y="284" fill="#f59e0b" font-size="10" text-anchor="middle" font-weight="700">O</text>
+
+    <rect x="112" y="258" width="320" height="150" rx="10" fill="#1a1a2e" stroke="#2a2a3e"/>
+    <text x="124" y="280" fill="#fff" font-size="12" font-weight="700">Grafana Health</text>
+    <text x="124" y="305" fill="#ccc" font-size="11">• Version: </text>
+    <text x="186" y="305" fill="#f59e0b" font-size="11" font-family="monospace">11.6.4</text>
+    <text x="124" y="324" fill="#ccc" font-size="11">• Database: </text>
+    <text x="196" y="324" fill="#22c55e" font-size="11">✓ ok</text>
+    <text x="124" y="343" fill="#ccc" font-size="11">• Enterprise: </text>
+    <text x="202" y="343" fill="#ef4444" font-size="11">false</text>
+    <text x="124" y="362" fill="#ccc" font-size="11">• Uptime: </text>
+    <text x="178" y="362" fill="#22c55e" font-size="11" font-family="monospace">2d 14h 32m</text>
+    <text x="124" y="381" fill="#ccc" font-size="11">• Datasources: </text>
+    <text x="210" y="381" fill="#60a5fa" font-size="11">Mimir, Loki, Tempo</text>
+
+    <!-- Footer -->
+    <rect x="70" y="478" width="380" height="32" fill="#0d0d12"/>
+    <text x="88" y="498" fill="#888" font-size="10">● admin · 2 msgs</text>
+    <text x="432" y="498" fill="#555" font-size="10" text-anchor="end">ESC to restore</text>
+
+    <!-- Label -->
+    <rect x="80" y="537" width="360" height="18" rx="9" fill="#1a1025" stroke="#2a2a3e"/>
+    <text x="260" y="549" fill="#f59e0b" font-size="11" text-anchor="middle" font-weight="700">🖥️ MAXIMIZED · 75% viewport · blur backdrop</text>
+  </g>
+
+  <!-- ═════════ RIGHT: Fullscreen mode ═════════ -->
+  <g>
+    <rect x="510" y="90" width="460" height="440" rx="10" fill="#0b0e13"/>
+    <rect x="510" y="90" width="460" height="28" rx="10" fill="#000"/>
+    <circle cx="530" cy="104" r="5" fill="#ef4444"/>
+    <circle cx="548" cy="104" r="5" fill="#f59e0b"/>
+    <circle cx="566" cy="104" r="5" fill="#22c55e"/>
+    <text x="740" y="108" fill="#666" font-size="10" text-anchor="middle">localhost:3200</text>
+
+    <!-- Fullscreen widget (fills everything) -->
+    <rect x="510" y="118" width="460" height="412" fill="#0d0d12"/>
+
+    <!-- Header -->
+    <rect x="510" y="118" width="460" height="46" fill="#1a1025"/>
+    <circle cx="536" cy="141" r="12" fill="url(#brand)"/>
+    <text x="536" y="146" fill="white" font-size="12" text-anchor="middle" font-weight="700">🤖</text>
+    <text x="558" y="137" fill="#fff" font-size="13" font-weight="600">O11yBot</text>
+    <text x="558" y="152" fill="#f59e0b" font-size="9" font-weight="700">⛶ FULLSCREEN</text>
+
+    <g>
+      <rect x="908" y="131" width="20" height="20" rx="4" fill="transparent" stroke="#2a2a3e"/>
+      <line x1="913" y1="141" x2="923" y2="141" stroke="#888" stroke-width="1.5"/>
+      <rect x="932" y="131" width="20" height="20" rx="4" fill="url(#brand)" opacity="0.3"/>
+      <path d="M 936 141 v -4 h 4 M 948 141 v -4 h -4 M 936 145 v 4 h 4 M 948 145 v 4 h -4" stroke="#f59e0b" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- Content -->
+    <text x="528" y="195" fill="#fff" font-size="16" font-weight="700">🚀 Advantages</text>
+
+    <g font-size="10">
+      <rect x="528" y="210" width="420" height="26" rx="5" fill="#181b23"/>
+      <text x="540" y="227" fill="#f59e0b">✨</text>
+      <text x="560" y="227" fill="#ccc">One chatbot across ALL Grafana pages — no context switching</text>
+
+      <rect x="528" y="243" width="420" height="26" rx="5" fill="#181b23"/>
+      <text x="540" y="260" fill="#f59e0b">🔐</text>
+      <text x="560" y="260" fill="#ccc">User-isolated chat history (per Grafana login)</text>
+
+      <rect x="528" y="276" width="420" height="26" rx="5" fill="#181b23"/>
+      <text x="540" y="293" fill="#f59e0b">🛠️</text>
+      <text x="560" y="293" fill="#ccc">16 real Grafana MCP tools — dashboards, alerts, datasources</text>
+
+      <rect x="528" y="309" width="420" height="26" rx="5" fill="#181b23"/>
+      <text x="540" y="326" fill="#f59e0b">💻</text>
+      <text x="560" y="326" fill="#ccc">Self-hosted LLM (Ollama) OR cloud (OpenAI/Anthropic)</text>
+
+      <rect x="528" y="342" width="420" height="26" rx="5" fill="#181b23"/>
+      <text x="540" y="359" fill="#f59e0b">🛡️</text>
+      <text x="560" y="359" fill="#ccc">PII detection with 15 patterns (email, SSN, API keys, AWS)</text>
+
+      <rect x="528" y="375" width="420" height="26" rx="5" fill="#181b23"/>
+      <text x="540" y="392" fill="#f59e0b">⚡</text>
+      <text x="560" y="392" fill="#ccc">Intent matcher — reliable tool calls with tiny 500MB LLM</text>
+
+      <rect x="528" y="408" width="420" height="26" rx="5" fill="#181b23"/>
+      <text x="540" y="425" fill="#f59e0b">📊</text>
+      <text x="560" y="425" fill="#ccc">Full OpenTelemetry traces + metrics to your LGTM stack</text>
+
+      <rect x="528" y="441" width="420" height="26" rx="5" fill="#181b23"/>
+      <text x="540" y="458" fill="#f59e0b">🎯</text>
+      <text x="560" y="458" fill="#ccc">98/98 automated tests — documented, production-ready</text>
+    </g>
+
+    <rect x="510" y="478" width="460" height="32" fill="#1a1025"/>
+    <text x="528" y="498" fill="#555" font-size="10">● admin · 2 msgs</text>
+    <text x="952" y="498" fill="#555" font-size="10" text-anchor="end">ESC to exit fullscreen</text>
+
+    <!-- Label -->
+    <rect x="560" y="537" width="360" height="18" rx="9" fill="#1a1025" stroke="#2a2a3e"/>
+    <text x="740" y="549" fill="#f59e0b" font-size="11" text-anchor="middle" font-weight="700">⛶ FULLSCREEN · 100% browser takeover</text>
+  </g>
+</svg>
