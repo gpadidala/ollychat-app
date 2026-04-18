@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "1.5.0";
+  var WIDGET_VERSION = "1.6.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -63,6 +63,7 @@
   state.open = false;       // re-opened by user each page load
   state.view = "chat";      // "chat" | "history"
   state.streaming = false;
+  state.showShortcuts = false;  // shortcuts modal visibility
   state.mode = state.mode || "normal";
   state.posX = state.posX != null ? state.posX : null;
   state.posY = state.posY != null ? state.posY : null;
@@ -190,6 +191,24 @@
 .ob-role-viewer{background:rgba(96,165,250,.2);color:#60a5fa}\
 .ob-role-editor{background:rgba(34,197,94,.2);color:#22c55e}\
 .ob-role-admin{background:rgba(239,68,68,.2);color:#ef4444}\
+.ob-kbd-btn{background:transparent;border:1px solid #2a2a3e;color:#888;padding:2px 8px;border-radius:10px;font-size:10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:inherit}\
+.ob-kbd-btn:hover{background:rgba(255,102,0,.1);border-color:rgba(255,102,0,.4);color:#f59e0b}\
+.ob-kbd-btn svg{width:11px;height:11px;fill:currentColor}\
+.ob-shortcuts-overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:10;display:flex;align-items:center;justify-content:center;animation:ob-fadein .15s ease}\
+@keyframes ob-fadein{from{opacity:0}to{opacity:1}}\
+.ob-shortcuts-modal{background:#111217;border:1px solid #2a2a3e;border-radius:12px;width:92%;max-width:420px;max-height:85%;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}\
+.ob-shortcuts-hdr{padding:14px 18px;border-bottom:1px solid #2a2a3e;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#1a1025,#111217);border-radius:12px 12px 0 0}\
+.ob-shortcuts-hdr h3{margin:0;font-size:14px;color:#f59e0b;font-weight:600;display:flex;align-items:center;gap:8px}\
+.ob-shortcuts-close{background:transparent;border:none;color:#888;cursor:pointer;width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center}\
+.ob-shortcuts-close:hover{background:rgba(255,255,255,.06);color:#ccc}\
+.ob-shortcuts-body{padding:10px 18px}\
+.ob-shortcuts-group{margin-bottom:14px}\
+.ob-shortcuts-group h4{margin:8px 0 6px;font-size:10.5px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:0.8px}\
+.ob-shortcut{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}\
+.ob-shortcut:last-child{border:none}\
+.ob-shortcut-label{font-size:12px;color:#ccc}\
+.ob-shortcut-keys{display:flex;gap:3px}\
+.ob-shortcut-kbd{background:#0d0d12;border:1px solid #2a2a3e;border-bottom-width:2px;border-radius:4px;padding:2px 6px;font-family:\"JetBrains Mono\",monospace;font-size:10.5px;color:#f59e0b;min-width:20px;text-align:center}\
 .ob-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:20px;color:#888}\
 .ob-welcome h3{color:#e0e0e0;margin:0 0 6px;font-size:17px}\
 .ob-welcome p{font-size:13px;max-width:280px;margin:0 0 16px;line-height:1.5}\
@@ -386,6 +405,77 @@
   }
 
   // ═══════════════════════════════════════════════════════════
+  // Render: Keyboard Shortcuts Modal
+  // ═══════════════════════════════════════════════════════════
+  var isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  var MOD = isMac ? "⌘" : "Ctrl";
+
+  var SHORTCUTS = [
+    {
+      group: "Widget",
+      items: [
+        { keys: [MOD, "K"],        label: "Toggle chatbot (open/close)" },
+        { keys: [MOD, "/"],        label: "Show this shortcuts panel" },
+        { keys: ["Esc"],           label: "Exit fullscreen / close modal" },
+      ],
+    },
+    {
+      group: "Chat",
+      items: [
+        { keys: ["Enter"],         label: "Send message" },
+        { keys: ["Shift", "Enter"], label: "New line in message" },
+        { keys: [MOD, "N"],        label: "New chat session" },
+        { keys: [MOD, "L"],        label: "Clear current chat" },
+      ],
+    },
+    {
+      group: "Navigation",
+      items: [
+        { keys: [MOD, "H"],        label: "Toggle History tab" },
+        { keys: [MOD, "J"],        label: "Focus Chat tab" },
+        { keys: [MOD, "↑"],        label: "Previous session in history" },
+        { keys: [MOD, "↓"],        label: "Next session in history" },
+      ],
+    },
+    {
+      group: "Window",
+      items: [
+        { keys: [MOD, "Shift", "F"], label: "Toggle fullscreen" },
+        { keys: [MOD, "Shift", "M"], label: "Toggle maximize" },
+        { keys: [MOD, "Shift", "N"], label: "Minimize to bubble" },
+      ],
+    },
+  ];
+
+  function renderShortcutsModal() {
+    var html = '<div class="ob-shortcuts-overlay" id="ob-shortcuts-overlay">';
+    html += '<div class="ob-shortcuts-modal" onclick="event.stopPropagation()">';
+    html += '<div class="ob-shortcuts-hdr">';
+    html += '<h3>⌨️ Keyboard Shortcuts</h3>';
+    html += '<button class="ob-shortcuts-close" id="ob-shortcuts-close" title="Close (Esc)">✕</button>';
+    html += '</div>';
+    html += '<div class="ob-shortcuts-body">';
+    for (var gi = 0; gi < SHORTCUTS.length; gi++) {
+      var g = SHORTCUTS[gi];
+      html += '<div class="ob-shortcuts-group">';
+      html += '<h4>' + g.group + '</h4>';
+      for (var ii = 0; ii < g.items.length; ii++) {
+        var s = g.items[ii];
+        html += '<div class="ob-shortcut">';
+        html += '<span class="ob-shortcut-label">' + esc(s.label) + '</span>';
+        html += '<span class="ob-shortcut-keys">';
+        for (var ki = 0; ki < s.keys.length; ki++) {
+          html += '<kbd class="ob-shortcut-kbd">' + esc(s.keys[ki]) + '</kbd>';
+        }
+        html += '</span></div>';
+      }
+      html += '</div>';
+    }
+    html += '</div></div></div>';
+    return html;
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // Render: Full panel
   // ═══════════════════════════════════════════════════════════
   function renderPanel() {
@@ -436,10 +526,13 @@
         '<div class="ob-footer">' +
           '<div class="ob-user-badge"><span>●</span> ' + esc(grafanaUser.name) + '</div>' +
           '<div class="ob-role-badge ' + roleClass + '">' + grafanaUser.role + '</div>' +
+          '<button class="ob-kbd-btn" id="ob-kbd" title="Keyboard shortcuts (⌘/)"><svg viewBox="0 0 24 24"><path d="M20 5H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2zM6 15H4v-2h2v2zm0-3H4v-2h2v2zm0-3H4V7h2v2zm3 6H7v-2h2v2zm0-3H7v-2h2v2zm0-3H7V7h2v2zm3 6h-2v-2h2v2zm0-3h-2v-2h2v2zm0-3h-2V7h2v2zm3 6h-2v-2h2v2zm0-3h-2v-2h2v2zm0-3h-2V7h2v2zm5 6h-4v-2h4v2zm0-3h-2v-2h2v2zm0-3h-2V7h2v2z"/></svg> Shortcuts</button>' +
           (state.view === "chat" && getActiveSession() ? '<span style="margin-left:auto">' + getActiveSession().msgs.length + ' msgs</span>' : '') +
         '</div>' +
         // Input (only in chat view)
         inputArea +
+        // Shortcuts overlay (shown when state.showShortcuts is true)
+        (state.showShortcuts ? renderShortcutsModal() : '') +
       '</div>';
 
     wireEvents();
@@ -450,6 +543,24 @@
     // Header drag
     var hdr = document.getElementById("ob-hdr");
     if (hdr) hdr.onmousedown = startDrag;
+
+    // Shortcuts button + overlay
+    var kbdBtn = document.getElementById("ob-kbd");
+    if (kbdBtn) kbdBtn.onclick = function(ev) {
+      ev.stopPropagation();
+      state.showShortcuts = true;
+      renderPanel();
+    };
+    var kbdClose = document.getElementById("ob-shortcuts-close");
+    if (kbdClose) kbdClose.onclick = function() {
+      state.showShortcuts = false;
+      renderPanel();
+    };
+    var kbdOverlay = document.getElementById("ob-shortcuts-overlay");
+    if (kbdOverlay) kbdOverlay.onclick = function() {
+      state.showShortcuts = false;
+      renderPanel();
+    };
 
     // Window controls
     var closeBtn = document.getElementById("ob-close");
@@ -737,11 +848,138 @@
   }
 
   // ═══════════════════════════════════════════════════════════
-  // Keyboard shortcuts
+  // Global Keyboard Shortcuts
   // ═══════════════════════════════════════════════════════════
+  function selectNextSession(direction) {
+    // direction: -1 (previous/up), +1 (next/down)
+    if (state.sessions.length === 0) return;
+    var sorted = state.sessions.slice().sort(function(a, b) { return b.updatedAt - a.updatedAt; });
+    var idx = sorted.findIndex(function(s) { return s.id === state.activeSessionId; });
+    if (idx < 0) idx = 0;
+    else idx = (idx + direction + sorted.length) % sorted.length;
+    selectSession(sorted[idx].id);
+    state.view = "history";
+    renderPanel();
+  }
+
   document.addEventListener("keydown", function(ev) {
+    var mod = ev.metaKey || ev.ctrlKey;
+
+    // ─── Close shortcuts modal with Esc ───
+    if (ev.key === "Escape" && state.showShortcuts) {
+      ev.preventDefault();
+      state.showShortcuts = false;
+      renderPanel();
+      return;
+    }
+
+    // ─── Esc to exit fullscreen/maximized ───
     if (ev.key === "Escape" && state.open && (state.mode === "fullscreen" || state.mode === "maximized")) {
+      ev.preventDefault();
       state.mode = "normal"; saveState(); renderPanel();
+      return;
+    }
+
+    // ─── Cmd/Ctrl + K: toggle widget open/close ───
+    if (mod && !ev.shiftKey && ev.key.toLowerCase() === "k") {
+      ev.preventDefault();
+      if (state.open) {
+        state.open = false; saveState(); renderFab();
+      } else {
+        state.open = true; renderPanel();
+      }
+      return;
+    }
+
+    // ─── Cmd/Ctrl + /: show shortcuts help ───
+    if (mod && ev.key === "/") {
+      ev.preventDefault();
+      if (!state.open) { state.open = true; renderPanel(); }
+      state.showShortcuts = !state.showShortcuts;
+      renderPanel();
+      return;
+    }
+
+    // Remaining shortcuts require widget to be open
+    if (!state.open) return;
+
+    // ─── Cmd/Ctrl + N: new chat ───
+    if (mod && !ev.shiftKey && ev.key.toLowerCase() === "n") {
+      ev.preventDefault();
+      newSession();
+      state.view = "chat";
+      saveState();
+      renderPanel();
+      return;
+    }
+
+    // ─── Cmd/Ctrl + L: clear current chat ───
+    if (mod && !ev.shiftKey && ev.key.toLowerCase() === "l") {
+      ev.preventDefault();
+      var s = getActiveSession();
+      if (s) {
+        s.msgs = [];
+        s.title = "New chat";
+        s.updatedAt = Date.now();
+        saveState();
+        renderPanel();
+      }
+      return;
+    }
+
+    // ─── Cmd/Ctrl + H: toggle history tab ───
+    if (mod && !ev.shiftKey && ev.key.toLowerCase() === "h") {
+      ev.preventDefault();
+      state.view = state.view === "history" ? "chat" : "history";
+      saveState();
+      renderPanel();
+      return;
+    }
+
+    // ─── Cmd/Ctrl + J: focus chat tab ───
+    if (mod && !ev.shiftKey && ev.key.toLowerCase() === "j") {
+      ev.preventDefault();
+      state.view = "chat";
+      saveState();
+      renderPanel();
+      return;
+    }
+
+    // ─── Cmd/Ctrl + ArrowUp / ArrowDown: prev/next session ───
+    if (mod && ev.key === "ArrowUp") {
+      ev.preventDefault();
+      selectNextSession(-1);
+      return;
+    }
+    if (mod && ev.key === "ArrowDown") {
+      ev.preventDefault();
+      selectNextSession(1);
+      return;
+    }
+
+    // ─── Cmd/Ctrl + Shift + F: fullscreen ───
+    if (mod && ev.shiftKey && ev.key.toLowerCase() === "f") {
+      ev.preventDefault();
+      state.mode = state.mode === "fullscreen" ? "normal" : "fullscreen";
+      saveState(); renderPanel();
+      return;
+    }
+
+    // ─── Cmd/Ctrl + Shift + M: maximize ───
+    if (mod && ev.shiftKey && ev.key.toLowerCase() === "m") {
+      ev.preventDefault();
+      state.mode = state.mode === "maximized" ? "normal" : "maximized";
+      saveState(); renderPanel();
+      return;
+    }
+
+    // ─── Cmd/Ctrl + Shift + N: minimize to bubble ───
+    if (mod && ev.shiftKey && ev.key.toLowerCase() === "n") {
+      ev.preventDefault();
+      state.open = false;
+      saveState();
+      renderFab();
+      return;
     }
   });
 
