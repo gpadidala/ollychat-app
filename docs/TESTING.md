@@ -1,18 +1,38 @@
 # O11yBot Testing Guide
 
-Complete testing documentation for the O11yBot Grafana chatbot plugin.
+Complete testing documentation — **147 automated tests across 7 suites**.
 
 ## Quick Start
 
 ```bash
 cd /Volumes/Gopalmac/Gopal-aiops/ollychat-app/tests
-./run-all-tests.sh        # Run all 94 tests across 5 suites
-./run-suite.sh 1          # Run only Suite 1 (API)
-./run-suite.sh 2          # Run only Suite 2 (Intents)
-./run-suite.sh 3          # Run only Suite 3 (UI Widget)
-./run-suite.sh 4          # Run only Suite 4 (Integration)
-./run-suite.sh 5          # Run only Suite 5 (Negative)
+
+./preflight.sh            # verify all services are up (required)
+./run-all-tests.sh        # run all 147 tests
+
+# Run individual suites:
+./suite1-api.sh           # 17 tests — API endpoints
+./suite2-intents.sh       # 19 tests — Intent matcher
+node suite3-widget.js     # 22 tests — UI Widget / SSE parser
+node suite4-integration.js  # 18 tests — Integration / E2E
+node suite5-negative.js   # 22 tests — Error / negative cases
+node suite6-prompts.js    # 18 tests — Prompt engineering
+./suite7-categories.sh    # 31 tests — Category intents
 ```
+
+Expected output:
+```
+Suite 1 Results: 17 passed, 0 failed   (API endpoints)
+Suite 2 Results: 19 passed, 0 failed   (Intent matcher)
+Suite 3 Results: 22 passed, 0 failed   (UI Widget / SSE)
+Suite 4 Results: 18 passed, 0 failed   (Integration / E2E)
+Suite 5 Results: 22 passed, 0 failed   (Negative / Errors)
+Suite 6 Results: 18 passed, 0 failed   (Prompt Engineering)
+Suite 7 Results: 31 passed, 0 failed   (Category Intents)
+TOTAL:          147 passed, 0 failed
+```
+
+---
 
 ## Architecture Under Test
 
@@ -24,7 +44,7 @@ O11yBot Widget (JavaScript)
   │ POST /api/v1/chat (SSE streaming)
   ↓
 Orchestrator (Python FastAPI :8000)
-  │ Intent matching → MCP routing → Ollama fallback
+  │ Intent matcher → Category router → MCP tool OR LLM fallback
   ├──→ Ollama LLM (:11434, qwen2.5:0.5b)
   └──→ Bifrost MCP Server (:8765)
            │ REST bridge /api/tools/call
@@ -32,22 +52,31 @@ Orchestrator (Python FastAPI :8000)
          Grafana API (:3200)
 ```
 
+---
+
 ## Pre-requisites
 
-All containers must be running:
+All services must be running before tests:
+
 ```bash
+# Orchestrator + LGTM stack
 docker ps --filter "name=ollychat"
 # Expected: ollychat-orchestrator, ollychat-ollama, ollychat-otel-collector,
 #           ollychat-mimir, ollychat-loki, ollychat-tempo
 
+# Main Grafana
 docker ps --filter "name=grafana-executive-dashboards"
-# Expected: grafana-executive-dashboards (Up)
 
+# Bifrost MCP
 curl -s http://localhost:8765/api/tools >/dev/null && echo "Bifrost OK"
-# Expected: Bifrost OK (or restart: cd ../Bifrost && .venv/bin/grafana-mcp serve --port 8765 &)
+# (or restart: cd ../Bifrost && .venv/bin/grafana-mcp serve --port 8765 &)
 ```
 
-## Endpoints Reference
+Run `./tests/preflight.sh` to check everything at once.
+
+---
+
+## Endpoints Under Test
 
 | Endpoint | Method | Purpose |
 |---|---|---|
@@ -67,218 +96,408 @@ curl -s http://localhost:8765/api/tools >/dev/null && echo "Bifrost OK"
 
 ---
 
-## Test Suite 1: API Endpoints (13 tests)
+## Suite 1: API Endpoints (17 tests)
 
-Validates that every REST endpoint responds correctly.
+Validates REST endpoints respond correctly.
 
 | # | Test | Endpoint | Expected |
 |---|---|---|---|
-| T1 | Orchestrator health | `GET /api/v1/health` | `{"status":"healthy"}` |
-| T2 | Models list | `GET /api/v1/models` | Array of models |
-| T3 | MCP servers | `GET /api/v1/mcp/servers` | bifrost-grafana status=connected, 16 tools |
-| T4 | MCP tools | `GET /api/v1/mcp/tools` | 16 tools |
-| T5 | Skills list | `GET /api/v1/skills` | 3 default skills |
-| T6 | Rules list | `GET /api/v1/rules` | 3 default rules |
-| T7 | PII scan | `POST /api/v1/guardrails/scan` | Detects email + SSN |
-| T8 | Tool call | `POST /api/v1/mcp/tools/call` | Returns dashboards |
-| T9 | CORS preflight | `OPTIONS /api/v1/chat` | `Access-Control-Allow-Origin: http://localhost:3200` |
-| T10 | Grafana | `GET :3200/api/health` | HTTP 200 |
-| T11 | Widget JS | `GET :3200/public/plugins/.../o11ybot-widget.js` | HTTP 200 |
-| T12 | Plugin enabled | `GET :3200/api/plugins/gopal-ollychat-app/settings` | `enabled: true` |
-| T13 | Widget injection | `GET :3200/` | Contains `o11ybot-widget` script |
-| T14 | Bifrost direct | `GET :8765/api/tools` | 16 tools |
+| T1 | Orchestrator healthy | `GET /api/v1/health` | `{"status":"healthy"}` |
+| T2 | Service name correct | `GET /api/v1/health` | Contains `ollychat-orchestrator` |
+| T3 | Models list | `GET /api/v1/models` | ≥1 model |
+| T4 | MCP Bifrost connected | `GET /api/v1/mcp/servers` | `status=connected` |
+| T5 | 16 MCP tools | `GET /api/v1/mcp/servers` | `toolCount=16` |
+| T6 | Tools endpoint | `GET /api/v1/mcp/tools` | 16 tools |
+| T7 | Skills list | `GET /api/v1/skills` | 3 default skills |
+| T8 | Rules list | `GET /api/v1/rules` | 3 default rules |
+| T9 | PII scan detects | `POST /api/v1/guardrails/scan` | `has_pii=true` |
+| T10 | PII matches count | `POST /api/v1/guardrails/scan` | 2 matches (email+ssn) |
+| T11 | Tool call succeeds | `POST /api/v1/mcp/tools/call` | `ok=true` |
+| T12 | CORS preflight | `OPTIONS /api/v1/chat` | allow origin 3200 |
+| T13 | Grafana healthy | `GET :3200/api/health` | HTTP 200 |
+| T14 | Widget JS served | `GET /public/plugins/.../widget.js` | HTTP 200 |
+| T15 | Plugin enabled | `GET /api/plugins/.../settings` | `enabled=true` |
+| T16 | Bifrost direct | `GET :8765/api/tools` | 16 tools |
+| T17 | HTML has widget | `GET :3200/ (auth)` | script tag present |
 
-### Manual curl commands
-
+### Manual validation
 ```bash
-# T1: Health
+# Health
 curl http://localhost:8000/api/v1/health
 
-# T3: MCP servers
-curl http://localhost:8000/api/v1/mcp/servers | jq
-
-# T7: PII scan
+# PII scan
 curl -X POST http://localhost:8000/api/v1/guardrails/scan \
   -H "Content-Type: application/json" \
   -d '{"text":"Email: user@test.com, SSN: 123-45-6789"}' | jq
-
-# T8: Direct MCP tool call
-curl -X POST http://localhost:8000/api/v1/mcp/tools/call \
-  -H "Content-Type: application/json" \
-  -d '{"server_name":"bifrost-grafana","tool_name":"list_dashboards","arguments":{}}' | jq
 ```
 
 ---
 
-## Test Suite 2: Intent Matcher (19 tests)
+## Suite 2: Intent Matcher (19 tests)
 
-Validates that natural-language queries route to correct MCP tools.
+Validates natural-language queries route to correct MCP tools.
 
 | # | Query | Expected Tool |
 |---|---|---|
-| 1 | "list all Grafana dashboards" | `list_dashboards` |
-| 2 | "show dashboards" | `list_dashboards` |
-| 3 | "all dashboards" | `list_dashboards` |
-| 4 | "list datasources" | `list_datasources` |
-| 5 | "show all data sources" | `list_datasources` |
-| 6 | "check datasource health" | `list_datasources` |
-| 7 | "list all alerts" | `list_alert_rules` |
-| 8 | "show firing alerts" | `list_alert_instances` |
-| 9 | "active alerts" | `list_alert_instances` |
-| 10 | "alert instances" | `list_alert_instances` |
-| 11 | "list all folders" | `list_folders` |
-| 12 | "check grafana health" | `health_check` |
-| 13 | "grafana status" | `health_check` |
-| 14 | "grafana version" | `health_check` |
-| 15 | "health check" | `health_check` |
-| 16 | "mcp server info" | `get_server_info` |
-| 17 | "bifrost info" | `get_server_info` |
-| 18 | "search dashboards aks" | `search_dashboards` |
-| 19 | "list users" | `list_users` |
+| T1 | `list all Grafana dashboards` | `list_dashboards` |
+| T2 | `show dashboards` | `list_dashboards` |
+| T3 | `all dashboards` | `list_dashboards` |
+| T4 | `list datasources` | `list_datasources` |
+| T5 | `show all data sources` | `list_datasources` |
+| T6 | `check datasource health` | `list_datasources` |
+| T7 | `list all alerts` | `list_alert_rules` |
+| T8 | `show firing alerts` | `list_alert_instances` |
+| T9 | `active alerts` | `list_alert_instances` |
+| T10 | `alert instances` | `list_alert_instances` |
+| T11 | `list all folders` | `list_folders` |
+| T12 | `check grafana health` | `health_check` |
+| T13 | `grafana status` | `health_check` |
+| T14 | `grafana version` | `health_check` |
+| T15 | `health check` | `health_check` |
+| T16 | `mcp server info` | `get_server_info` |
+| T17 | `bifrost info` | `get_server_info` |
+| T18 | `search dashboards aks` | `search_dashboards` |
+| T19 | `list users` | `list_users` |
 
-### Manual test
-
+### Manual validation
 ```bash
 curl -N -X POST http://localhost:8000/api/v1/chat \
   -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"list all dashboards"}],"stream":true}'
-# Look for: data: {"type":"tool_start","name":"list_dashboards",...}
+  -d '{"messages":[{"role":"user","content":"list all dashboards"}],"stream":true}' \
+  | grep "tool_start"
+# Expected: data: {"type":"tool_start","name":"list_dashboards",...}
 ```
 
 ---
 
-## Test Suite 3: UI Widget / SSE Parser (22 tests)
+## Suite 3: UI Widget / SSE Parser (22 tests)
 
-Simulates the exact browser widget behavior to catch streaming issues.
+Simulates exact browser widget behavior to catch streaming bugs.
 
-### What it checks
+### T1-T3: HTTP Response
+- HTTP 200 status
+- Content-Type: `text/event-stream`
+- CORS: `Access-Control-Allow-Origin: http://localhost:3200`
 
-1. **HTTP Response**
-   - Status 200
-   - Content-Type: `text/event-stream`
-   - CORS header echoes origin
+### T4-T8: SSE Event Types
+All 5 event types emitted:
+- `tool_start` — tool invocation begins
+- `tool_result` — tool completed with duration
+- `text` — streaming content delta
+- `usage` — token counts + cost
+- `done` — stream terminator
 
-2. **SSE Event Types** (5 total)
-   - `tool_start` — when an intent triggers a tool
-   - `tool_result` — tool call completed
-   - `text` — streaming text content
-   - `usage` — token counts and cost
-   - `done` — stream terminator
+### T9-T12: Content Correctness
+- Content length > 500 bytes
+- Mentions `dashboard`
+- Markdown bold (`**text**`) present
+- Markdown links (`[text](url)`) present
 
-3. **Content Parsing**
-   - Content length > 500 bytes
-   - Markdown bold (`**text**`) present
-   - Markdown links (`[text](url)`) present
+### T13-T15: Tool Metadata
+- `tool_start.name === "list_dashboards"`
+- `tool_start.id` present
+- `tool_result.durationMs` tracked
 
-4. **CRLF Line Ending Fix**
-   - sse-starlette emits `\r\n\r\n` frame separators
-   - Widget normalizes to `\n\n` before parsing
-   - Expected: 500+ events parsed per query
+### T16: CRLF Line Ending Fix
+- sse-starlette emits `\r\n\r\n` frames
+- Widget normalizes to `\n\n` before parsing
+- Expected: 500+ events parsed per query
 
-5. **Multi-query Isolation**
-   - Sequential queries don't contaminate each other
-   - State is clean between requests
+### T17-T20: Multi-query Isolation
+- Sequential queries don't contaminate
+- Different tools for different queries
+- Content matches each query
 
-### Known issue fixed
+### T21-T22: Dashboard Search
+- `search dashboards aks` → tool `search_dashboards`
+- Args contain `query: "aks"`
 
-Before the fix, widget parsed `\n\n` directly → missed ALL events because server emits `\r\n\r\n`. Now: `buf = buf.replace(/\r\n/g, "\n")` before parsing.
+### Known Bug (fixed)
+Before: widget parsed `\n\n` only, server emits `\r\n\r\n` → ALL events missed, empty bubble.
+Fix: `buf = buf.replace(/\r\n/g, "\n")` before parsing.
 
 ---
 
-## Test Suite 4: Integration (18 tests)
+## Suite 4: Integration / E2E (18 tests)
 
 End-to-end tests covering the full request chain.
 
-### Key tests
+| # | Test | Verifies |
+|---|---|---|
+| T1 | Chat → tool → dashboards | HTTP 200 + real dashboard data |
+| T2 | User identity propagation | `X-Grafana-User` reaches logs |
+| T3 | MCP → Grafana chain | Real v11.6.4, DB ok, 42ms |
+| T4 | All tools have `minRole` | 16/16 tools tagged |
+| T5 | Admin-only tools | ≥2 (list_users, list_service_accounts) |
+| T6 | Plugin enabled | Returns `enabled=true` |
+| T7 | Plugin name | "OllyChat" |
+| T8 | 6 pages registered | Chat, Investigate, Skills, MCP, Rules, Config |
+| T9 | Multi-turn conversation | 3-turn accepted |
+| T10 | Multi-turn returns text | Events present |
+| T11 | Dashboard count = Grafana | MCP returns 113 = `/api/search` |
 
-- **E2E flow**: Chat query → Intent match → MCP call → Bifrost → Grafana → 113 dashboards returned
-- **User identity propagation**: `X-Grafana-User` header reaches orchestrator logs
-- **MCP → Grafana chain**: Bifrost `health_check` returns real Grafana v11.6.4
-- **Role metadata**: All 16 tools have `minRole`, 2 admin-only tools
-- **Plugin registration**: 6 pages registered (Chat, Investigate, Skills, MCP, Rules, Config)
-- **Multi-turn conversation**: History passed correctly
-- **Dashboard count consistency**: MCP and Grafana API both return 113
+### Manual validation
+```bash
+# Full chain test
+curl -X POST http://localhost:8000/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -H "X-Grafana-User: admin" \
+  -d '{"messages":[{"role":"user","content":"list all dashboards"}]}' \
+  | grep -o "dashboard" | wc -l
+# Expected: many matches (response mentions dashboards)
+```
 
 ---
 
-## Test Suite 5: Negative / Error Cases (22 tests)
+## Suite 5: Negative / Error Cases (22 tests)
 
 | # | Test | Expected |
 |---|---|---|
-| T1 | Invalid tool name | `{ok:false, error:"..."}` |
-| T2 | Invalid server name | `{ok:false, error:"..."}` (not 500) |
-| T3 | RBAC block | viewer role can't call `list_users` → `PermissionError` |
+| T1 | Invalid tool name | `{ok:false, error}` |
+| T2 | Unknown server name | HTTP 200 with JSON error (not 500) |
+| T3 | RBAC: viewer → admin tool | `PermissionError` in response |
 | T4 | Empty messages | HTTP 200 graceful |
-| T5 | Malformed schema | HTTP 422 validation |
-| T6 | Non-intent query | Falls through to Ollama LLM |
-| T7 | Skills CRUD | Create + delete roundtrip |
-| T8 | Rules CRUD | Create + delete roundtrip |
-| T9 | Clean text PII scan | `has_pii: false` |
-| T10 | Multi-type PII | Detects 3+ types (email, ssn, api_key) |
-| T11 | Concurrent requests | 5 parallel all succeed |
-| T12 | Large payload | 10KB message accepted |
-| T13 | Unicode/emoji | 🎉 Japanese 日本語 accepted |
+| T5 | Malformed schema | HTTP 422 |
+| T6 | Non-intent → LLM fallback | `text` events, no `tool_start` |
+| T7 | Skills CRUD | Create+delete roundtrip works |
+| T8 | Rules CRUD | Create+delete roundtrip works |
+| T9 | PII clean text | `has_pii=false` |
+| T10 | PII multi-type | Detects ≥3 types (email+ssn+aws) |
+| T11 | 5x concurrent requests | All return HTTP 200 |
+| T12 | Large payload (10KB) | HTTP 200 accepted |
+| T13 | Unicode/emoji | `Hello 👋 日本語 🎉` accepted |
+
+---
+
+## Suite 6: Prompt Engineering (18 tests)
+
+Validates query classifier, tuned sampling, system prompts, few-shot examples.
+
+### Query Classifier
+
+| Query | Expected Category | Tuned Params |
+|---|---|---|
+| `promql for cpu usage` | `promql_help` | T=0.15, max=600 |
+| `what is the RED method?` | `observability_qa` | T=0.2, max=500 |
+| `why is payment slow?` | `incident_analysis` | T=0.3, max=1500 |
+| `hi` | `chitchat` | T=0.5, max=150 |
+| (tool result rephrasing) | `tool_result_formatting` | T=0.1, max=800 |
+
+### Tests
+
+- T1-T3: PromQL help → response contains code fence / `rate(` / `promql`
+- T4-T6: Observability Q&A → mentions ≥2 RED terms (rate/error/duration)
+- T7: LogQL help → non-empty response
+- T8-T10: Intent match still uses fast path (no LLM call)
+- T11-T12: Chitchat classification works
+- T13-T14: Incident analysis returns substantive response
+- T15: User name propagated to system prompt
+- T16-T17: Multi-turn conversation
+- T18: Response doesn't blindly echo user message
+
+### Manual validation
+```bash
+# PromQL help should return code fence
+curl -N -X POST http://localhost:8000/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"promql for error rate"}],"stream":true}' \
+  | grep -o "promql"
+```
+
+---
+
+## Suite 7: Category Intents (31 tests)
+
+Validates category-filtered and service-specific dashboard queries.
+
+### Cloud Providers (5 tests)
+
+| Query | Expected Tag |
+|---|---|
+| `list AKS dashboards` | `aks` |
+| `show Azure dashboards` | `azure` |
+| `list OCI dashboards` | `oci` |
+| `GCP dashboards` | `gcp` |
+| `AWS dashboards` | `aws` |
+
+### Kubernetes (1 test)
+- `kubernetes dashboards` → tag `kubernetes`
+
+### Databases (3 tests)
+
+| Query | Expected Tag |
+|---|---|
+| `database dashboards` | `database` |
+| `postgres dashboards` | `postgresql` |
+| `redis dashboards` | `redis` |
+
+### Observability Signals (4 tests)
+
+| Query | Expected Tag |
+|---|---|
+| `show loki dashboards` | `loki` |
+| `mimir dashboards` | `mimir` |
+| `tempo dashboards` | `tempo` |
+| `pyroscope dashboards` | `pyroscope` |
+
+### SRE Patterns (3 tests)
+
+| Query | Expected Tag |
+|---|---|
+| `SLO dashboards` | `slo` |
+| `performance dashboards` | `performance` |
+| `error dashboards` | `errors` |
+
+### Compliance / Security (2 tests)
+
+| Query | Expected Tag |
+|---|---|
+| `security dashboards` | `security` |
+| `PCI dashboards` | `pci` |
+
+### Dashboard Levels (2 tests)
+
+| Query | Expected Tag |
+|---|---|
+| `show executive dashboards` | `executive` |
+| `L3 dashboards` | `l3` |
+
+### Cost / Capacity (2 tests)
+
+| Query | Expected Tag |
+|---|---|
+| `cost dashboards` | `cost` |
+| `capacity dashboards` | `capacity` |
+
+### Network / Storage (2 tests)
+
+| Query | Expected Tag |
+|---|---|
+| `network dashboards` | `network` |
+| `storage dashboards` | `storage` |
+
+### Service-specific Searches (3 tests)
+
+| Query | Expected Tool | Query Arg |
+|---|---|---|
+| `payment-service dashboards` | `search_dashboards` | `payment-service` |
+| `dashboards for api-gateway` | `search_dashboards` | `api-gateway` |
+| `dashboards for user-svc` | `search_dashboards` | `user-svc` |
+
+### Regression Tests (4 tests)
+
+| Query | Expected Tool |
+|---|---|
+| `list all dashboards` (plain) | `list_dashboards` |
+| `search dashboards aks` | `search_dashboards` |
+| `list datasources` | `list_datasources` |
+| `check grafana health` | `health_check` |
+
+### Real-data validation
+
+Against 113 real Grafana dashboards:
+- AKS → 6 · Azure → 24 · OCI → 22 · Kubernetes → 11
+- Loki → 5 · Mimir → 7 · Tempo → 7 · Pyroscope → 1
+- Security → 4 · SLO → 8 · Cost → 5 · Database → 5
+- Network → 2 · Storage → 2
+
+### Manual validation
+```bash
+# Category filter returns ONLY matching tag
+curl -N -X POST http://localhost:8000/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"list AKS dashboards"}],"stream":true}' \
+  | grep "tool_start"
+# Expected: "arguments":{"tags":["aks"]}
+```
 
 ---
 
 ## Bug Fixes Log
 
 ### Bug #1 — Intent Pattern Ordering
+**Symptom:** `"show firing alerts"` matched `list_alert_rules` (wrong).
+**Fix:** Reordered `INTENTS` list — specific patterns before generic ones.
+**Fixed in:** `orchestrator/intents.py`
 
-**Symptom:** Queries like "show firing alerts" were matching `list_alert_rules` instead of `list_alert_instances`.
+### Bug #2 — Unhandled Exception on Unknown MCP Server
+**Symptom:** POST with unknown `server_name` returned HTTP 500 text.
+**Fix:** Wrapped `call_tool` in try/except; returns `{ok:false, error}` JSON.
+**Fixed in:** `orchestrator/routers/mcp.py`
 
-**Cause:** Generic patterns registered before specific ones. Python iterates the `INTENTS` list in order.
+### Bug #3 — SSE CRLF Parsing
+**Symptom:** Chat bubble rendered empty even though server streamed 113 dashboards.
+**Cause:** `sse-starlette` uses `\r\n\r\n` as frame separator; widget looked for `\n\n`.
+**Fix:** Normalize CRLF → LF before parsing.
+**Fixed in:** `o11ybot-widget.js`
 
-**Fix:** Reordered patterns by specificity:
-1. Most specific (MCP info) → first
-2. Specific variants (search, firing alerts) → before generic
-3. Most generic (health status) → last
+### Bug #4 — Category Keyword Collision ("board")
+**Symptom:** `"PCI dashboards"` matched Executive category.
+**Cause:** Executive keywords included `"board"` which matched `"dashboard"`.
+**Fix:** Removed overly-generic keywords.
+**Fixed in:** `orchestrator/categories.py`
 
-Location: `orchestrator/intents.py` `INTENTS` list.
+### Bug #5 — Bifrost Tag Filter AND Semantics
+**Symptom:** `"kubernetes dashboards"` returned 0 results despite 11 tagged `kubernetes`.
+**Cause:** Bifrost uses AND logic for tags; we sent `["kubernetes","k8s"]` needing BOTH tags.
+**Fix:** Send only primary (first) tag from each category.
+**Fixed in:** `orchestrator/intents.py`
 
-### Bug #2 — Unhandled Exception in MCP Router
-
-**Symptom:** POSTing to `/api/v1/mcp/tools/call` with unknown `server_name` returned HTTP 500 `"Internal Server Error"` text.
-
-**Cause:** `RuntimeError: MCP server X not connected` uncaught.
-
-**Fix:** Wrapped in try/except in `routers/mcp.py`. Now returns `{ok: false, error: "..."}` JSON.
-
-### Bug #3 — CRLF Line Endings in SSE Parser
-
-**Symptom:** O11yBot chat bubble showed empty content even though server was sending data correctly.
-
-**Cause:** `sse-starlette` emits frames separated by `\r\n\r\n` (CRLF), but widget parser used `indexOf("\n\n")` which never matched.
-
-**Fix:** Added `buf = buf.replace(/\r\n/g, "\n")` normalization before parsing.
-
-Location: `o11ybot-widget.js` line ~330.
+### Bug #6 — Category Hijacked Explicit Search
+**Symptom:** `"search dashboards aks"` routed to category filter instead of `search_dashboards`.
+**Cause:** Category detection ran before intent matching.
+**Fix:** Added priority-0 "starts with search" check before category lookup.
+**Fixed in:** `orchestrator/intents.py`
 
 ---
 
-## How to Add a New Test
+## Adding a New Test
 
-### For a new intent pattern
+### New intent pattern
 
-1. Add the pattern to `orchestrator/intents.py` `INTENTS` list
-2. Add a formatter function if the tool returns new data
-3. Add a test case to `tests/suite2-intents.sh`:
+1. Add pattern to `orchestrator/intents.py` `INTENTS` list (remember: specific before generic)
+2. Add formatter if needed
+3. Add test case in `tests/suite2-intents.sh`:
    ```bash
-   test_intent "my new query" "my new query" "expected_tool_name"
+   test_intent "my query" "my query" "expected_tool_name"
    ```
 
-### For a new API endpoint
+### New category
+
+1. Add entry to `orchestrator/categories.py` `CATEGORIES` dict:
+   ```python
+   "my_cat": {
+     "label": "My Category",
+     "tags": ["primary_tag", "secondary"],
+     "folder_hints": [],
+     "keywords": ["my cat", "other term"],
+   }
+   ```
+2. Add test case in `tests/suite7-categories.sh`:
+   ```bash
+   test_category "My Cat" "my cat dashboards" "primary_tag"
+   ```
+
+### New API endpoint
 
 1. Implement in `orchestrator/routers/*.py`
 2. Wire in `orchestrator/main.py`
 3. Add curl test to `tests/suite1-api.sh`
 4. Add integration test to `tests/suite4-integration.js`
 
-### For a new UI widget behavior
+### New UI widget behavior
 
 1. Update `o11ybot-widget.js`
 2. Copy to `dist/o11ybot-widget.js`
-3. Add SSE-level test to `tests/suite3-widget.js` using Node.js http module
+3. Add SSE-level test in `tests/suite3-widget.js` using Node.js http module
+
+### New prompt category
+
+1. Add to `orchestrator/prompts.py` `QueryType` + profile
+2. Add classifier rule in `classify_query()`
+3. Add system prompt constant
+4. Add few-shot examples
+5. Add test in `tests/suite6-prompts.js`
 
 ---
 
@@ -286,15 +505,19 @@ Location: `o11ybot-widget.js` line ~330.
 
 Run before every deploy:
 ```bash
-./tests/run-all-tests.sh
+./tests/preflight.sh && ./tests/run-all-tests.sh
 ```
 
-Expected output:
+Expected:
 ```
 Suite 1 Results: 17 passed, 0 failed   (API endpoints)
 Suite 2 Results: 19 passed, 0 failed   (Intent matcher)
 Suite 3 Results: 22 passed, 0 failed   (UI Widget / SSE)
 Suite 4 Results: 18 passed, 0 failed   (Integration / E2E)
 Suite 5 Results: 22 passed, 0 failed   (Negative / Errors)
-TOTAL: 98/98 passed
+Suite 6 Results: 18 passed, 0 failed   (Prompt Engineering)
+Suite 7 Results: 31 passed, 0 failed   (Category Intents)
+TOTAL:          147 passed, 0 failed
 ```
+
+See also: **[docs/VALIDATION.md](VALIDATION.md)** — end-to-end validation scenarios with expected outputs.
