@@ -84,15 +84,28 @@ def fmt_alerts(data: Any) -> str:
     return "\n".join(lines)
 
 
+def _slugify(text: str) -> str:
+    """Grafana-compatible slug from a folder title."""
+    import re
+    s = text.lower()
+    s = re.sub(r"[^a-z0-9\s-]", "", s)
+    s = re.sub(r"\s+", "-", s).strip("-")
+    return s or "folder"
+
+
 def fmt_folders(data: Any) -> str:
-    """Format list_folders response."""
+    """Format list_folders response with names as clickable links to Grafana folder pages."""
     if not isinstance(data, list) or len(data) == 0:
         return "No folders found."
     lines = [f"**Found {len(data)} folder{'s' if len(data) != 1 else ''}:**\n"]
     for f in data:
         title = f.get("title", "(untitled)")
         uid = f.get("uid", "")
-        lines.append(f"- **{title}** (`{uid}`)")
+        url = f.get("url") or f"/dashboards/f/{uid}/{_slugify(title)}"
+        # Show prominent name with link, UID as small hint
+        lines.append(f"- 📁 [**{title}**]({url})")
+        if uid:
+            lines.append(f"  <sup>`uid: {uid}`</sup>")
     return "\n".join(lines)
 
 
@@ -378,15 +391,20 @@ async def match_intent(user_message: str) -> dict | None:
     return None
 
 
-async def execute_intent(intent: dict) -> dict:
+async def execute_intent(intent: dict, role: str | None = None) -> dict:
     """Execute the MCP tool call and format the result.
+
+    Args:
+        intent: the intent dict from match_intent()
+        role: Grafana role (viewer|editor|admin) for RBAC enforcement.
+              When provided, Bifrost uses the role-specific token.
 
     Returns:
         {ok: bool, content: str (formatted markdown), raw_data: Any (tool data),
          duration_ms: int, tool: str, server: str, arguments: dict, error?: str}
     """
     mgr = get_mcp_manager()
-    result = await mgr.call_tool(intent["server"], intent["tool"], intent["arguments"])
+    result = await mgr.call_tool(intent["server"], intent["tool"], intent["arguments"], role=role)
     if result.get("ok"):
         data = result.get("data", result)
         formatted = intent["formatter"](data)

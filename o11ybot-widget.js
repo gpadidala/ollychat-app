@@ -1,12 +1,15 @@
 /**
- * O11yBot — Floating Grafana Chatbot Widget v1.3.0
+ * O11yBot — Floating Grafana Chatbot Widget v1.5.0
  *
- * Rewritten with direct DOM references for reliable streaming updates.
- * Includes extensive debug logging (check browser console).
+ * Features:
+ * - Multi-session history (VSCode-style) with per-user isolation
+ * - Grafana RBAC enforcement (X-Grafana-Role header)
+ * - Restore/continue previous conversations
+ * - Drag, resize, minimize, maximize, fullscreen
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "1.3.1";
+  var WIDGET_VERSION = "1.5.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -17,14 +20,18 @@
 
   console.log("%c[O11yBot] v" + WIDGET_VERSION + " initializing...", "color:#f59e0b;font-weight:bold;font-size:14px;");
 
-  // ── Get Grafana user ──
-  var grafanaUser = { login: "anonymous", name: "User", orgId: 1 };
+  // ═══════════════════════════════════════════════════════════
+  // Grafana user identity + RBAC role
+  // ═══════════════════════════════════════════════════════════
+  var grafanaUser = { login: "anonymous", name: "User", orgId: 1, role: "Viewer" };
   try {
     if (window.grafanaBootData && window.grafanaBootData.user) {
       var gu = window.grafanaBootData.user;
       grafanaUser.login = gu.login || gu.email || "anonymous";
       grafanaUser.name = gu.name || gu.login || "User";
       grafanaUser.orgId = gu.orgId || 1;
+      // Grafana role: "Viewer" | "Editor" | "Admin" | "Grafana Admin"
+      grafanaUser.role = gu.orgRole || gu.role || "Viewer";
     }
   } catch(e) { console.warn("[O11yBot] Could not read grafanaBootData:", e); }
 
@@ -33,51 +40,111 @@
   var STORE_KEY = "o11ybot-" + grafanaUser.login;
   var userInitial = (grafanaUser.name || "U").charAt(0).toUpperCase();
 
-  // ── State ──
+  // ═══════════════════════════════════════════════════════════
+  // State: multi-session history (like VSCode chat)
+  // ═══════════════════════════════════════════════════════════
   var state = (function() {
-    try { var s = localStorage.getItem(STORE_KEY); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+    try {
+      var s = localStorage.getItem(STORE_KEY);
+      var parsed = s ? JSON.parse(s) : {};
+      // ── Migrate from old flat-msgs format ──
+      if (parsed.msgs && !parsed.sessions) {
+        parsed.sessions = parsed.msgs.length > 0
+          ? [{ id: "migrated-" + Date.now(), title: "Previous session", msgs: parsed.msgs, createdAt: Date.now(), updatedAt: Date.now() }]
+          : [];
+        delete parsed.msgs;
+      }
+      return parsed;
+    } catch(e) { return {}; }
   })();
-  state.msgs = state.msgs || [];
-  state.open = false;
+
+  state.sessions = state.sessions || [];
+  state.activeSessionId = state.activeSessionId || null;
+  state.open = false;       // re-opened by user each page load
+  state.view = "chat";      // "chat" | "history"
   state.streaming = false;
+  state.mode = state.mode || "normal";
   state.posX = state.posX != null ? state.posX : null;
   state.posY = state.posY != null ? state.posY : null;
-  // mode: "normal" | "maximized" | "fullscreen"
-  state.mode = state.mode || "normal";
 
   function saveState() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
-        msgs: state.msgs.slice(-100),
+        sessions: state.sessions.slice(-50),  // cap at 50 sessions
+        activeSessionId: state.activeSessionId,
+        mode: state.mode,
         posX: state.posX, posY: state.posY,
-        mode: state.mode
       }));
     } catch(e) {}
   }
 
-  // ── CSS ──
+  function uuid() { return "s" + Date.now() + "-" + Math.random().toString(36).slice(2, 8); }
+
+  function getActiveSession() {
+    if (!state.activeSessionId) return null;
+    return state.sessions.find(function(s) { return s.id === state.activeSessionId; }) || null;
+  }
+
+  function newSession() {
+    var s = { id: uuid(), title: "New chat", msgs: [], createdAt: Date.now(), updatedAt: Date.now() };
+    state.sessions.unshift(s);
+    state.activeSessionId = s.id;
+    saveState();
+    return s;
+  }
+
+  function deleteSession(id) {
+    state.sessions = state.sessions.filter(function(s) { return s.id !== id; });
+    if (state.activeSessionId === id) state.activeSessionId = null;
+    saveState();
+  }
+
+  function selectSession(id) {
+    state.activeSessionId = id;
+    state.view = "chat";
+    saveState();
+  }
+
+  // Auto-title a session from its first user message
+  function autoTitle(session) {
+    if (!session || !session.msgs || session.msgs.length === 0) return "New chat";
+    var firstUser = session.msgs.find(function(m) { return m.role === "user"; });
+    if (!firstUser) return "New chat";
+    var t = firstUser.content.slice(0, 50).trim();
+    return t + (firstUser.content.length > 50 ? "…" : "");
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // CSS
+  // ═══════════════════════════════════════════════════════════
   var css = document.createElement("style");
   css.textContent = "\
 #o11ybot-root{position:fixed;z-index:999999;font-family:Inter,-apple-system,sans-serif;font-size:14px;color:#e0e0e0}\
-.ob-fab{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff6600,#f59e0b);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(255,102,0,.4),0 2px 8px rgba(0,0,0,.3);transition:transform .2s,box-shadow .2s;position:relative}\
-.ob-fab:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(255,102,0,.5)}\
+.ob-fab{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff6600,#f59e0b);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(255,102,0,.4),0 2px 8px rgba(0,0,0,.3);transition:transform .2s;position:relative}\
+.ob-fab:hover{transform:scale(1.1)}\
 .ob-fab svg{width:28px;height:28px;fill:#fff}\
 .ob-dot{position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:#22c55e;border:2px solid #111}\
-.ob-panel{width:440px;height:600px;background:#111217;border:1px solid #2a2a3e;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.5);overflow:hidden;resize:both;min-width:340px;min-height:400px;max-width:90vw;max-height:85vh;transition:width .25s ease,height .25s ease,border-radius .2s ease}\
+.ob-panel{width:460px;height:620px;background:#111217;border:1px solid #2a2a3e;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.5);overflow:hidden;resize:both;min-width:360px;min-height:420px;max-width:90vw;max-height:85vh}\
 .ob-panel.ob-maximized{width:75vw!important;height:85vh!important;resize:none}\
 .ob-panel.ob-fullscreen{width:100vw!important;height:100vh!important;border-radius:0;resize:none;border:none}\
-#o11ybot-root.ob-maximized,#o11ybot-root.ob-fullscreen{left:0!important;top:0!important;right:0!important;bottom:0!important;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);backdrop-filter:blur(3px);width:100vw;height:100vh;padding:0}\
-#o11ybot-root.ob-fullscreen{background:#0d0d12;padding:0}\
+#o11ybot-root.ob-maximized,#o11ybot-root.ob-fullscreen{display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);backdrop-filter:blur(3px)}\
+#o11ybot-root.ob-fullscreen{background:#0d0d12}\
 .ob-hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,#1a1025,#111217);border-bottom:1px solid #2a2a3e;cursor:grab;user-select:none}\
 .ob-hdr:active{cursor:grabbing}\
 .ob-hdr-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff6600,#f59e0b);display:flex;align-items:center;justify-content:center;flex-shrink:0}\
 .ob-hdr-icon svg{width:18px;height:18px;fill:#fff}\
-.ob-title{font-weight:600;font-size:15px;flex:1}\
+.ob-title{font-weight:600;font-size:15px}\
 .ob-sub{font-size:11px;color:#888;margin-top:1px}\
 .ob-acts{display:flex;gap:4px}\
 .ob-hbtn{width:28px;height:28px;border-radius:6px;background:0 0;border:1px solid transparent;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center}\
 .ob-hbtn:hover{background:rgba(255,255,255,.06);color:#ccc}\
 .ob-hbtn svg{width:16px;height:16px;fill:currentColor}\
+.ob-tabs{display:flex;border-bottom:1px solid #2a2a3e;background:#0d0d12}\
+.ob-tab{flex:1;padding:10px 14px;cursor:pointer;color:#888;font-size:12.5px;font-weight:500;text-align:center;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}\
+.ob-tab:hover{color:#ccc;background:rgba(255,255,255,.03)}\
+.ob-tab.active{color:#f59e0b;border-bottom-color:#f59e0b;background:#181b23}\
+.ob-tab-badge{background:#2a2a3e;color:#888;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:600}\
+.ob-tab.active .ob-tab-badge{background:#ff660033;color:#f59e0b}\
 .ob-msgs{flex:1;overflow-y:auto;padding:16px}\
 .ob-msgs::-webkit-scrollbar{width:5px}\
 .ob-msgs::-webkit-scrollbar-thumb{background:#333;border-radius:3px}\
@@ -93,9 +160,12 @@
 .ob-bub code{background:#0d0d12;padding:2px 5px;border-radius:4px;font-family:monospace;font-size:12px;color:#f59e0b}\
 .ob-bub pre{background:#0d0d12;padding:10px;border-radius:6px;overflow-x:auto;margin:8px 0;font-size:12px;font-family:monospace;border:1px solid #1e1e2e}\
 .ob-bub a{color:#60a5fa;text-decoration:underline}\
+.ob-bub a:hover{color:#93bbfc}\
 .ob-bub strong{color:#fff}\
+.ob-bub em{color:#aaa;font-style:italic}\
 .ob-bub ul{margin:8px 0;padding-left:20px}\
 .ob-bub li{margin:4px 0}\
+.ob-bub sup{font-size:9px;color:#555}\
 .ob-meta{font-size:11px;color:#555;margin-top:4px;display:flex;gap:8px}\
 .ob-cost{color:#f59e0b;font-family:monospace}\
 .ob-typing{display:flex;gap:4px;padding:4px 10px;color:#888}\
@@ -114,34 +184,58 @@
 .ob-stop{width:38px;height:38px;border-radius:8px;background:#dc2626;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}\
 .ob-stop svg{width:16px;height:16px;fill:#fff}\
 .ob-footer{display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:11px;color:#555;border-top:1px solid #1a1a2e}\
+.ob-user-badge{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;background:#1e1e2e;border-radius:10px;font-size:11px;color:#888}\
+.ob-user-badge span{color:#60a5fa}\
+.ob-role-badge{padding:1px 8px;border-radius:10px;font-size:10px;font-weight:600;text-transform:uppercase}\
+.ob-role-viewer{background:rgba(96,165,250,.2);color:#60a5fa}\
+.ob-role-editor{background:rgba(34,197,94,.2);color:#22c55e}\
+.ob-role-admin{background:rgba(239,68,68,.2);color:#ef4444}\
 .ob-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:20px;color:#888}\
 .ob-welcome h3{color:#e0e0e0;margin:0 0 6px;font-size:17px}\
 .ob-welcome p{font-size:13px;max-width:280px;margin:0 0 16px;line-height:1.5}\
-.ob-sugg-list{display:flex;flex-direction:column;gap:6px;width:100%}\
+.ob-sugg-list{display:flex;flex-direction:column;gap:6px;width:100%;max-width:360px}\
 .ob-sugg{padding:9px 14px;background:#181b23;border:1px solid #2a2a3e;border-radius:8px;cursor:pointer;text-align:left;color:#ccc;font-size:12.5px}\
 .ob-sugg:hover{background:#1e1e2e;border-color:rgba(255,102,0,.3);color:#f59e0b}\
-.ob-err{color:#ef4444;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:8px 12px;margin:6px 0;font-size:12px}\
-.ob-user-badge{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;background:#1e1e2e;border-radius:10px;font-size:11px;color:#888}\
-.ob-user-badge span{color:#60a5fa}\
 .ob-ts{font-size:10px;color:#444;margin-top:2px}\
+.ob-new-chat-btn{margin:10px;padding:8px 12px;background:linear-gradient(135deg,#ff6600,#f59e0b);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}\
+.ob-new-chat-btn:hover{opacity:.9}\
+.ob-history-list{flex:1;overflow-y:auto;padding:0 10px 10px}\
+.ob-history-item{padding:10px 12px;margin:4px 0;border-radius:8px;cursor:pointer;background:#181b23;border:1px solid #2a2a3e;position:relative;transition:all .15s}\
+.ob-history-item:hover{background:#1e1e2e;border-color:rgba(255,102,0,.3)}\
+.ob-history-item.active{background:#1a1025;border-color:#f59e0b}\
+.ob-hi-title{font-size:13px;color:#e0e0e0;font-weight:500;margin-right:28px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\
+.ob-hi-meta{display:flex;gap:10px;margin-top:4px;font-size:10.5px;color:#888}\
+.ob-hi-msgs{color:#f59e0b}\
+.ob-hi-delete{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:4px;background:transparent;border:none;color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}\
+.ob-history-item:hover .ob-hi-delete{opacity:1}\
+.ob-hi-delete:hover{background:rgba(239,68,68,.2);color:#ef4444}\
+.ob-hi-empty{padding:40px 20px;text-align:center;color:#666;font-size:13px}\
+.ob-hi-empty p{margin:8px 0}\
 ";
   document.head.appendChild(css);
 
-  // ── Icons ──
+  // ═══════════════════════════════════════════════════════════
+  // Icons
+  // ═══════════════════════════════════════════════════════════
   var ICO_BOT = '<svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 012 2v1h4a3 3 0 013 3v8a3 3 0 01-3 3H6a3 3 0 01-3-3V8a3 3 0 013-3h4V4a2 2 0 012-2zm-3 9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg>';
   var ICO_SEND = '<svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICO_STOP = '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="#fff"/></svg>';
+  var ICO_NEW = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+  var ICO_TRASH = '<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M5 6v14a2 2 0 002 2h10a2 2 0 002-2V6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>';
+  var ICO_CLOSE = '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+  var ICO_MIN = '<svg viewBox="0 0 24 24"><path d="M4 14h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+  var ICO_MAX = '<svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>';
+  var ICO_FULL = '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
 
-  // ── Mount ──
+  // ═══════════════════════════════════════════════════════════
+  // Mount
+  // ═══════════════════════════════════════════════════════════
   var root = document.createElement("div");
   root.id = WIDGET_ID;
   document.body.appendChild(root);
 
   var drag = { active: false, ox: 0, oy: 0 };
   var abortCtrl = null;
-  var msgCounter = Date.now();
-
-  // Cached DOM references for streaming updates
   var currentBotBubble = null;
   var currentTypingEl = null;
 
@@ -151,147 +245,201 @@
     var h = d.getHours(); var m = d.getMinutes();
     return (h % 12 || 12) + ":" + (m<10?"0":"") + m + " " + (h>=12?"PM":"AM");
   }
-
-  // ── Minimal Markdown ──
-  function esc(s) {
-    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  function fmtRelative(ts) {
+    if (!ts) return "";
+    var s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return "just now";
+    if (s < 3600) return Math.floor(s/60) + "m ago";
+    if (s < 86400) return Math.floor(s/3600) + "h ago";
+    var d = Math.floor(s/86400);
+    if (d === 1) return "yesterday";
+    if (d < 7) return d + "d ago";
+    return new Date(ts).toLocaleDateString();
   }
+
+  function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function fmtMd(s) {
     if (!s) return "";
     s = esc(s);
-    // Links: [text](url)
+    // Links
     s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-    // Code blocks ```...```
+    // Code blocks
     s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, function(_,l,c) { return "<pre><code>" + c.trim() + "</code></pre>"; });
-    // Inline code `...`
     s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
-    // Bold **...**
     s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    // Italic _..._
-    s = s.replace(/\b_([^_]+)_\b/g, "<em>$1</em>");
-    // Lists: lines starting with "- "
+    s = s.replace(/(^|\s)_([^_\s][^_]*?)_(\s|$|\.|,|\))/g, "$1<em>$2</em>$3");
+    // <sup>...</sup> pass-through (we already escaped < to &lt;)
+    s = s.replace(/&lt;sup&gt;/g, "<sup>").replace(/&lt;\/sup&gt;/g, "</sup>");
+    // Lists
     s = s.replace(/(^|\n)- (.+)/g, "$1<li>$2</li>");
     s = s.replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, "<ul>$1</ul>");
-    // Collapse multiple <ul>
     s = s.replace(/<\/ul>\s*<ul>/g, "");
-    // Line breaks
     s = s.replace(/\n/g, "<br/>");
     return s;
   }
 
-  // ── Render position ──
   function applyPos() {
-    // Reset classes first
     root.classList.remove("ob-maximized", "ob-fullscreen");
-
     if (state.mode === "maximized" || state.mode === "fullscreen") {
-      // Cover the whole viewport as an overlay container
-      root.style.cssText = "position:fixed;z-index:999999;left:0;top:0;right:0;bottom:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;" +
+      root.style.cssText = "position:fixed;z-index:999999;left:0;top:0;right:0;bottom:0;width:100vw;height:100vh;" +
         (state.mode === "fullscreen" ? "background:#0d0d12;" : "background:rgba(0,0,0,.35);backdrop-filter:blur(3px);");
       root.classList.add("ob-" + state.mode);
       return;
     }
-    // Normal: floating corner/custom position
-    var posStyle;
-    if (state.posX != null && state.posY != null) {
-      posStyle = "left:" + state.posX + "px;top:" + state.posY + "px;";
-    } else {
-      posStyle = "bottom:24px;right:24px;";
-    }
+    var posStyle = (state.posX != null && state.posY != null)
+      ? "left:" + state.posX + "px;top:" + state.posY + "px;"
+      : "bottom:24px;right:24px;";
     root.style.cssText = "position:fixed;z-index:999999;" + posStyle;
   }
 
-  // ── Render FAB (closed state) ──
+  // ═══════════════════════════════════════════════════════════
+  // Render: FAB (closed state)
+  // ═══════════════════════════════════════════════════════════
   function renderFab() {
     applyPos();
     root.innerHTML = '<button class="ob-fab" title="O11yBot">' + ICO_BOT + '<div class="ob-dot"></div></button>';
-    root.querySelector(".ob-fab").onclick = function() { state.open = true; renderPanel(); };
+    root.querySelector(".ob-fab").onclick = function() {
+      state.open = true;
+      renderPanel();
+    };
   }
 
-  // ── Render full panel ──
-  function renderPanel() {
-    applyPos();
+  // ═══════════════════════════════════════════════════════════
+  // Render: Chat tab (current active session)
+  // ═══════════════════════════════════════════════════════════
+  function renderChatTab() {
     currentBotBubble = null;
     currentTypingEl = null;
+    var session = getActiveSession();
+    var msgs = session ? session.msgs : [];
 
-    var msgsHtml = "";
-    if (state.msgs.length === 0) {
+    if (msgs.length === 0) {
       var suggs = [
         "List all Grafana dashboards",
-        "List datasources",
-        "Check Grafana health",
-        "List folders"
+        "List AKS dashboards",
+        "Check grafana health",
+        "Show PostgreSQL dashboards",
       ];
-      msgsHtml = '<div class="ob-welcome"><h3>Hey ' + esc(grafanaUser.name.split(" ")[0]) + '!</h3><p>Ask me about dashboards, metrics, logs, traces, or incidents.</p><div class="ob-sugg-list">';
+      var welcome = '<div class="ob-welcome"><h3>Hey ' + esc(grafanaUser.name.split(" ")[0]) + '!</h3>' +
+                    '<p>Ask about dashboards, metrics, logs, alerts, or incidents.</p>' +
+                    '<div class="ob-sugg-list">';
       for (var si = 0; si < suggs.length; si++) {
-        msgsHtml += '<button class="ob-sugg">' + esc(suggs[si]) + '</button>';
+        welcome += '<button class="ob-sugg">' + esc(suggs[si]) + '</button>';
       }
-      msgsHtml += '</div></div>';
-    } else {
-      for (var i = 0; i < state.msgs.length; i++) {
-        var m = state.msgs[i];
-        var isU = m.role === "user";
-        var cls = isU ? "ob-msg ob-msg-u" : "ob-msg ob-msg-b";
-        msgsHtml += '<div class="' + cls + '" data-mid="' + m.id + '">';
-        msgsHtml += '<div class="ob-av">' + (isU ? esc(userInitial) : "O") + '</div>';
-        msgsHtml += '<div class="ob-msg-wrap">';
-        if (isU) {
-          msgsHtml += '<div class="ob-bub">' + esc(m.content) + '</div>';
-        } else {
-          msgsHtml += '<div class="ob-bub">' + fmtMd(m.content || "") + '</div>';
-          if (m.streaming) msgsHtml += '<div class="ob-typing"><span></span><span></span><span></span></div>';
-          if (!m.streaming && (m.cost > 0 || m.tokens > 0)) {
-            msgsHtml += '<div class="ob-meta">';
-            if (m.tokens > 0) msgsHtml += '<span>' + m.tokens + ' tok</span>';
-            if (m.cost > 0) msgsHtml += '<span class="ob-cost">$' + m.cost.toFixed(4) + '</span>';
-            msgsHtml += '</div>';
-          }
-        }
-        if (m.ts) msgsHtml += '<div class="ob-ts">' + fmtTime(m.ts) + '</div>';
-        msgsHtml += '</div></div>';
-      }
+      welcome += '</div></div>';
+      return '<div class="ob-msgs" id="ob-msgs">' + welcome + '</div>';
     }
 
-    // Icons for window controls
-    var ICO_CLEAR  = '<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M5 6v14a2 2 0 002 2h10a2 2 0 002-2V6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>';
-    var ICO_MIN    = '<svg viewBox="0 0 24 24"><path d="M4 14h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
-    var ICO_MAX    = '<svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>';
-    var ICO_RESTORE = '<svg viewBox="0 0 24 24"><rect x="8" y="4" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="4" y="8" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="#111217"/></svg>';
-    var ICO_FULL   = '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
-    var ICO_FULL_EXIT = '<svg viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
-    var ICO_CLOSE  = '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+    var html = '<div class="ob-msgs" id="ob-msgs">';
+    var lastDate = "";
+    for (var i = 0; i < msgs.length; i++) {
+      var m = msgs[i];
+      var isU = m.role === "user";
+      var cls = isU ? "ob-msg ob-msg-u" : "ob-msg ob-msg-b";
+      html += '<div class="' + cls + '" data-mid="' + m.id + '">';
+      html += '<div class="ob-av">' + (isU ? esc(userInitial) : "O") + '</div>';
+      html += '<div class="ob-msg-wrap">';
+      if (isU) {
+        html += '<div class="ob-bub">' + esc(m.content) + '</div>';
+      } else {
+        html += '<div class="ob-bub">' + fmtMd(m.content || "") + '</div>';
+        if (!m.streaming && (m.cost > 0 || m.tokens > 0)) {
+          html += '<div class="ob-meta">';
+          if (m.tokens > 0) html += '<span>' + m.tokens + ' tok</span>';
+          if (m.cost > 0) html += '<span class="ob-cost">$' + m.cost.toFixed(4) + '</span>';
+          html += '</div>';
+        }
+      }
+      if (m.ts) html += '<div class="ob-ts">' + fmtTime(m.ts) + '</div>';
+      html += '</div></div>';
+    }
+    html += '<div id="ob-end"></div></div>';
+    return html;
+  }
 
-    // Determine which buttons to show based on current mode
-    var modeClass = state.mode === "maximized" ? "ob-maximized" : (state.mode === "fullscreen" ? "ob-fullscreen" : "");
-    if (modeClass) root.classList.add(modeClass); else root.classList.remove("ob-maximized","ob-fullscreen");
+  // ═══════════════════════════════════════════════════════════
+  // Render: History tab (list of past sessions)
+  // ═══════════════════════════════════════════════════════════
+  function renderHistoryTab() {
+    var html = '<button class="ob-new-chat-btn" id="ob-new-chat">' + ICO_NEW + ' New chat</button>';
+    html += '<div class="ob-history-list">';
+    if (state.sessions.length === 0) {
+      html += '<div class="ob-hi-empty"><p>💬 No past chats yet</p><p>Start a conversation — it will appear here.</p></div>';
+    } else {
+      var sorted = state.sessions.slice().sort(function(a, b) { return b.updatedAt - a.updatedAt; });
+      for (var i = 0; i < sorted.length; i++) {
+        var s = sorted[i];
+        var title = s.title || autoTitle(s);
+        var active = s.id === state.activeSessionId ? "active" : "";
+        html += '<div class="ob-history-item ' + active + '" data-sid="' + s.id + '">';
+        html += '<div class="ob-hi-title">' + esc(title) + '</div>';
+        html += '<div class="ob-hi-meta">';
+        html += '<span class="ob-hi-msgs">' + s.msgs.length + ' msg' + (s.msgs.length !== 1 ? 's' : '') + '</span>';
+        html += '<span>· ' + fmtRelative(s.updatedAt) + '</span>';
+        html += '</div>';
+        html += '<button class="ob-hi-delete" data-del="' + s.id + '" title="Delete">' + ICO_TRASH + '</button>';
+        html += '</div>';
+      }
+    }
+    html += '</div>';
+    return html;
+  }
 
-    var maxBtnIcon = state.mode === "maximized" ? ICO_RESTORE : ICO_MAX;
-    var maxBtnTitle = state.mode === "maximized" ? "Restore" : "Maximize";
-    var fullBtnIcon = state.mode === "fullscreen" ? ICO_FULL_EXIT : ICO_FULL;
-    var fullBtnTitle = state.mode === "fullscreen" ? "Exit fullscreen" : "Fullscreen";
+  // ═══════════════════════════════════════════════════════════
+  // Render: Full panel
+  // ═══════════════════════════════════════════════════════════
+  function renderPanel() {
+    applyPos();
+
+    var modeClass = state.mode === "maximized" ? "ob-maximized" :
+                    state.mode === "fullscreen" ? "ob-fullscreen" : "";
+
+    var roleClass = grafanaUser.role.toLowerCase().includes("admin") ? "ob-role-admin" :
+                    grafanaUser.role.toLowerCase() === "editor" ? "ob-role-editor" :
+                    "ob-role-viewer";
+
+    var chatCount = state.sessions.filter(function(s) { return s.msgs.length > 0; }).length;
+
+    var body = state.view === "history" ? renderHistoryTab() : renderChatTab();
+
+    var showInput = state.view === "chat";
+    var inputArea = showInput ? (
+      '<div class="ob-in-area"><div class="ob-in-row">' +
+        '<textarea class="ob-in" id="ob-input" rows="1" placeholder="Ask about observability..."></textarea>' +
+        (state.streaming
+          ? '<button class="ob-stop" id="ob-stop">' + ICO_STOP + '</button>'
+          : '<button class="ob-send" id="ob-send">' + ICO_SEND + '</button>') +
+      '</div></div>'
+    ) : '';
 
     root.innerHTML =
       '<div class="ob-panel ' + modeClass + '">' +
+        // Header
         '<div class="ob-hdr" id="ob-hdr">' +
           '<div class="ob-hdr-icon">' + ICO_BOT + '</div>' +
-          '<div style="flex:1"><div class="ob-title">O11yBot</div><div class="ob-sub">O11y Assistant \u2022 drag to move</div></div>' +
+          '<div style="flex:1"><div class="ob-title">O11yBot</div><div class="ob-sub">' + (grafanaUser.role) + ' · drag to move</div></div>' +
           '<div class="ob-acts">' +
-            '<button class="ob-hbtn" id="ob-clear" title="Clear chat">' + ICO_CLEAR + '</button>' +
             '<button class="ob-hbtn" id="ob-min" title="Minimize">' + ICO_MIN + '</button>' +
-            '<button class="ob-hbtn" id="ob-max" title="' + maxBtnTitle + '">' + maxBtnIcon + '</button>' +
-            '<button class="ob-hbtn" id="ob-full" title="' + fullBtnTitle + '">' + fullBtnIcon + '</button>' +
+            '<button class="ob-hbtn" id="ob-max" title="' + (state.mode === "maximized" ? "Restore" : "Maximize") + '">' + ICO_MAX + '</button>' +
+            '<button class="ob-hbtn" id="ob-full" title="' + (state.mode === "fullscreen" ? "Exit fullscreen" : "Fullscreen") + '">' + ICO_FULL + '</button>' +
             '<button class="ob-hbtn" id="ob-close" title="Close">' + ICO_CLOSE + '</button>' +
           '</div>' +
         '</div>' +
-        '<div class="ob-msgs" id="ob-msgs">' + msgsHtml + '</div>' +
-        '<div class="ob-footer">' +
-          '<div class="ob-user-badge"><span>\u25CF</span> ' + esc(grafanaUser.name) + '</div>' +
-          '<span style="margin-left:auto">' + state.msgs.length + ' msgs</span>' +
+        // Tabs
+        '<div class="ob-tabs">' +
+          '<div class="ob-tab ' + (state.view === "chat" ? "active" : "") + '" data-tab="chat">💬 Chat</div>' +
+          '<div class="ob-tab ' + (state.view === "history" ? "active" : "") + '" data-tab="history">🕑 History <span class="ob-tab-badge">' + chatCount + '</span></div>' +
         '</div>' +
-        '<div class="ob-in-area"><div class="ob-in-row">' +
-          '<textarea class="ob-in" id="ob-input" rows="1" placeholder="Ask about observability..."></textarea>' +
-          '<button class="ob-send" id="ob-send">' + ICO_SEND + '</button>' +
-        '</div></div>' +
+        // Body
+        body +
+        // Footer
+        '<div class="ob-footer">' +
+          '<div class="ob-user-badge"><span>●</span> ' + esc(grafanaUser.name) + '</div>' +
+          '<div class="ob-role-badge ' + roleClass + '">' + grafanaUser.role + '</div>' +
+          (state.view === "chat" && getActiveSession() ? '<span style="margin-left:auto">' + getActiveSession().msgs.length + ' msgs</span>' : '') +
+        '</div>' +
+        // Input (only in chat view)
+        inputArea +
       '</div>';
 
     wireEvents();
@@ -299,52 +447,93 @@
   }
 
   function wireEvents() {
+    // Header drag
     var hdr = document.getElementById("ob-hdr");
     if (hdr) hdr.onmousedown = startDrag;
 
+    // Window controls
     var closeBtn = document.getElementById("ob-close");
     if (closeBtn) closeBtn.onclick = function() {
-      state.open = false;
-      state.mode = "normal";  // reset on close
-      saveState();
-      renderFab();
+      state.open = false; state.mode = "normal"; saveState(); renderFab();
     };
-
     var minBtn = document.getElementById("ob-min");
     if (minBtn) minBtn.onclick = function() {
-      state.open = false;
-      saveState();
-      renderFab();
+      state.open = false; saveState(); renderFab();
     };
-
     var maxBtn = document.getElementById("ob-max");
     if (maxBtn) maxBtn.onclick = function() {
       state.mode = state.mode === "maximized" ? "normal" : "maximized";
-      saveState();
-      renderPanel();
+      saveState(); renderPanel();
     };
-
     var fullBtn = document.getElementById("ob-full");
     if (fullBtn) fullBtn.onclick = function() {
       state.mode = state.mode === "fullscreen" ? "normal" : "fullscreen";
-      saveState();
-      renderPanel();
+      saveState(); renderPanel();
     };
 
-    var clearBtn = document.getElementById("ob-clear");
-    if (clearBtn) clearBtn.onclick = function() { state.msgs = []; saveState(); renderPanel(); };
-    var inp = document.getElementById("ob-input");
-    if (inp) {
-      inp.onkeydown = function(ev) {
-        if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); send(inp.value); }
+    // Tabs
+    var tabs = root.querySelectorAll(".ob-tab");
+    for (var ti = 0; ti < tabs.length; ti++) {
+      tabs[ti].onclick = function() {
+        state.view = this.dataset.tab;
+        saveState();
+        renderPanel();
       };
-      inp.focus();
     }
-    var sendBtn = document.getElementById("ob-send");
-    if (sendBtn) sendBtn.onclick = function() { send(document.getElementById("ob-input").value); };
-    var suggs = root.querySelectorAll(".ob-sugg");
-    for (var si = 0; si < suggs.length; si++) {
-      suggs[si].onclick = function() { send(this.textContent); };
+
+    if (state.view === "chat") {
+      var inp = document.getElementById("ob-input");
+      if (inp) {
+        inp.onkeydown = function(ev) {
+          if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); send(inp.value); }
+        };
+        inp.focus();
+      }
+      var sendBtn = document.getElementById("ob-send");
+      if (sendBtn) sendBtn.onclick = function() { send(document.getElementById("ob-input").value); };
+      var stopBtn = document.getElementById("ob-stop");
+      if (stopBtn) stopBtn.onclick = function() {
+        if (abortCtrl) abortCtrl.abort();
+        state.streaming = false;
+        renderPanel();
+      };
+      // Welcome suggestions
+      var suggs = root.querySelectorAll(".ob-sugg");
+      for (var sb = 0; sb < suggs.length; sb++) {
+        suggs[sb].onclick = function() { send(this.textContent); };
+      }
+    }
+
+    if (state.view === "history") {
+      // New chat
+      var newBtn = document.getElementById("ob-new-chat");
+      if (newBtn) newBtn.onclick = function() {
+        newSession();
+        state.view = "chat";
+        saveState();
+        renderPanel();
+      };
+      // Select session
+      var items = root.querySelectorAll(".ob-history-item");
+      for (var hi = 0; hi < items.length; hi++) {
+        items[hi].onclick = function(ev) {
+          // Ignore clicks on delete button
+          if (ev.target.closest(".ob-hi-delete")) return;
+          selectSession(this.dataset.sid);
+          renderPanel();
+        };
+      }
+      // Delete session
+      var dels = root.querySelectorAll(".ob-hi-delete");
+      for (var di = 0; di < dels.length; di++) {
+        dels[di].onclick = function(ev) {
+          ev.stopPropagation();
+          if (confirm("Delete this chat?")) {
+            deleteSession(this.dataset.del);
+            renderPanel();
+          }
+        };
+      }
     }
   }
 
@@ -355,8 +544,7 @@
 
   function startDrag(ev) {
     if (ev.target.tagName === "BUTTON" || ev.target.closest("button")) return;
-    // Don't drag when maximized or fullscreen
-    if (state.mode === "maximized" || state.mode === "fullscreen") return;
+    if (state.mode !== "normal") return;
     var rect = root.getBoundingClientRect();
     drag = { active: true, ox: ev.clientX - rect.left, oy: ev.clientY - rect.top };
     document.onmousemove = function(ev2) {
@@ -374,34 +562,9 @@
     };
   }
 
-  // ── Append bot message directly (for streaming) ──
-  function appendBotMessage(botMsg) {
-    var msgsEl = document.getElementById("ob-msgs");
-    if (!msgsEl) return;
-
-    // Remove welcome screen if present
-    var welcome = msgsEl.querySelector(".ob-welcome");
-    if (welcome) welcome.remove();
-
-    var div = document.createElement("div");
-    div.className = "ob-msg ob-msg-b";
-    div.dataset.mid = botMsg.id;
-    div.innerHTML =
-      '<div class="ob-av">O</div>' +
-      '<div class="ob-msg-wrap">' +
-        '<div class="ob-bub"></div>' +
-        '<div class="ob-typing"><span></span><span></span><span></span></div>' +
-        '<div class="ob-ts">' + fmtTime(botMsg.ts) + '</div>' +
-      '</div>';
-    msgsEl.appendChild(div);
-
-    currentBotBubble = div.querySelector(".ob-bub");
-    currentTypingEl = div.querySelector(".ob-typing");
-
-    console.log("[O11yBot] Bot bubble created:", currentBotBubble);
-    scrollToBottom();
-  }
-
+  // ═══════════════════════════════════════════════════════════
+  // Append to current chat (streaming)
+  // ═══════════════════════════════════════════════════════════
   function appendUserMessage(userMsg) {
     var msgsEl = document.getElementById("ob-msgs");
     if (!msgsEl) return;
@@ -421,56 +584,90 @@
     scrollToBottom();
   }
 
-  // ── Send ──
+  function appendBotMessage(botMsg) {
+    var msgsEl = document.getElementById("ob-msgs");
+    if (!msgsEl) return;
+    var welcome = msgsEl.querySelector(".ob-welcome");
+    if (welcome) welcome.remove();
+
+    var div = document.createElement("div");
+    div.className = "ob-msg ob-msg-b";
+    div.dataset.mid = botMsg.id;
+    div.innerHTML =
+      '<div class="ob-av">O</div>' +
+      '<div class="ob-msg-wrap">' +
+        '<div class="ob-bub"></div>' +
+        '<div class="ob-typing"><span></span><span></span><span></span></div>' +
+        '<div class="ob-ts">' + fmtTime(botMsg.ts) + '</div>' +
+      '</div>';
+    msgsEl.appendChild(div);
+    currentBotBubble = div.querySelector(".ob-bub");
+    currentTypingEl = div.querySelector(".ob-typing");
+    scrollToBottom();
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Send (writes to active session)
+  // ═══════════════════════════════════════════════════════════
   function send(text) {
     if (!text || !text.trim() || state.streaming) return;
     text = text.trim();
-    var uid = ++msgCounter;
+
+    // Ensure we have an active session
+    var session = getActiveSession();
+    if (!session) {
+      session = newSession();
+    }
+
     var now = Date.now();
-    var userMsg = { role: "user", content: text, id: "u" + uid, ts: now };
-    var botMsg = { role: "bot", content: "", id: "b" + uid, ts: now, streaming: true, cost: 0, tokens: 0 };
+    var userMsg = { role: "user", content: text, id: "u" + now, ts: now };
+    var botMsg = { role: "bot", content: "", id: "b" + now, ts: now, streaming: true, cost: 0, tokens: 0 };
 
-    console.log("[O11yBot] send:", text);
-
-    state.msgs.push(userMsg);
-    state.msgs.push(botMsg);
+    session.msgs.push(userMsg);
+    session.msgs.push(botMsg);
+    session.updatedAt = now;
+    // Auto-title from first user message
+    if (session.msgs.filter(function(m) { return m.role === "user"; }).length === 1) {
+      session.title = autoTitle(session);
+    }
     state.streaming = true;
+    saveState();
 
-    // Clear input + append messages directly (no full re-render)
+    // Clear input + append directly (no full re-render)
     var inp = document.getElementById("ob-input");
     if (inp) inp.value = "";
     appendUserMessage(userMsg);
     appendBotMessage(botMsg);
 
-    // Build messages array for API
+    // Build messages array
     var allMsgs = [];
-    for (var i = 0; i < state.msgs.length - 1; i++) {
-      var m = state.msgs[i];
+    for (var i = 0; i < session.msgs.length - 1; i++) {
+      var m = session.msgs[i];
       allMsgs.push({ role: m.role === "user" ? "user" : "assistant", content: m.content });
     }
 
     abortCtrl = new AbortController();
 
-    console.log("[O11yBot] POST", ORCHESTRATOR + "/api/v1/chat");
+    console.log("[O11yBot] POST", ORCHESTRATOR + "/api/v1/chat", "role:", grafanaUser.role);
 
     fetch(ORCHESTRATOR + "/api/v1/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-Grafana-User": grafanaUser.login,
-        "X-Grafana-Org-Id": String(grafanaUser.orgId)
+        "X-Grafana-Org-Id": String(grafanaUser.orgId),
+        "X-Grafana-Role": grafanaUser.role,
       },
       body: JSON.stringify({
         messages: allMsgs,
-        system: "You are O11yBot, an assistant embedded in Grafana for " + grafanaUser.name + ". Help with observability. Be brief. Use code blocks for queries.",
-        max_tokens: 4096, temperature: 0.2, stream: true
+        system: "You are O11yBot, an assistant embedded in Grafana for " + grafanaUser.name +
+                " (role: " + grafanaUser.role + "). Help with observability. Be brief.",
+        max_tokens: 4096, temperature: 0.2, stream: true,
       }),
-      signal: abortCtrl.signal
+      signal: abortCtrl.signal,
     }).then(function(resp) {
-      console.log("[O11yBot] Response:", resp.status, resp.headers.get("content-type"));
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       if (!resp.body) throw new Error("No response body");
-
       var reader = resp.body.getReader();
       var decoder = new TextDecoder();
       var buf = "";
@@ -478,22 +675,17 @@
 
       function read() {
         return reader.read().then(function(r) {
-          if (r.done) {
-            console.log("[O11yBot] Stream done. Total content length:", acc.length);
-            finish();
-            return;
-          }
+          if (r.done) { finish(); return; }
           buf += decoder.decode(r.value, { stream: true });
-          // Normalize CRLF -> LF so the frame separator is always \n\n
           buf = buf.replace(/\r\n/g, "\n");
           var sep;
           while ((sep = buf.indexOf("\n\n")) !== -1) {
             var frame = buf.slice(0, sep);
             buf = buf.slice(sep + 2);
-            var lines = frame.split("\n");
-            for (var li = 0; li < lines.length; li++) {
-              if (lines[li].indexOf("data: ") !== 0) continue;
-              var js = lines[li].slice(6);
+            for (var li = 0; li < frame.split("\n").length; li++) {
+              var line = frame.split("\n")[li];
+              if (line.indexOf("data: ") !== 0) continue;
+              var js = line.slice(6);
               if (js === "[DONE]") continue;
               try {
                 var ev = JSON.parse(js);
@@ -505,16 +697,12 @@
                 } else if (ev.type === "usage") {
                   botMsg.cost = ev.costUsd || 0;
                   botMsg.tokens = (ev.usage||{}).totalTokens || 0;
-                } else if (ev.type === "tool_start") {
-                  console.log("[O11yBot] tool_start:", ev.name, ev.input);
-                } else if (ev.type === "tool_result") {
-                  console.log("[O11yBot] tool_result:", ev.durationMs + "ms", ev.error || "OK");
                 } else if (ev.type === "error") {
                   acc += "\n\n**Error:** " + ev.message;
                   botMsg.content = acc;
                   if (currentBotBubble) currentBotBubble.innerHTML = fmtMd(acc);
                 }
-              } catch(e) { console.warn("[O11yBot] parse err:", e, js); }
+              } catch(e) {}
             }
           }
           return read();
@@ -525,7 +713,7 @@
       console.error("[O11yBot] Fetch error:", err);
       if (err.name !== "AbortError") {
         botMsg.content = "Error: " + err.message;
-        if (currentBotBubble) currentBotBubble.innerHTML = '<div class="ob-err">' + esc(err.message) + '</div>';
+        if (currentBotBubble) currentBotBubble.innerHTML = '<div style="color:#ef4444">' + esc(err.message) + '</div>';
       }
       finish();
     });
@@ -533,34 +721,34 @@
     function finish() {
       botMsg.streaming = false;
       state.streaming = false;
+      session.updatedAt = Date.now();
       if (currentTypingEl) currentTypingEl.remove();
       currentTypingEl = null;
       saveState();
-
-      // Add token/cost meta if available
-      if (currentBotBubble && (botMsg.cost > 0 || botMsg.tokens > 0)) {
-        var wrap = currentBotBubble.parentElement;
-        var meta = document.createElement("div");
-        meta.className = "ob-meta";
-        var metaHtml = "";
-        if (botMsg.tokens > 0) metaHtml += '<span>' + botMsg.tokens + ' tok</span>';
-        if (botMsg.cost > 0) metaHtml += '<span class="ob-cost">$' + botMsg.cost.toFixed(4) + '</span>';
-        meta.innerHTML = metaHtml;
-        wrap.insertBefore(meta, wrap.querySelector(".ob-ts"));
+      // Update footer (msg count)
+      var footer = root.querySelector(".ob-footer");
+      if (footer) {
+        var countEl = footer.querySelector("span:last-child");
+        if (countEl && countEl.textContent.indexOf("msgs") >= 0) {
+          countEl.textContent = session.msgs.length + " msgs";
+        }
       }
     }
   }
 
-  // ── Keyboard shortcuts ──
+  // ═══════════════════════════════════════════════════════════
+  // Keyboard shortcuts
+  // ═══════════════════════════════════════════════════════════
   document.addEventListener("keydown", function(ev) {
     if (ev.key === "Escape" && state.open && (state.mode === "fullscreen" || state.mode === "maximized")) {
-      state.mode = "normal";
-      saveState();
-      renderPanel();
+      state.mode = "normal"; saveState(); renderPanel();
     }
   });
 
-  // ── Init ──
+  // ═══════════════════════════════════════════════════════════
+  // Init
+  // ═══════════════════════════════════════════════════════════
   if (state.open) renderPanel(); else renderFab();
-  console.log("%c[O11yBot] v" + WIDGET_VERSION + " ready. User: " + grafanaUser.login, "color:#22c55e;font-weight:bold;");
+  console.log("%c[O11yBot] v" + WIDGET_VERSION + " ready · User: " + grafanaUser.login + " · Role: " + grafanaUser.role + " · Sessions: " + state.sessions.length,
+    "color:#22c55e;font-weight:bold;");
 })();

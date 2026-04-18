@@ -63,6 +63,15 @@ async def chat(request: Request, body: ChatRequest):
     # Extract Grafana user context from headers
     grafana_user = request.headers.get("X-Grafana-User", "anonymous")
     grafana_org = request.headers.get("X-Grafana-Org-Id", "1")
+    # RBAC: map Grafana role to Bifrost role (viewer/editor/admin)
+    grafana_role_raw = request.headers.get("X-Grafana-Role", "Viewer").lower()
+    # Normalize: "Admin" → admin, "Editor" → editor, everything else → viewer
+    if grafana_role_raw in ("admin", "grafana admin"):
+        bifrost_role = "admin"
+    elif grafana_role_raw == "editor":
+        bifrost_role = "editor"
+    else:
+        bifrost_role = "viewer"
 
     logger.info(
         "chat_request",
@@ -106,8 +115,8 @@ async def chat(request: Request, body: ChatRequest):
                     "input": intent["arguments"],
                 })}
 
-                # Execute the intent
-                result = await execute_intent(intent)
+                # Execute the intent with Grafana RBAC enforcement
+                result = await execute_intent(intent, role=bifrost_role)
 
                 if result["ok"]:
                     yield {"data": json.dumps({

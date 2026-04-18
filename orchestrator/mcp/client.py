@@ -129,8 +129,23 @@ class MCPClientManager:
             logger.error("mcp.connect.failed", server=cfg.name, error=str(e))
             self.status[cfg.name] = f"error: {e}"
 
-    async def call_tool(self, server_name: str, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        """Execute a tool via the server's REST bridge."""
+    async def call_tool(
+        self,
+        server_name: str,
+        tool_name: str,
+        arguments: dict[str, Any],
+        role: str | None = None,
+    ) -> dict[str, Any]:
+        """Execute a tool via the server's REST bridge.
+
+        Args:
+            server_name: MCP server to route to
+            tool_name: Tool identifier
+            arguments: Tool input
+            role: Optional Grafana role override (viewer|editor|admin).
+                  When provided, Bifrost uses the role-specific SA token,
+                  enforcing Grafana RBAC.
+        """
         client = self._http_clients.get(server_name)
         if not client:
             raise RuntimeError(f"MCP server {server_name} not connected")
@@ -139,11 +154,16 @@ class MCPClientManager:
         if not cfg:
             raise RuntimeError(f"MCP server {server_name} not configured")
 
+        # Inject role as argument — Bifrost tools accept `role` override
+        enriched_args = dict(arguments or {})
+        if role:
+            enriched_args["role"] = role
+
         t0 = time.perf_counter()
         try:
             r = await client.post(
                 f"{cfg.url}/api/tools/call",
-                json={"name": tool_name, "arguments": arguments},
+                json={"name": tool_name, "arguments": enriched_args},
             )
             duration_ms = int((time.perf_counter() - t0) * 1000)
 
