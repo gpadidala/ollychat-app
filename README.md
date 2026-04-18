@@ -32,24 +32,39 @@
 
 ## 🎬 Demo
 
-### Floating bubble — on every Grafana page
+<p align="center">
+  <img src="docs/assets/o11ybot-demo.gif" alt="O11yBot in action" width="900"/>
+</p>
 
+<p align="center"><sub>
+  <b>The bubble pulses</b> → <b>user opens chat</b> → <b>asks "list all Grafana dashboards"</b> → <b>streams 113 real dashboards in 114ms</b> → <b>maximizes</b> → <b>shows advantages in fullscreen</b>
+</sub></p>
+
+### Still frames (static screenshots)
+
+<details>
+<summary><b>🟠 Floating bubble on a Grafana dashboard</b></summary>
+<br/>
 <p align="center">
   <img src="docs/assets/screenshot-1-bubble.svg" alt="O11yBot floating bubble on Grafana" width="900"/>
 </p>
 
 The orange bubble appears in the bottom-right corner of **every** Grafana page — dashboards, explore, alerts, admin. Drag it anywhere, it stays there.
+</details>
 
-### Chat — streaming responses from real Grafana tools
-
+<details>
+<summary><b>💬 Chat — streaming responses from real Grafana tools</b></summary>
+<br/>
 <p align="center">
   <img src="docs/assets/screenshot-2-chat.svg" alt="O11yBot chat with real data" width="900"/>
 </p>
 
 Natural-language queries → MCP tools → real Grafana data. **114ms response** for 113 dashboards.
+</details>
 
-### 4 Window Modes
-
+<details>
+<summary><b>🖥️ 4 Window Modes — Maximized &amp; Fullscreen</b></summary>
+<br/>
 <p align="center">
   <img src="docs/assets/screenshot-3-modes.svg" alt="Maximized and Fullscreen modes" width="900"/>
 </p>
@@ -60,6 +75,7 @@ Click the window controls in the header:
 - **Fullscreen (⛶)** — full 100vw × 100vh browser takeover
 - **Close (×)** — same as minimize
 - Press **Esc** to exit fullscreen/maximized
+</details>
 
 ---
 
