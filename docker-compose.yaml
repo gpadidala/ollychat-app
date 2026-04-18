@@ -1,13 +1,25 @@
 version: "3.9"
 
+# ─────────────────────────────────────────────────────────────
+# OllyChat — Grafana Enterprise O11y Chatbot
+#
+# Ports chosen to avoid conflicts with existing stacks:
+#   Grafana:      3002 (existing: 3000, 3001, 3200)
+#   Orchestrator: 8000
+#   Bifrost MCP:  8765
+#   OTEL:         4327/4328 (existing: 4317/4318)
+#   Tempo:        3210/14327
+#   Mimir:        9010
+#   Loki:         3110
+# ─────────────────────────────────────────────────────────────
+
 services:
-  # ─────────────────────────────────────────────────────────
-  # Grafana — with OllyChat plugin mounted
-  # ─────────────────────────────────────────────────────────
+  # ─── Grafana with OllyChat plugin ──────────────────────────
   grafana:
     image: grafana/grafana:11.4.0
+    container_name: ollychat-grafana
     ports:
-      - "3000:3000"
+      - "3002:3000"
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -17,7 +29,8 @@ services:
     volumes:
       - ./dist:/var/lib/grafana/plugins/gopal-ollychat-app
       - ./provisioning:/etc/grafana/provisioning
-      - grafana-data:/var/lib/grafana
+      - ./grafana-index.html:/usr/share/grafana/public/views/index.html:ro
+      - ollychat-grafana-data:/var/lib/grafana
     depends_on:
       - ollychat-orchestrator
       - tempo
@@ -26,36 +39,52 @@ services:
     networks:
       - ollychat
 
-  # ─────────────────────────────────────────────────────────
-  # OllyChat Python Orchestrator
-  # ─────────────────────────────────────────────────────────
+  # ─── OllyChat Python Orchestrator ─────────────────────────
   ollychat-orchestrator:
     build:
       context: ./orchestrator
       dockerfile: Dockerfile
+    container_name: ollychat-orchestrator
     ports:
       - "8000:8000"
     env_file: .env
     environment:
       OLLYCHAT_OTEL_EXPORTER_ENDPOINT: otel-collector:4317
       OLLYCHAT_GRAFANA_URL: http://grafana:3000
+      OLLYCHAT_BIFROST_URL: http://bifrost-core:8765
+      OLLYCHAT_OLLAMA_BASE_URL: http://ollama:11434
+      OLLYCHAT_DEFAULT_MODEL: qwen2.5:0.5b
       OLLYCHAT_MIMIR_URL: http://mimir:9009
       OLLYCHAT_LOKI_URL: http://loki:3100
       OLLYCHAT_TEMPO_URL: http://tempo:3200
     depends_on:
       - otel-collector
+      - ollama
     networks:
       - ollychat
 
-  # ─────────────────────────────────────────────────────────
-  # OpenTelemetry Collector (Grafana Alloy compatible)
-  # ─────────────────────────────────────────────────────────
+  # ─── Ollama (Self-hosted LLM for dev/testing) ───────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollychat-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollychat-ollama-data:/root/.ollama
+    networks:
+      - ollychat
+    environment:
+      OLLAMA_NUM_PARALLEL: 1
+      OLLAMA_MAX_LOADED_MODELS: 1
+
+  # ─── OpenTelemetry Collector ───────────────────────────────
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.112.0
+    container_name: ollychat-otel-collector
     command: ["--config=/etc/otelcol/config.yaml"]
     ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
+      - "4327:4317"   # OTLP gRPC
+      - "4328:4318"   # OTLP HTTP
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
     depends_on:
@@ -65,54 +94,51 @@ services:
     networks:
       - ollychat
 
-  # ─────────────────────────────────────────────────────────
-  # Tempo — Distributed Traces
-  # ─────────────────────────────────────────────────────────
+  # ─── Tempo (Traces) ───────────────────────────────────────
   tempo:
     image: grafana/tempo:2.6.1
+    container_name: ollychat-tempo
     command: ["-config.file=/etc/tempo/config.yaml"]
     ports:
-      - "3200:3200"   # Tempo API
-      - "14317:4317"  # OTLP gRPC receiver
+      - "3210:3200"
     volumes:
       - ./tempo-config.yaml:/etc/tempo/config.yaml:ro
-      - tempo-data:/var/tempo
+      - ollychat-tempo-data:/var/tempo
     networks:
       - ollychat
 
-  # ─────────────────────────────────────────────────────────
-  # Mimir — Metrics (Prometheus compatible)
-  # ─────────────────────────────────────────────────────────
+  # ─── Mimir (Metrics) ──────────────────────────────────────
   mimir:
     image: grafana/mimir:2.14.0
+    container_name: ollychat-mimir
     command: ["-config.file=/etc/mimir/config.yaml", "-target=all"]
     ports:
-      - "9009:9009"
+      - "9010:9009"
     volumes:
       - ./mimir-config.yaml:/etc/mimir/config.yaml:ro
-      - mimir-data:/data
+      - ollychat-mimir-data:/data
     networks:
       - ollychat
 
-  # ─────────────────────────────────────────────────────────
-  # Loki — Logs
-  # ─────────────────────────────────────────────────────────
+  # ─── Loki (Logs) ──────────────────────────────────────────
   loki:
     image: grafana/loki:3.2.1
+    container_name: ollychat-loki
     command: ["-config.file=/etc/loki/config.yaml"]
     ports:
-      - "3100:3100"
+      - "3110:3100"
     volumes:
       - ./loki-config.yaml:/etc/loki/config.yaml:ro
-      - loki-data:/loki
+      - ollychat-loki-data:/loki
     networks:
       - ollychat
 
 volumes:
-  grafana-data:
-  tempo-data:
-  mimir-data:
-  loki-data:
+  ollychat-grafana-data:
+  ollychat-tempo-data:
+  ollychat-mimir-data:
+  ollychat-loki-data:
+  ollychat-ollama-data:
 
 networks:
   ollychat:

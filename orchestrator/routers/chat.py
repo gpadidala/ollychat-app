@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 
 from config import get_settings
+from intents import execute_intent, match_intent
 from routers.models import SUPPORTED_MODELS
 
 logger = structlog.get_logger()
@@ -76,8 +77,65 @@ async def chat(request: Request, body: ChatRequest):
         total_output_tokens = 0
 
         try:
+            # ── Intent matching: intercept MCP-related queries ──
+            # This gives reliable tool calling even for small LLMs.
+            last_user_msg = ""
+            for m in reversed(body.messages):
+                if m.role == "user":
+                    last_user_msg = m.content
+                    break
+
+            intent = await match_intent(last_user_msg) if last_user_msg else None
+            if intent:
+                logger.info("intent.matched", tool=intent["tool"], user_msg=last_user_msg[:100])
+
+                # Emit tool_start event
+                yield {"data": json.dumps({
+                    "type": "tool_start",
+                    "id": request_id,
+                    "name": intent["tool"],
+                    "input": intent["arguments"],
+                })}
+
+                # Execute the intent
+                result = await execute_intent(intent)
+
+                if result["ok"]:
+                    yield {"data": json.dumps({
+                        "type": "tool_result",
+                        "id": request_id,
+                        "result": {"ok": True},
+                        "durationMs": result["duration_ms"],
+                    })}
+                    # Stream the formatted content as text
+                    content = result["content"]
+                    # Stream in chunks for a natural feel
+                    chunk_size = 40
+                    for i in range(0, len(content), chunk_size):
+                        yield {"data": json.dumps({"type": "text", "delta": content[i:i+chunk_size]})}
+
+                    yield {"data": json.dumps({
+                        "type": "usage",
+                        "usage": {"promptTokens": 0, "completionTokens": 0, "totalTokens": 0},
+                        "costUsd": 0.0,
+                    })}
+                    yield {"data": json.dumps({"type": "done"})}
+                    return
+                else:
+                    yield {"data": json.dumps({
+                        "type": "tool_result",
+                        "id": request_id,
+                        "error": result["error"],
+                        "durationMs": 0,
+                    })}
+                    yield {"data": json.dumps({"type": "text", "delta": f"Tool error: {result['error']}"})}
+                    yield {"data": json.dumps({"type": "done"})}
+                    return
+
+            # ── No intent matched — fall through to LLM ──
             spec = SUPPORTED_MODELS.get(model, {})
-            provider = spec.get("provider", "anthropic")
+            # Default to ollama for unknown/self-hosted models
+            provider = spec.get("provider", "ollama")
 
             if provider == "anthropic":
                 async for event in _stream_anthropic(model, body, settings):
@@ -270,8 +328,45 @@ async def _stream_openai(model: str, body: ChatRequest, settings):
                     }
 
 
+async def _ensure_ollama_model(model: str, settings) -> str | None:
+    """Check if model exists in Ollama; if not, pull it. Returns error or None."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.get(f"{settings.ollama_base_url}/api/tags")
+            if r.status_code != 200:
+                return f"Ollama not reachable: HTTP {r.status_code}"
+            tags = r.json()
+            installed = [m.get("name", "") for m in tags.get("models", [])]
+            if model in installed or model.split(":")[0] in [n.split(":")[0] for n in installed]:
+                return None  # already installed
+    except Exception as e:
+        return f"Ollama not reachable: {e}"
+
+    # Pull the model
+    logger.info("ollama.pulling_model", model=model)
+    try:
+        async with httpx.AsyncClient(timeout=600) as client:
+            r = await client.post(
+                f"{settings.ollama_base_url}/api/pull",
+                json={"name": model, "stream": False},
+                timeout=600,
+            )
+            if r.status_code == 200:
+                logger.info("ollama.model_pulled", model=model)
+                return None
+            return f"Failed to pull model: {r.text[:200]}"
+    except Exception as e:
+        return f"Failed to pull model: {e}"
+
+
 async def _stream_ollama(model: str, body: ChatRequest, settings):
-    """Stream from Ollama local API."""
+    """Stream from self-hosted Ollama. Auto-pulls the model if not present."""
+    # Ensure model is available
+    pull_error = await _ensure_ollama_model(model, settings)
+    if pull_error:
+        yield {"type": "error", "message": pull_error}
+        return
+
     messages = []
     if body.system:
         messages.append({"role": "system", "content": body.system})

@@ -1,5 +1,4 @@
-# Build artifacts
-dist/
+# Build artifacts (dist/ kept — it's the plugin deliverable)
 node_modules/
 
 # Go

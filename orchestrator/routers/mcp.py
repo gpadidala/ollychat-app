@@ -79,7 +79,13 @@ async def list_tools():
 @router.post("/mcp/tools/call")
 async def call_tool(body: ToolCallRequest):
     mgr = get_mcp_manager()
-    result = await mgr.call_tool(body.server_name, body.tool_name, body.arguments)
+    try:
+        result = await mgr.call_tool(body.server_name, body.tool_name, body.arguments)
+    except RuntimeError as e:
+        return {"ok": False, "error": str(e), "duration_ms": 0}
+    except Exception as e:
+        logger.error("mcp.tool.call.exception", error=str(e))
+        return {"ok": False, "error": f"Internal error: {e}", "duration_ms": 0}
     logger.info(
         "mcp.tool.called",
         server=body.server_name,

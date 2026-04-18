@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     log_level: str = "info"
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    cors_origins: list[str] = ["*"]
 
     # --- LLM Provider Keys ---
     anthropic_api_key: str = ""
@@ -29,8 +29,8 @@ class Settings(BaseSettings):
     azure_openai_endpoint: str = ""
     azure_openai_api_version: str = "2024-10-21"
 
-    # --- Default LLM ---
-    default_model: str = "claude-sonnet-4-6"
+    # --- Default LLM (admin-configured, not user-visible) ---
+    default_model: str = "gpt-4o"
     default_max_tokens: int = 4096
     default_temperature: float = 0.2
     max_tool_loop_iterations: int = 8

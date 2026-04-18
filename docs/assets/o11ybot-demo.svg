@@ -1,0 +1,277 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff6600"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="grafanaBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0d0d12"/>
+    </linearGradient>
+    <linearGradient id="panelBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1025"/>
+      <stop offset="100%" stop-color="#111217"/>
+    </linearGradient>
+    <linearGradient id="userBub" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowOrange">
+      <feGaussianBlur stdDeviation="5"/>
+      <feColorMatrix values="1 0 0 0 1  0 0.4 0 0 0.4  0 0 0 0 0  0 0 0 0.8 0"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Grafana background -->
+  <rect width="900" height="500" fill="url(#grafanaBg)"/>
+
+  <!-- Grafana top nav -->
+  <rect x="0" y="0" width="900" height="44" fill="#0b0e13"/>
+  <circle cx="24" cy="22" r="8" fill="#f05a28"/>
+  <text x="44" y="27" fill="#ccc" font-size="13" font-weight="600">Grafana</text>
+  <text x="110" y="27" fill="#666" font-size="12">/ Dashboards / AKS — Cluster Overview</text>
+  <circle cx="860" cy="22" r="11" fill="#2563eb33" stroke="#2563eb" stroke-width="1"/>
+  <text x="860" y="26" fill="#60a5fa" font-size="11" text-anchor="middle" font-weight="700">A</text>
+
+  <!-- Mock dashboard panels in background -->
+  <rect x="20" y="60" width="200" height="80" rx="6" fill="#181b23" stroke="#2a2a3e"/>
+  <text x="32" y="80" fill="#888" font-size="11">CPU Usage</text>
+  <polyline points="32,125 62,110 92,118 122,95 152,105 182,85 212,90" fill="none" stroke="url(#brand)" stroke-width="2"/>
+
+  <rect x="230" y="60" width="200" height="80" rx="6" fill="#181b23" stroke="#2a2a3e"/>
+  <text x="242" y="80" fill="#888" font-size="11">Memory</text>
+  <rect x="250" y="115" width="8" height="15" fill="#22c55e"/>
+  <rect x="262" y="108" width="8" height="22" fill="#22c55e"/>
+  <rect x="274" y="100" width="8" height="30" fill="#f59e0b"/>
+  <rect x="286" y="105" width="8" height="25" fill="#22c55e"/>
+  <rect x="298" y="95" width="8" height="35" fill="#f59e0b"/>
+  <rect x="310" y="90" width="8" height="40" fill="#ef4444"/>
+  <rect x="322" y="110" width="8" height="20" fill="#22c55e"/>
+  <rect x="334" y="118" width="8" height="12" fill="#22c55e"/>
+
+  <rect x="440" y="60" width="200" height="80" rx="6" fill="#181b23" stroke="#2a2a3e"/>
+  <text x="452" y="80" fill="#888" font-size="11">Error Rate</text>
+  <circle cx="540" cy="105" r="24" fill="none" stroke="#1e1e2e" stroke-width="6"/>
+  <circle cx="540" cy="105" r="24" fill="none" stroke="#22c55e" stroke-width="6" stroke-dasharray="120 40" transform="rotate(-90 540 105)"/>
+  <text x="540" y="110" fill="#22c55e" font-size="14" text-anchor="middle" font-weight="700">98%</text>
+
+  <rect x="20" y="160" width="410" height="110" rx="6" fill="#181b23" stroke="#2a2a3e"/>
+  <text x="32" y="180" fill="#888" font-size="11">Request Latency</text>
+  <path d="M 40 250 Q 80 220 120 235 T 200 230 T 280 215 T 400 220" fill="none" stroke="#60a5fa" stroke-width="2"/>
+  <path d="M 40 255 Q 80 240 120 250 T 200 245 T 280 240 T 400 245" fill="none" stroke="#f59e0b" stroke-width="2"/>
+
+  <rect x="20" y="290" width="410" height="190" rx="6" fill="#181b23" stroke="#2a2a3e"/>
+  <text x="32" y="310" fill="#888" font-size="11">Traces Waterfall</text>
+  <g font-size="9" font-family="monospace" fill="#aaa">
+    <rect x="32" y="325" width="300" height="10" rx="2" fill="#22c55e66"/>
+    <text x="340" y="334">http · 320ms</text>
+    <rect x="42" y="342" width="180" height="8" rx="2" fill="#60a5fa66"/>
+    <text x="230" y="349">db.query · 180ms</text>
+    <rect x="48" y="356" width="80" height="8" rx="2" fill="#f59e0b66"/>
+    <text x="136" y="363">cache.get · 80ms</text>
+    <rect x="130" y="370" width="60" height="8" rx="2" fill="#60a5fa66"/>
+    <text x="198" y="377">grpc.call · 60ms</text>
+    <rect x="42" y="384" width="120" height="8" rx="2" fill="#22c55e66"/>
+    <text x="170" y="391">render · 120ms</text>
+    <rect x="160" y="398" width="90" height="8" rx="2" fill="#ef444466"/>
+    <text x="258" y="405">timeout · 90ms</text>
+  </g>
+
+  <rect x="440" y="160" width="440" height="320" rx="6" fill="#111217" stroke="#1e1e2e"/>
+  <text x="452" y="180" fill="#666" font-size="11" font-family="monospace">payment-service logs</text>
+  <g font-size="9" font-family="monospace">
+    <text x="452" y="200" fill="#666">14:32:01</text>
+    <text x="510" y="200" fill="#22c55e">INFO</text>
+    <text x="540" y="200" fill="#999">request received /api/v1/charge</text>
+    <text x="452" y="215" fill="#666">14:32:01</text>
+    <text x="510" y="215" fill="#60a5fa">DEBUG</text>
+    <text x="550" y="215" fill="#999">validating payment method</text>
+    <text x="452" y="230" fill="#666">14:32:02</text>
+    <text x="510" y="230" fill="#22c55e">INFO</text>
+    <text x="540" y="230" fill="#999">charged successfully — 249.00</text>
+    <text x="452" y="245" fill="#666">14:32:03</text>
+    <text x="510" y="245" fill="#f59e0b">WARN</text>
+    <text x="545" y="245" fill="#999">retry #2 for webhook delivery</text>
+    <text x="452" y="260" fill="#666">14:32:05</text>
+    <text x="510" y="260" fill="#ef4444">ERROR</text>
+    <text x="550" y="260" fill="#999">connection pool exhausted</text>
+    <text x="452" y="275" fill="#666">14:32:05</text>
+    <text x="510" y="275" fill="#22c55e">INFO</text>
+    <text x="540" y="275" fill="#999">healthcheck ok · 200</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       O11yBot Widget with animation
+       ═══════════════════════════════════════════════════════════ -->
+
+  <!-- Scene 1: FAB (floating bubble) visible — 0-3s -->
+  <g opacity="1">
+    <animate attributeName="opacity" values="1;1;0;0;0;0;0;0;0;1;1" keyTimes="0;0.08;0.12;0.18;0.3;0.5;0.65;0.75;0.85;0.92;1" dur="18s" repeatCount="indefinite"/>
+    <circle cx="820" cy="430" r="28" fill="url(#brand)" filter="url(#glowOrange)"/>
+    <circle cx="820" cy="430" r="28" fill="url(#brand)"/>
+    <path d="M 812 425 q 0 -6 6 -6 h 4 q 6 0 6 6 v 6 q 0 6 -6 6 h -4 q -6 0 -6 -6 z" fill="white"/>
+    <circle cx="816" cy="428" r="1.5" fill="#1a1a2e"/>
+    <circle cx="824" cy="428" r="1.5" fill="#1a1a2e"/>
+    <circle cx="836" cy="412" r="6" fill="#22c55e" stroke="#0d0d12" stroke-width="2"/>
+    <animate attributeName="transform" attributeType="XML" type="scale" values="1;1.1;1" dur="2s" repeatCount="indefinite"/>
+  </g>
+
+  <!-- Scene 2-3: Chat panel open (normal size) — 3-10s -->
+  <g opacity="0">
+    <animate attributeName="opacity" values="0;0;1;1;1;1;0;0;0;0;0" keyTimes="0;0.12;0.18;0.25;0.35;0.5;0.55;0.7;0.85;0.92;1" dur="18s" repeatCount="indefinite"/>
+
+    <!-- Panel -->
+    <rect x="560" y="130" width="320" height="340" rx="12" fill="url(#panelBg)" stroke="#2a2a3e" stroke-width="1" filter="url(#glow)"/>
+
+    <!-- Header -->
+    <rect x="560" y="130" width="320" height="50" rx="12" fill="#1a1025"/>
+    <rect x="560" y="160" width="320" height="20" fill="#1a1025"/>
+    <circle cx="585" cy="155" r="14" fill="url(#brand)"/>
+    <text x="585" y="160" fill="white" font-size="13" text-anchor="middle" font-weight="700">🤖</text>
+    <text x="608" y="151" fill="#fff" font-size="14" font-weight="600">O11yBot</text>
+    <text x="608" y="167" fill="#888" font-size="10">O11y Assistant · drag to move</text>
+
+    <!-- Window controls -->
+    <g fill="#888">
+      <text x="774" y="158" font-size="16" text-anchor="middle">−</text>
+      <text x="794" y="158" font-size="14" text-anchor="middle">□</text>
+      <text x="814" y="159" font-size="13" text-anchor="middle">⛶</text>
+      <text x="834" y="158" font-size="16" text-anchor="middle">×</text>
+    </g>
+    <rect x="767" y="142" width="14" height="16" rx="3" fill="#fff" opacity="0">
+      <animate attributeName="opacity" values="0;0;0;0.15;0.15;0" keyTimes="0;0.2;0.4;0.42;0.5;0.52" dur="18s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- User message -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;0;1;1;1;1;1" keyTimes="0;0.2;0.24;0.27;0.35;0.45;0.5;1" dur="18s" repeatCount="indefinite"/>
+      <rect x="670" y="200" width="200" height="28" rx="10" fill="url(#userBub)"/>
+      <text x="682" y="219" fill="#cfe2ff" font-size="12">list all Grafana dashboards</text>
+      <circle cx="878" cy="214" r="11" fill="#2563eb33" stroke="#2563eb"/>
+      <text x="878" y="218" fill="#60a5fa" font-size="10" text-anchor="middle" font-weight="700">A</text>
+    </g>
+
+    <!-- Bot avatar + typing indicator -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;0;0;1;1;0;0" keyTimes="0;0.28;0.3;0.32;0.33;0.4;0.42;1" dur="18s" repeatCount="indefinite"/>
+      <circle cx="578" cy="250" r="11" fill="#ff660033" stroke="#f59e0b"/>
+      <text x="578" y="254" fill="#f59e0b" font-size="10" text-anchor="middle" font-weight="700">O</text>
+      <circle cx="608" cy="252" r="3" fill="#f59e0b">
+        <animate attributeName="cy" values="252;246;252" dur="0.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="620" cy="252" r="3" fill="#f59e0b">
+        <animate attributeName="cy" values="252;246;252" dur="0.8s" begin="0.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="632" cy="252" r="3" fill="#f59e0b">
+        <animate attributeName="cy" values="252;246;252" dur="0.8s" begin="0.4s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- Bot response (streaming text) -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;0;0;0;1;1;1" keyTimes="0;0.3;0.35;0.4;0.42;0.43;0.5;1" dur="18s" repeatCount="indefinite"/>
+      <circle cx="578" cy="250" r="11" fill="#ff660033" stroke="#f59e0b"/>
+      <text x="578" y="254" fill="#f59e0b" font-size="10" text-anchor="middle" font-weight="700">O</text>
+      <rect x="598" y="238" width="260" height="180" rx="10" fill="#1a1a2e" stroke="#2a2a3e"/>
+
+      <text x="608" y="256" fill="#fff" font-size="11" font-weight="700">Found 113 dashboards:</text>
+
+      <text x="608" y="278" fill="#ccc" font-size="10">• AKS — Cluster Overview & Health</text>
+      <text x="622" y="290" fill="#666" font-size="9" font-style="italic">folder: Azure · 12 panels</text>
+
+      <text x="608" y="308" fill="#ccc" font-size="10">• Azure — Application Insights (APM)</text>
+      <text x="622" y="320" fill="#666" font-size="9" font-style="italic">folder: Azure · 24 panels</text>
+
+      <text x="608" y="338" fill="#ccc" font-size="10">• Albertsons — Home</text>
+      <text x="622" y="350" fill="#666" font-size="9" font-style="italic">folder: Platform · 8 panels</text>
+
+      <text x="608" y="368" fill="#ccc" font-size="10">• Loki Write QoS Executive</text>
+      <text x="622" y="380" fill="#666" font-size="9" font-style="italic">folder: Loki · 15 panels</text>
+
+      <text x="608" y="398" fill="#666" font-size="10">…and 109 more</text>
+
+      <text x="608" y="414" fill="#555" font-size="9">54 tok</text>
+      <text x="638" y="414" fill="#f59e0b" font-size="9" font-family="monospace">$0.0002</text>
+    </g>
+
+    <!-- Input bar -->
+    <rect x="570" y="435" width="300" height="28" rx="8" fill="#181b23" stroke="#2a2a3e"/>
+    <text x="580" y="453" fill="#555" font-size="11">Ask about observability...</text>
+    <rect x="840" y="437" width="24" height="24" rx="6" fill="url(#brand)"/>
+    <text x="852" y="454" fill="white" font-size="11" text-anchor="middle">➤</text>
+  </g>
+
+  <!-- Scene 4: Maximized mode — 10-14s -->
+  <g opacity="0">
+    <animate attributeName="opacity" values="0;0;0;0;0;0;1;1;0;0;0" keyTimes="0;0.1;0.2;0.3;0.4;0.5;0.55;0.7;0.73;0.85;1" dur="18s" repeatCount="indefinite"/>
+    <!-- Backdrop blur overlay -->
+    <rect x="0" y="44" width="900" height="456" fill="black" opacity="0.4"/>
+    <!-- Maximized panel -->
+    <rect x="100" y="80" width="700" height="380" rx="12" fill="url(#panelBg)" stroke="url(#brand)" stroke-width="2" filter="url(#glow)"/>
+    <rect x="100" y="80" width="700" height="50" rx="12" fill="#1a1025"/>
+    <rect x="100" y="110" width="700" height="20" fill="#1a1025"/>
+    <circle cx="125" cy="105" r="14" fill="url(#brand)"/>
+    <text x="125" y="110" fill="white" font-size="13" text-anchor="middle">🤖</text>
+    <text x="148" y="101" fill="#fff" font-size="14" font-weight="600">O11yBot</text>
+    <text x="148" y="117" fill="#f59e0b" font-size="10" font-weight="700">⚡ MAXIMIZED (75% viewport)</text>
+
+    <!-- Large user msg -->
+    <rect x="500" y="155" width="280" height="32" rx="10" fill="url(#userBub)"/>
+    <text x="514" y="176" fill="#cfe2ff" font-size="13">check grafana health</text>
+
+    <!-- Large bot response -->
+    <circle cx="125" cy="220" r="13" fill="#ff660033" stroke="#f59e0b"/>
+    <text x="125" y="225" fill="#f59e0b" font-size="12" text-anchor="middle" font-weight="700">O</text>
+    <rect x="150" y="200" width="400" height="140" rx="10" fill="#1a1a2e" stroke="#2a2a3e"/>
+    <text x="162" y="225" fill="#fff" font-size="13" font-weight="700">Grafana Health</text>
+    <text x="162" y="250" fill="#ccc" font-size="12">• Version: </text>
+    <text x="228" y="250" fill="#f59e0b" font-size="12" font-family="monospace">11.6.4</text>
+    <text x="162" y="272" fill="#ccc" font-size="12">• Database: </text>
+    <text x="236" y="272" fill="#22c55e" font-size="12">✓ ok</text>
+    <text x="162" y="294" fill="#ccc" font-size="12">• Enterprise: </text>
+    <text x="244" y="294" fill="#ef4444" font-size="12">false</text>
+    <text x="162" y="316" fill="#ccc" font-size="12">• Uptime: </text>
+    <text x="218" y="316" fill="#22c55e" font-size="12" font-family="monospace">2d 14h 32m</text>
+
+    <!-- Maximized status -->
+    <rect x="100" y="430" width="700" height="30" rx="0" fill="#0d0d12"/>
+    <circle cx="120" cy="445" r="4" fill="#60a5fa"/>
+    <text x="130" y="449" fill="#888" font-size="11">admin</text>
+    <text x="780" y="449" fill="#555" font-size="11" text-anchor="end">Press ESC to exit maximize</text>
+  </g>
+
+  <!-- Scene 5: Fullscreen mode — 14-17s -->
+  <g opacity="0">
+    <animate attributeName="opacity" values="0;0;0;0;0;0;0;0;0;1;1" keyTimes="0;0.1;0.2;0.3;0.4;0.5;0.55;0.7;0.75;0.78;0.9" dur="18s" repeatCount="indefinite"/>
+    <rect x="0" y="44" width="900" height="456" fill="#0d0d12"/>
+    <rect x="0" y="44" width="900" height="50" fill="#1a1025"/>
+    <circle cx="30" cy="70" r="16" fill="url(#brand)"/>
+    <text x="30" y="75" fill="white" font-size="15" text-anchor="middle">🤖</text>
+    <text x="60" y="65" fill="#fff" font-size="16" font-weight="600">O11yBot</text>
+    <text x="60" y="82" fill="#f59e0b" font-size="11" font-weight="700">⛶ FULLSCREEN MODE</text>
+
+    <text x="30" y="150" fill="#fff" font-size="18" font-weight="700">Advantages</text>
+    <g font-size="14" fill="#ccc">
+      <text x="30" y="185">✨  One chatbot across ALL Grafana pages — no context switching</text>
+      <text x="30" y="215">🔐  User-isolated chat history (per Grafana login)</text>
+      <text x="30" y="245">🛠️  16 real Grafana tools via MCP — dashboards, alerts, datasources</text>
+      <text x="30" y="275">💻  Self-hosted LLM (Ollama) OR cloud (OpenAI/Anthropic) — admin choice</text>
+      <text x="30" y="305">🛡️  Built-in PII detection (15 patterns: email, SSN, API keys, AWS)</text>
+      <text x="30" y="335">⚡  Intent matcher = reliable tool calls even with tiny 500MB LLM</text>
+      <text x="30" y="365">📊  Full OpenTelemetry traces + metrics to your LGTM stack</text>
+      <text x="30" y="395">🎯  98/98 automated tests — covered, documented, production-ready</text>
+    </g>
+    <text x="870" y="480" fill="#555" font-size="10" text-anchor="end">Press ESC to exit fullscreen</text>
+  </g>
+
+  <!-- Progress indicator at bottom -->
+  <rect x="20" y="490" width="860" height="2" fill="#1e1e2e"/>
+  <rect x="20" y="490" width="0" height="2" fill="url(#brand)">
+    <animate attributeName="width" values="0;860" dur="18s" repeatCount="indefinite"/>
+  </rect>
+</svg>
