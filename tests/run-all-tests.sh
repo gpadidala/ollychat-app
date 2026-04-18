@@ -43,6 +43,7 @@ run_suite 3 "UI Widget / SSE"      "node suite3-widget.js" || true
 run_suite 4 "Integration / E2E"    "node suite4-integration.js" || true
 run_suite 5 "Negative / Errors"    "node suite5-negative.js" || true
 run_suite 6 "Prompt Engineering"   "node suite6-prompts.js" || true
+run_suite 7 "Category Intents"     "./suite7-categories.sh" || true
 
 echo ""
 echo ""

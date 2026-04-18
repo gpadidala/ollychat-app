@@ -9,6 +9,7 @@ import re
 from typing import Any, Callable, Awaitable
 
 from mcp.client import get_mcp_manager
+from categories import CATEGORIES, extract_service_name, find_category
 
 
 # Each pattern is (regex, tool_name, args_builder, formatter)
@@ -136,6 +137,46 @@ def fmt_generic(data: Any) -> str:
     return str(data)
 
 
+def fmt_dashboards_filtered(data: Any, category_label: str | None = None,
+                             service_name: str | None = None) -> str:
+    """Format filtered dashboards with category context header."""
+    if not isinstance(data, list) or len(data) == 0:
+        if category_label:
+            return f"No dashboards found for **{category_label}**."
+        if service_name:
+            return f"No dashboards found for service **{service_name}**."
+        return "No dashboards found."
+
+    header_parts = [f"**Found {len(data)} dashboard{'s' if len(data) != 1 else ''}"]
+    if category_label:
+        header_parts.append(f"in category _{category_label}_")
+    if service_name:
+        header_parts.append(f"matching service _{service_name}_")
+    header_parts.append(":**\n")
+    lines = [" ".join(header_parts)]
+
+    # Group by folder for scannability
+    from collections import defaultdict
+    by_folder = defaultdict(list)
+    for d in data:
+        by_folder[d.get("folder_title", "General")].append(d)
+
+    for folder, items in sorted(by_folder.items()):
+        if len(by_folder) > 1:
+            lines.append(f"\n### 📁 {folder}")
+        for d in items:
+            title = d.get("title", "(untitled)")
+            uid = d.get("uid", "")
+            tags = d.get("tags", [])
+            tags_str = f" `[{', '.join(tags[:4])}]`" if tags else ""
+            url = d.get("url", "")
+            lines.append(f"- **{title}**{tags_str}")
+            if url:
+                lines.append(f"  UID: `{uid}` · [Open dashboard]({url})")
+
+    return "\n".join(lines)
+
+
 # ─────────────────────────────────────────────────────────────
 # Intent patterns — ordered by specificity (most specific first)
 # ─────────────────────────────────────────────────────────────
@@ -245,9 +286,67 @@ INTENTS = [
 
 
 async def match_intent(user_message: str) -> dict | None:
-    """Try to match user message to an intent. Returns intent or None."""
+    """Try to match user message to an intent. Returns intent or None.
+
+    Priority (FIRST match wins):
+      1. Service-specific dashboard search (e.g., "payment-service dashboards")
+      2. Category-filtered dashboards (e.g., "list AKS dashboards")
+      3. Exact intent patterns (e.g., "list datasources")
+      4. Category-only fallback (e.g., "show me AKS stuff")
+    """
     if not user_message:
         return None
+
+    msg_lower = user_message.lower()
+    has_dashboard_keyword = any(k in msg_lower for k in [
+        "dashboard", "dashes", "panels"
+    ])
+    starts_with_search = re.match(r"^\s*(search|find)\b", msg_lower) is not None
+
+    # ── 0. Explicit "search" — check INTENTS first for search_dashboards ──
+    # This ensures "search dashboards aks" uses search_dashboards, not category list
+    if starts_with_search:
+        for intent in INTENTS:
+            match = intent["pattern"].search(user_message)
+            if match and intent["tool"] == "search_dashboards":
+                try:
+                    args = intent["args"](match)
+                except Exception:
+                    args = {}
+                return {
+                    "server": intent["server"],
+                    "tool": intent["tool"],
+                    "arguments": args,
+                    "formatter": intent["fmt"] or fmt_generic,
+                    "desc": intent["desc"],
+                }
+
+    # ── 1. Service-specific search — HIGH priority ──
+    svc = extract_service_name(user_message)
+    if svc and has_dashboard_keyword:
+        return {
+            "server": "bifrost-grafana",
+            "tool": "search_dashboards",
+            "arguments": {"query": svc},
+            "formatter": lambda data: fmt_dashboards_filtered(data, service_name=svc),
+            "desc": f"Search dashboards for service: {svc}",
+            "service": svc,
+        }
+
+    # ── 2. Category-filtered dashboards ──
+    if has_dashboard_keyword:
+        cat = find_category(user_message)
+        if cat:
+            return {
+                "server": "bifrost-grafana",
+                "tool": "list_dashboards",
+                "arguments": {"tags": [cat["tags"][0]]},
+                "formatter": lambda data: fmt_dashboards_filtered(data, category_label=cat["label"]),
+                "desc": f"List dashboards filtered by: {cat['label']}",
+                "category": cat["key"],
+            }
+
+    # ── 3. All other exact intent patterns ──
     for intent in INTENTS:
         match = intent["pattern"].search(user_message)
         if match:
@@ -262,6 +361,20 @@ async def match_intent(user_message: str) -> dict | None:
                 "formatter": intent["fmt"] or fmt_generic,
                 "desc": intent["desc"],
             }
+
+    # ── 4. Category-only query (no explicit "dashboard" word) ──
+    # e.g. "show me AKS stuff", "view kubernetes"
+    if cat := find_category(user_message):
+        if any(trigger in msg_lower for trigger in ["show", "list", "get", "see", "view", "find"]):
+            return {
+                "server": "bifrost-grafana",
+                "tool": "list_dashboards",
+                "arguments": {"tags": [cat["tags"][0]]},  # primary tag only (Bifrost uses AND)
+                "formatter": lambda data: fmt_dashboards_filtered(data, category_label=cat["label"]),
+                "desc": f"List {cat['label']} dashboards",
+                "category": cat["key"],
+            }
+
     return None
 
 
