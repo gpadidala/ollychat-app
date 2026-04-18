@@ -37,45 +37,52 @@
 </p>
 
 <p align="center"><sub>
-  <b>The bubble pulses</b> → <b>user opens chat</b> → <b>asks "list all Grafana dashboards"</b> → <b>streams 113 real dashboards in 114ms</b> → <b>maximizes</b> → <b>shows advantages in fullscreen</b>
+  <b>o11Y Place Home</b> → <b>user asks "list dashboards"</b> → <b>streams 113 real results</b> → <b>navigates to AKS dashboard</b> → <b>bot follows!</b> → <b>asks "check grafana health"</b> → <b>goes to Logs</b> → <b>maximizes</b> → <b>fullscreen advantages</b>
 </sub></p>
 
-### Still frames (static screenshots)
+### 📸 Screenshots — every page, same bot
 
-<details>
-<summary><b>🟠 Floating bubble on a Grafana dashboard</b></summary>
-<br/>
-<p align="center">
-  <img src="docs/assets/screenshot-1-bubble.svg" alt="O11yBot floating bubble on Grafana" width="900"/>
-</p>
+<table>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/assets/screenshot-home-bubble.png" alt="O11yBot on Grafana Home" width="100%"/>
+  <br/><sub><b>🏠 Home page</b> — "Welcome to o11Y Place" · pulsing bubble</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/assets/screenshot-home-chat.png" alt="O11yBot chat on Home" width="100%"/>
+  <br/><sub><b>💬 Chat on Home</b> — 113 dashboards streamed in 114ms</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/assets/screenshot-aks-bubble.png" alt="O11yBot on AKS dashboard" width="100%"/>
+  <br/><sub><b>📊 AKS dashboard</b> — bot follows across pages · no context switch</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/assets/screenshot-aks-chat.png" alt="O11yBot health check on AKS" width="100%"/>
+  <br/><sub><b>💓 Health check</b> — version 11.6.4 · 3 datasources · 42ms</sub>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+  <img src="docs/assets/screenshot-logs-maximized.png" alt="Maximized on Logs page" width="100%"/>
+  <br/><sub><b>⚡ Maximized on Logs</b> — 75% viewport with blur backdrop</sub>
+</td>
+<td align="center" width="50%">
+  <img src="docs/assets/screenshot-fullscreen.png" alt="Fullscreen advantages" width="100%"/>
+  <br/><sub><b>⛶ Fullscreen</b> — all advantages at a glance</sub>
+</td>
+</tr>
+</table>
 
-The orange bubble appears in the bottom-right corner of **every** Grafana page — dashboards, explore, alerts, admin. Drag it anywhere, it stays there.
-</details>
+### 🎛️ 4 Window Modes
 
-<details>
-<summary><b>💬 Chat — streaming responses from real Grafana tools</b></summary>
-<br/>
-<p align="center">
-  <img src="docs/assets/screenshot-2-chat.svg" alt="O11yBot chat with real data" width="900"/>
-</p>
-
-Natural-language queries → MCP tools → real Grafana data. **114ms response** for 113 dashboards.
-</details>
-
-<details>
-<summary><b>🖥️ 4 Window Modes — Maximized &amp; Fullscreen</b></summary>
-<br/>
-<p align="center">
-  <img src="docs/assets/screenshot-3-modes.svg" alt="Maximized and Fullscreen modes" width="900"/>
-</p>
-
-Click the window controls in the header:
-- **Minimize (−)** — collapse to floating bubble, keep history
+Click the window controls in the chat header:
+- **Minimize (−)** — collapse to the floating bubble, keep history
 - **Maximize (□)** — overlay 75% of the viewport with blur backdrop
 - **Fullscreen (⛶)** — full 100vw × 100vh browser takeover
 - **Close (×)** — same as minimize
 - Press **Esc** to exit fullscreen/maximized
-</details>
 
 ---
 
