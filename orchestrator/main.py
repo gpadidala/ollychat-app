@@ -10,7 +10,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import get_settings
-from routers import chat, models
+from routers import chat, models, mcp, investigate, skills, rules
+from guardrails.router import router as guardrails_router
 
 # --- Structured Logging ---
 structlog.configure(
@@ -76,6 +77,11 @@ app.add_middleware(
 # --- Routes ---
 app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(models.router, prefix="/api/v1", tags=["models"])
+app.include_router(mcp.router, prefix="/api/v1", tags=["mcp"])
+app.include_router(investigate.router, prefix="/api/v1", tags=["investigate"])
+app.include_router(skills.router, prefix="/api/v1", tags=["skills"])
+app.include_router(rules.router, prefix="/api/v1", tags=["rules"])
+app.include_router(guardrails_router, prefix="/api/v1", tags=["guardrails"])
 
 
 @app.get("/api/v1/health")

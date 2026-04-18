@@ -55,6 +55,14 @@
     },
     {
       "type": "page",
+      "name": "Rules",
+      "path": "/a/gopal-ollychat-app/rules",
+      "role": "Editor",
+      "addToNav": true,
+      "icon": "shield"
+    },
+    {
+      "type": "page",
       "name": "Configuration",
       "path": "/a/gopal-ollychat-app/config",
       "role": "Admin",

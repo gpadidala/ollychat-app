@@ -88,14 +88,18 @@ func (a *App) resourceHandler() http.Handler {
 	mux.HandleFunc("/api/v1/mcp/tools", a.handleProxy("/api/v1/mcp/tools"))
 	mux.HandleFunc("/api/v1/mcp/tools/call", a.handleProxy("/api/v1/mcp/tools/call"))
 
-	// Investigation endpoints
-	mux.HandleFunc("/api/v1/investigate", a.handleProxy("/api/v1/investigate"))
+	// Investigation endpoints (SSE streaming)
+	mux.HandleFunc("/api/v1/investigate", a.handleChat)
 
 	// Skills endpoints
 	mux.HandleFunc("/api/v1/skills", a.handleProxy("/api/v1/skills"))
+	mux.HandleFunc("/api/v1/skills/search", a.handleProxy("/api/v1/skills/search"))
 
 	// Rules endpoints
 	mux.HandleFunc("/api/v1/rules", a.handleProxy("/api/v1/rules"))
+
+	// Guardrails / PII scanning
+	mux.HandleFunc("/api/v1/guardrails/scan", a.handleProxy("/api/v1/guardrails/scan"))
 
 	return mux
 }

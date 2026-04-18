@@ -1,0 +1,132 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Total Requests",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "targets": [{ "expr": "sum(increase(ollychat_requests_total[$__range]))", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "steps": [{ "value": null, "color": "blue" }] } } }
+    },
+    {
+      "title": "Total Cost (USD)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "targets": [{ "expr": "sum(increase(ollychat_cost_usd_total[$__range]))", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "thresholds": { "steps": [{ "value": null, "color": "green" }, { "value": 10, "color": "yellow" }, { "value": 100, "color": "red" }] } } }
+    },
+    {
+      "title": "Total Tokens",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "targets": [{ "expr": "sum(increase(ollychat_tokens_total[$__range]))", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "value": null, "color": "purple" }] } } }
+    },
+    {
+      "title": "PII Detections",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "targets": [{ "expr": "sum(increase(ollychat_pii_detections_total[$__range]))", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "steps": [{ "value": null, "color": "green" }, { "value": 1, "color": "orange" }, { "value": 10, "color": "red" }] } } }
+    },
+    {
+      "title": "MCP Tool Calls",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "targets": [{ "expr": "sum(increase(ollychat_mcp_tool_calls_total[$__range]))", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "steps": [{ "value": null, "color": "blue" }] } } }
+    },
+    {
+      "title": "Active Sessions",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "targets": [{ "expr": "ollychat_sessions_active", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "steps": [{ "value": null, "color": "green" }] } } }
+    },
+    {
+      "title": "Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "sum(rate(ollychat_requests_total[5m])) by (model)", "legendFormat": "{{model}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 15 } } }
+    },
+    {
+      "title": "Request Latency (P50/P95/P99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(ollychat_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P50", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum(rate(ollychat_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P95", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum(rate(ollychat_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "P99", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 5 } } }
+    },
+    {
+      "title": "Cost by Model",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 12 },
+      "targets": [
+        { "expr": "sum(increase(ollychat_cost_usd_total[$__range])) by (model)", "legendFormat": "{{model}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } }
+    },
+    {
+      "title": "Token Usage Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 12 },
+      "targets": [
+        { "expr": "sum(rate(ollychat_tokens_total{direction=\"input\"}[5m]))", "legendFormat": "Input", "refId": "A" },
+        { "expr": "sum(rate(ollychat_tokens_total{direction=\"output\"}[5m]))", "legendFormat": "Output", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 50, "stacking": { "mode": "normal" } } } }
+    },
+    {
+      "title": "MCP Tool Invocations",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 12 },
+      "targets": [
+        { "expr": "sum(rate(ollychat_mcp_tool_calls_total[5m])) by (tool_name)", "legendFormat": "{{tool_name}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "bars", "fillOpacity": 30 } } }
+    },
+    {
+      "title": "PII Detections by Type",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        { "expr": "sum(increase(ollychat_pii_detections_total[$__range])) by (pii_type)", "legendFormat": "{{pii_type}}", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Investigation Runs",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        { "expr": "sum(rate(ollychat_investigations_total[5m])) by (trigger)", "legendFormat": "{{trigger}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "bars", "fillOpacity": 30 } } }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["ollychat", "llm", "observability"],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Mimir", "value": "Mimir" }
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "OllyChat / Overview",
+  "uid": "ollychat-overview"
+}
