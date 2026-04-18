@@ -1,0 +1,40 @@
+# Build artifacts
+dist/
+node_modules/
+
+# Go
+*.exe
+*.test
+*.out
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Environment
+.env
+*.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+grafana-data/
+tempo-data/
+mimir-data/
+loki-data/
+
+# Coverage
+coverage/
+.nyc_output/
+htmlcov/

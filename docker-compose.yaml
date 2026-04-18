@@ -1,0 +1,119 @@
+version: "3.9"
+
+services:
+  # ─────────────────────────────────────────────────────────
+  # Grafana — with OllyChat plugin mounted
+  # ─────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: gopal-ollychat-app
+      GF_LOG_LEVEL: info
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor,flameGraph
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/gopal-ollychat-app
+      - ./provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - ollychat-orchestrator
+      - tempo
+      - mimir
+      - loki
+    networks:
+      - ollychat
+
+  # ─────────────────────────────────────────────────────────
+  # OllyChat Python Orchestrator
+  # ─────────────────────────────────────────────────────────
+  ollychat-orchestrator:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      OLLYCHAT_OTEL_EXPORTER_ENDPOINT: otel-collector:4317
+      OLLYCHAT_GRAFANA_URL: http://grafana:3000
+      OLLYCHAT_MIMIR_URL: http://mimir:9009
+      OLLYCHAT_LOKI_URL: http://loki:3100
+      OLLYCHAT_TEMPO_URL: http://tempo:3200
+    depends_on:
+      - otel-collector
+    networks:
+      - ollychat
+
+  # ─────────────────────────────────────────────────────────
+  # OpenTelemetry Collector (Grafana Alloy compatible)
+  # ─────────────────────────────────────────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.112.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      - tempo
+      - mimir
+      - loki
+    networks:
+      - ollychat
+
+  # ─────────────────────────────────────────────────────────
+  # Tempo — Distributed Traces
+  # ─────────────────────────────────────────────────────────
+  tempo:
+    image: grafana/tempo:2.6.1
+    command: ["-config.file=/etc/tempo/config.yaml"]
+    ports:
+      - "3200:3200"   # Tempo API
+      - "14317:4317"  # OTLP gRPC receiver
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo/config.yaml:ro
+      - tempo-data:/var/tempo
+    networks:
+      - ollychat
+
+  # ─────────────────────────────────────────────────────────
+  # Mimir — Metrics (Prometheus compatible)
+  # ─────────────────────────────────────────────────────────
+  mimir:
+    image: grafana/mimir:2.14.0
+    command: ["-config.file=/etc/mimir/config.yaml", "-target=all"]
+    ports:
+      - "9009:9009"
+    volumes:
+      - ./mimir-config.yaml:/etc/mimir/config.yaml:ro
+      - mimir-data:/data
+    networks:
+      - ollychat
+
+  # ─────────────────────────────────────────────────────────
+  # Loki — Logs
+  # ─────────────────────────────────────────────────────────
+  loki:
+    image: grafana/loki:3.2.1
+    command: ["-config.file=/etc/loki/config.yaml"]
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    networks:
+      - ollychat
+
+volumes:
+  grafana-data:
+  tempo-data:
+  mimir-data:
+  loki-data:
+
+networks:
+  ollychat:
+    driver: bridge

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "app",
+  "name": "OllyChat",
+  "id": "gopal-ollychat-app",
+  "backend": true,
+  "executable": "gpx_ollychat",
+  "info": {
+    "description": "Enterprise O11y Chatbot with LLM Observability, MCP Integration & Multi-Agent Investigation",
+    "author": {
+      "name": "Gopal",
+      "url": "https://github.com/gopal"
+    },
+    "keywords": ["llm", "chatbot", "observability", "mcp", "aiops", "investigation"],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "version": "1.0.0",
+    "updated": "2026-04-17"
+  },
+  "includes": [
+    {
+      "type": "page",
+      "name": "Chat",
+      "path": "/a/gopal-ollychat-app/chat",
+      "role": "Viewer",
+      "addToNav": true,
+      "defaultNav": true,
+      "icon": "comment-alt"
+    },
+    {
+      "type": "page",
+      "name": "Investigate",
+      "path": "/a/gopal-ollychat-app/investigate",
+      "role": "Viewer",
+      "addToNav": true,
+      "icon": "search"
+    },
+    {
+      "type": "page",
+      "name": "Skills",
+      "path": "/a/gopal-ollychat-app/skills",
+      "role": "Editor",
+      "addToNav": true,
+      "icon": "book"
+    },
+    {
+      "type": "page",
+      "name": "MCP Servers",
+      "path": "/a/gopal-ollychat-app/mcp",
+      "role": "Admin",
+      "addToNav": true,
+      "icon": "plug"
+    },
+    {
+      "type": "page",
+      "name": "Configuration",
+      "path": "/a/gopal-ollychat-app/config",
+      "role": "Admin",
+      "addToNav": true,
+      "icon": "cog"
+    }
+  ],
+  "dependencies": {
+    "grafanaDependency": ">=10.0.0",
+    "plugins": []
+  }
+}

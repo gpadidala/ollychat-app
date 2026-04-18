@@ -1,0 +1,25 @@
+# Core
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+httpx[http2]>=0.27.0
+
+# LLM Providers
+anthropic>=0.39.0
+openai>=1.50.0
+
+# Observability
+opentelemetry-api>=1.28.0
+opentelemetry-sdk>=1.28.0
+opentelemetry-exporter-otlp-proto-grpc>=1.28.0
+opentelemetry-instrumentation-fastapi>=0.49b0
+opentelemetry-instrumentation-httpx>=0.49b0
+structlog>=24.0.0
+
+# SSE Streaming
+sse-starlette>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+uuid6>=2024.1.12
