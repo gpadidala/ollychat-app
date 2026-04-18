@@ -266,7 +266,12 @@ async def match_intent(user_message: str) -> dict | None:
 
 
 async def execute_intent(intent: dict) -> dict:
-    """Execute the MCP tool call and format the result."""
+    """Execute the MCP tool call and format the result.
+
+    Returns:
+        {ok: bool, content: str (formatted markdown), raw_data: Any (tool data),
+         duration_ms: int, tool: str, server: str, arguments: dict, error?: str}
+    """
     mgr = get_mcp_manager()
     result = await mgr.call_tool(intent["server"], intent["tool"], intent["arguments"])
     if result.get("ok"):
@@ -275,6 +280,7 @@ async def execute_intent(intent: dict) -> dict:
         return {
             "ok": True,
             "content": formatted,
+            "raw_data": data,  # raw tool data for LLM post-processing
             "duration_ms": result.get("duration_ms", 0),
             "tool": intent["tool"],
             "server": intent["server"],

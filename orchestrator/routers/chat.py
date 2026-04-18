@@ -20,6 +20,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from config import get_settings
 from intents import execute_intent, match_intent
+from prompts import build_messages, classify_query, get_generation_config
 from routers.models import SUPPORTED_MODELS
 
 logger = structlog.get_logger()
@@ -38,6 +39,7 @@ class ChatRequest(BaseModel):
     system: str | None = None
     max_tokens: int = 4096
     temperature: float = 0.2
+    top_p: float = 0.9
     stream: bool = True
     tools: list[dict[str, Any]] | None = None
 
@@ -86,6 +88,13 @@ async def chat(request: Request, body: ChatRequest):
                     break
 
             intent = await match_intent(last_user_msg) if last_user_msg else None
+
+            # Build conversation history (exclude current message, keep recent)
+            history = [
+                {"role": m.role, "content": m.content}
+                for m in body.messages[:-1]  # excl. last user message
+            ]
+
             if intent:
                 logger.info("intent.matched", tool=intent["tool"], user_msg=last_user_msg[:100])
 
@@ -107,17 +116,43 @@ async def chat(request: Request, body: ChatRequest):
                         "result": {"ok": True},
                         "durationMs": result["duration_ms"],
                     })}
-                    # Stream the formatted content as text
-                    content = result["content"]
-                    # Stream in chunks for a natural feel
-                    chunk_size = 40
-                    for i in range(0, len(content), chunk_size):
-                        yield {"data": json.dumps({"type": "text", "delta": content[i:i+chunk_size]})}
+
+                    # ── OPTIONAL LLM post-processing ──
+                    # For small queries with clean data, use the direct formatter.
+                    # For rich queries, pass through LLM for natural language.
+                    use_llm_format = _should_use_llm_formatting(intent, result, last_user_msg)
+
+                    if use_llm_format:
+                        # Feed raw tool data to LLM with formatting prompt
+                        messages = build_messages(
+                            query_type="tool_result_formatting",
+                            user_message=last_user_msg,
+                            user_name=grafana_user,
+                            user_role="viewer",
+                            tool_name=intent["tool"],
+                            tool_result=result.get("raw_data", result["content"]),
+                        )
+                        cfg = get_generation_config("tool_result_formatting")
+                        async for event in _call_llm(model, messages, cfg, settings):
+                            if event.get("type") == "usage":
+                                total_input_tokens = event.get("usage", {}).get("promptTokens", 0)
+                                total_output_tokens = event.get("usage", {}).get("completionTokens", 0)
+                            yield {"data": json.dumps(event)}
+                    else:
+                        # Fast path: stream the pre-formatted content
+                        content = result["content"]
+                        chunk_size = 40
+                        for i in range(0, len(content), chunk_size):
+                            yield {"data": json.dumps({"type": "text", "delta": content[i:i+chunk_size]})}
 
                     yield {"data": json.dumps({
                         "type": "usage",
-                        "usage": {"promptTokens": 0, "completionTokens": 0, "totalTokens": 0},
-                        "costUsd": 0.0,
+                        "usage": {
+                            "promptTokens": total_input_tokens,
+                            "completionTokens": total_output_tokens,
+                            "totalTokens": total_input_tokens + total_output_tokens,
+                        },
+                        "costUsd": _calculate_cost(model, total_input_tokens, total_output_tokens),
                     })}
                     yield {"data": json.dumps({"type": "done"})}
                     return
@@ -128,36 +163,32 @@ async def chat(request: Request, body: ChatRequest):
                         "error": result["error"],
                         "durationMs": 0,
                     })}
-                    yield {"data": json.dumps({"type": "text", "delta": f"Tool error: {result['error']}"})}
+                    err_text = f"**Tool call failed:** {result['error']}\n\nPlease try again or rephrase your question."
+                    for i in range(0, len(err_text), 40):
+                        yield {"data": json.dumps({"type": "text", "delta": err_text[i:i+40]})}
                     yield {"data": json.dumps({"type": "done"})}
                     return
 
-            # ── No intent matched — fall through to LLM ──
-            spec = SUPPORTED_MODELS.get(model, {})
-            # Default to ollama for unknown/self-hosted models
-            provider = spec.get("provider", "ollama")
+            # ═══════════════════════════════════════════════
+            # No intent matched — use LLM with prompt engineering
+            # ═══════════════════════════════════════════════
+            query_type = classify_query(last_user_msg)
+            logger.info("query.classified", type=query_type, user_msg=last_user_msg[:100])
 
-            if provider == "anthropic":
-                async for event in _stream_anthropic(model, body, settings):
-                    if event.get("type") == "usage":
-                        total_input_tokens = event.get("usage", {}).get("promptTokens", 0)
-                        total_output_tokens = event.get("usage", {}).get("completionTokens", 0)
-                    yield {"data": json.dumps(event)}
+            messages = build_messages(
+                query_type=query_type,
+                user_message=last_user_msg,
+                history=history,
+                user_name=grafana_user,
+                user_role="viewer",
+            )
+            cfg = get_generation_config(query_type)
 
-            elif provider == "openai":
-                async for event in _stream_openai(model, body, settings):
-                    if event.get("type") == "usage":
-                        total_input_tokens = event.get("usage", {}).get("promptTokens", 0)
-                        total_output_tokens = event.get("usage", {}).get("completionTokens", 0)
-                    yield {"data": json.dumps(event)}
-
-            elif provider == "ollama":
-                async for event in _stream_ollama(model, body, settings):
-                    yield {"data": json.dumps(event)}
-
-            else:
-                yield {"data": json.dumps({"type": "error", "message": f"Unsupported provider: {provider}"})}
-                return
+            async for event in _call_llm(model, messages, cfg, settings):
+                if event.get("type") == "usage":
+                    total_input_tokens = event.get("usage", {}).get("promptTokens", 0)
+                    total_output_tokens = event.get("usage", {}).get("completionTokens", 0)
+                yield {"data": json.dumps(event)}
 
             # Emit final usage + cost
             cost = _calculate_cost(model, total_input_tokens, total_output_tokens)
@@ -189,6 +220,75 @@ async def chat(request: Request, body: ChatRequest):
             )
 
     return EventSourceResponse(event_generator())
+
+
+# ═══════════════════════════════════════════════════════════════
+# Prompt-engineered LLM dispatcher
+# ═══════════════════════════════════════════════════════════════
+
+def _should_use_llm_formatting(intent: dict, result: dict, user_msg: str) -> bool:
+    """Decide whether to pass tool results through LLM for natural formatting.
+
+    Use LLM when:
+    - The query is nuanced ("what's firing in prod?") rather than exact ("list alerts")
+    - The tool returned a lot of data that needs summarization
+    - The user phrased it conversationally
+
+    Skip LLM when:
+    - Query is a direct imperative ("list all dashboards")
+    - Result is a simple list < 20 items
+    - User likely wants the full structured list
+    """
+    # Simple heuristic: if the user query is > 50 chars or contains analytical words,
+    # post-process with LLM. Otherwise use the fast path.
+    msg_lower = user_msg.lower()
+    analytical_words = [
+        "why", "what's", "analyze", "explain", "summarize", "summary",
+        "tell me about", "how many", "which", "health of",
+    ]
+    is_analytical = any(w in msg_lower for w in analytical_words)
+
+    raw = result.get("raw_data")
+    data_is_large = isinstance(raw, (list, dict)) and len(str(raw)) > 5000
+
+    # For dev with tiny local LLM, skip LLM formatting to avoid slow/weird output
+    # Re-enable this when using gpt-4o or claude-sonnet-4-6 in prod
+    return False  # TODO: flip to `is_analytical or data_is_large` in prod
+
+
+async def _call_llm(model: str, messages: list, cfg, settings):
+    """Unified LLM call using prompt-engineered messages + tuned config.
+
+    Routes to the correct provider based on model prefix.
+    """
+    spec = SUPPORTED_MODELS.get(model, {})
+    provider = spec.get("provider", "ollama")
+
+    # Build a minimal body using the config
+    class _Body:
+        pass
+    b = _Body()
+    b.system = None  # system is already in messages[0]
+    b.max_tokens = cfg.max_tokens
+    b.temperature = cfg.temperature
+    # Convert dict messages to ChatMessageIn-like objects
+    b.messages = [ChatMessageIn(role=m["role"], content=m["content"]) for m in messages]
+
+    if provider == "anthropic":
+        # Anthropic requires system separate from messages
+        sys_msg = next((m["content"] for m in messages if m["role"] == "system"), None)
+        b.system = sys_msg
+        b.messages = [ChatMessageIn(role=m["role"], content=m["content"]) for m in messages if m["role"] != "system"]
+        async for event in _stream_anthropic(model, b, settings):
+            yield event
+    elif provider == "openai":
+        async for event in _stream_openai(model, b, settings):
+            yield event
+    elif provider == "ollama":
+        async for event in _stream_ollama(model, b, settings, config=cfg):
+            yield event
+    else:
+        yield {"type": "error", "message": f"Unsupported provider: {provider}"}
 
 
 # --- Provider Implementations ---
@@ -359,8 +459,12 @@ async def _ensure_ollama_model(model: str, settings) -> str | None:
         return f"Failed to pull model: {e}"
 
 
-async def _stream_ollama(model: str, body: ChatRequest, settings):
-    """Stream from self-hosted Ollama. Auto-pulls the model if not present."""
+async def _stream_ollama(model: str, body: ChatRequest, settings, config=None):
+    """Stream from self-hosted Ollama. Auto-pulls the model if not present.
+
+    Uses tuned sampling params from `config` (GenerationConfig) when provided,
+    else falls back to body.temperature/max_tokens.
+    """
     # Ensure model is available
     pull_error = await _ensure_ollama_model(model, settings)
     if pull_error:
@@ -372,6 +476,26 @@ async def _stream_ollama(model: str, body: ChatRequest, settings):
         messages.append({"role": "system", "content": body.system})
     messages.extend([{"role": m.role, "content": m.content} for m in body.messages])
 
+    # Ollama sampling options — tuned per query type when config is provided
+    if config:
+        options = {
+            "temperature": config.temperature,
+            "top_p": config.top_p,
+            "num_predict": config.max_tokens,
+            # Anti-repetition (helps small models)
+            "repeat_penalty": 1.15,
+            "repeat_last_n": 64,
+            # Stop tokens for cleaner output
+            "stop": ["<|im_end|>", "<|endoftext|>"],
+        }
+    else:
+        options = {
+            "temperature": body.temperature,
+            "top_p": 0.9,
+            "num_predict": body.max_tokens,
+            "repeat_penalty": 1.1,
+        }
+
     async with httpx.AsyncClient(timeout=300) as client:
         async with client.stream(
             "POST",
@@ -380,10 +504,7 @@ async def _stream_ollama(model: str, body: ChatRequest, settings):
                 "model": model,
                 "messages": messages,
                 "stream": True,
-                "options": {
-                    "temperature": body.temperature,
-                    "num_predict": body.max_tokens,
-                },
+                "options": options,
             },
         ) as response:
             if response.status_code != 200:
