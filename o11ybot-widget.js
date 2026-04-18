@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "1.6.0";
+  var WIDGET_VERSION = "1.7.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -215,6 +215,13 @@
 .ob-sugg-list{display:flex;flex-direction:column;gap:6px;width:100%;max-width:360px}\
 .ob-sugg{padding:9px 14px;background:#181b23;border:1px solid #2a2a3e;border-radius:8px;cursor:pointer;text-align:left;color:#ccc;font-size:12.5px}\
 .ob-sugg:hover{background:#1e1e2e;border-color:rgba(255,102,0,.3);color:#f59e0b}\
+.ob-quick-actions{width:100%;max-width:400px}\
+.ob-qa-group{margin-bottom:12px}\
+.ob-qa-title{font-size:10.5px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:0.6px;margin:6px 4px 6px;text-align:left}\
+.ob-qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}\
+.ob-qa-btn{padding:8px 10px;background:#181b23;border:1px solid #2a2a3e;border-radius:7px;cursor:pointer;color:#ccc;font-size:12px;display:flex;align-items:center;gap:6px;text-align:left;transition:all .15s;line-height:1.2}\
+.ob-qa-btn:hover{background:#1e1e2e;border-color:rgba(255,102,0,.4);color:#f59e0b;transform:translateY(-1px)}\
+.ob-qa-btn .ob-qa-icon{font-size:14px;flex-shrink:0}\
 .ob-ts{font-size:10px;color:#444;margin-top:2px}\
 .ob-new-chat-btn{margin:10px;padding:8px 12px;background:linear-gradient(135deg,#ff6600,#f59e0b);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}\
 .ob-new-chat-btn:hover{opacity:.9}\
@@ -316,8 +323,42 @@
   // ═══════════════════════════════════════════════════════════
   function renderFab() {
     applyPos();
-    root.innerHTML = '<button class="ob-fab" title="O11yBot">' + ICO_BOT + '<div class="ob-dot"></div></button>';
-    root.querySelector(".ob-fab").onclick = function() {
+    root.innerHTML = '<button class="ob-fab" title="O11yBot (drag to move, click to chat)">' + ICO_BOT + '<div class="ob-dot"></div></button>';
+    var fab = root.querySelector(".ob-fab");
+
+    // Click to open — but only if not dragged
+    var dragStarted = false;
+    fab.addEventListener("mousedown", function(ev) {
+      dragStarted = false;
+      var startX = ev.clientX, startY = ev.clientY;
+      var rect = root.getBoundingClientRect();
+      var ox = ev.clientX - rect.left, oy = ev.clientY - rect.top;
+
+      var onMove = function(e2) {
+        if (!dragStarted && (Math.abs(e2.clientX - startX) > 3 || Math.abs(e2.clientY - startY) > 3)) {
+          dragStarted = true;
+          document.body.style.userSelect = "none";
+        }
+        if (dragStarted) {
+          var nx = Math.max(0, Math.min(window.innerWidth - 60, e2.clientX - ox));
+          var ny = Math.max(0, Math.min(window.innerHeight - 60, e2.clientY - oy));
+          state.posX = nx; state.posY = ny;
+          root.style.left = nx + "px"; root.style.top = ny + "px";
+          root.style.right = "auto"; root.style.bottom = "auto";
+        }
+      };
+      var onUp = function() {
+        document.body.style.userSelect = "";
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        if (dragStarted) saveState();
+      };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+
+    fab.onclick = function() {
+      if (dragStarted) return;  // don't open if user dragged
       state.open = true;
       renderPanel();
     };
@@ -333,17 +374,63 @@
     var msgs = session ? session.msgs : [];
 
     if (msgs.length === 0) {
-      var suggs = [
-        "List all Grafana dashboards",
-        "List AKS dashboards",
-        "Check grafana health",
-        "Show PostgreSQL dashboards",
+      // Grafana Quick Actions — one-click common queries
+      var quickActions = [
+        {
+          title: "📊 Dashboards",
+          actions: [
+            { icon: "📋", label: "List all", q: "list all Grafana dashboards" },
+            { icon: "🔍", label: "Search…", q: "search dashboards " },
+            { icon: "📁", label: "Folders", q: "list all folders" },
+            { icon: "⭐", label: "Starred", q: "list starred dashboards" },
+          ],
+        },
+        {
+          title: "🔔 Alerts",
+          actions: [
+            { icon: "🔴", label: "Firing", q: "show firing alerts" },
+            { icon: "📝", label: "Rules", q: "list all alert rules" },
+          ],
+        },
+        {
+          title: "📡 Datasources",
+          actions: [
+            { icon: "📋", label: "List all", q: "list datasources" },
+            { icon: "💓", label: "Health", q: "check grafana health" },
+          ],
+        },
+        {
+          title: "🏷️ By Category",
+          actions: [
+            { icon: "☸️", label: "AKS / K8s", q: "list AKS dashboards" },
+            { icon: "☁️", label: "Azure", q: "list Azure dashboards" },
+            { icon: "🗄️", label: "Database", q: "list database dashboards" },
+            { icon: "🛡️", label: "Security", q: "list security dashboards" },
+            { icon: "📊", label: "Loki", q: "list Loki dashboards" },
+            { icon: "📈", label: "Mimir", q: "list Mimir dashboards" },
+            { icon: "🔗", label: "Tempo", q: "list Tempo dashboards" },
+            { icon: "🎯", label: "SLO", q: "list SLO dashboards" },
+          ],
+        },
       ];
-      var welcome = '<div class="ob-welcome"><h3>Hey ' + esc(grafanaUser.name.split(" ")[0]) + '!</h3>' +
-                    '<p>Ask about dashboards, metrics, logs, alerts, or incidents.</p>' +
-                    '<div class="ob-sugg-list">';
-      for (var si = 0; si < suggs.length; si++) {
-        welcome += '<button class="ob-sugg">' + esc(suggs[si]) + '</button>';
+
+      var welcome = '<div class="ob-welcome">';
+      welcome += '<h3>Hey ' + esc(grafanaUser.name.split(" ")[0]) + '! 👋</h3>';
+      welcome += '<p>One-click actions — or type your own question:</p>';
+      welcome += '<div class="ob-quick-actions">';
+      for (var gi = 0; gi < quickActions.length; gi++) {
+        var g = quickActions[gi];
+        welcome += '<div class="ob-qa-group">';
+        welcome += '<div class="ob-qa-title">' + g.title + '</div>';
+        welcome += '<div class="ob-qa-grid">';
+        for (var ai = 0; ai < g.actions.length; ai++) {
+          var a = g.actions[ai];
+          welcome += '<button class="ob-qa-btn" data-q="' + esc(a.q) + '">';
+          welcome += '<span class="ob-qa-icon">' + a.icon + '</span>';
+          welcome += '<span>' + esc(a.label) + '</span>';
+          welcome += '</button>';
+        }
+        welcome += '</div></div>';
       }
       welcome += '</div></div>';
       return '<div class="ob-msgs" id="ob-msgs">' + welcome + '</div>';
@@ -540,9 +627,11 @@
   }
 
   function wireEvents() {
-    // Header drag
+    // Header drag — use addEventListener to not get overridden
     var hdr = document.getElementById("ob-hdr");
-    if (hdr) hdr.onmousedown = startDrag;
+    if (hdr) {
+      hdr.addEventListener("mousedown", startDrag);
+    }
 
     // Shortcuts button + overlay
     var kbdBtn = document.getElementById("ob-kbd");
@@ -608,10 +697,24 @@
         state.streaming = false;
         renderPanel();
       };
-      // Welcome suggestions
+      // Welcome suggestions (legacy + new quick-actions)
       var suggs = root.querySelectorAll(".ob-sugg");
       for (var sb = 0; sb < suggs.length; sb++) {
         suggs[sb].onclick = function() { send(this.textContent); };
+      }
+      // Quick-action buttons
+      var qas = root.querySelectorAll(".ob-qa-btn");
+      for (var qi = 0; qi < qas.length; qi++) {
+        qas[qi].onclick = function() {
+          var q = this.getAttribute("data-q");
+          // If query ends with space (e.g., "search dashboards "), focus input with prefix
+          if (q.endsWith(" ")) {
+            var inp = document.getElementById("ob-input");
+            if (inp) { inp.value = q; inp.focus(); }
+          } else {
+            send(q);
+          }
+        };
       }
     }
 
@@ -654,23 +757,44 @@
   }
 
   function startDrag(ev) {
+    // Don't drag if clicking on a button or interactive element
     if (ev.target.tagName === "BUTTON" || ev.target.closest("button")) return;
-    if (state.mode !== "normal") return;
+    if (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA" || ev.target.tagName === "SELECT") return;
+    // Can't drag while maximized/fullscreen
+    if (state.mode === "maximized" || state.mode === "fullscreen") return;
+
+    ev.preventDefault();
+    ev.stopPropagation();
+
     var rect = root.getBoundingClientRect();
-    drag = { active: true, ox: ev.clientX - rect.left, oy: ev.clientY - rect.top };
-    document.onmousemove = function(ev2) {
-      if (!drag.active) return;
-      var nx = Math.max(0, Math.min(window.innerWidth - 100, ev2.clientX - drag.ox));
-      var ny = Math.max(0, Math.min(window.innerHeight - 100, ev2.clientY - drag.oy));
-      state.posX = nx; state.posY = ny;
-      root.style.left = nx + "px"; root.style.top = ny + "px";
-      root.style.right = ""; root.style.bottom = "";
+    drag = {
+      active: true,
+      ox: ev.clientX - rect.left,
+      oy: ev.clientY - rect.top,
     };
-    document.onmouseup = function() {
+    document.body.style.userSelect = "none";
+
+    var onMove = function(ev2) {
+      if (!drag.active) return;
+      ev2.preventDefault();
+      var nx = Math.max(0, Math.min(window.innerWidth - 60, ev2.clientX - drag.ox));
+      var ny = Math.max(0, Math.min(window.innerHeight - 60, ev2.clientY - drag.oy));
+      state.posX = nx;
+      state.posY = ny;
+      root.style.left = nx + "px";
+      root.style.top = ny + "px";
+      root.style.right = "auto";
+      root.style.bottom = "auto";
+    };
+    var onUp = function() {
       drag.active = false;
-      document.onmousemove = null; document.onmouseup = null;
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
       saveState();
     };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   }
 
   // ═══════════════════════════════════════════════════════════

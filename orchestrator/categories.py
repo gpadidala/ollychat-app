@@ -176,7 +176,8 @@ CATEGORIES: dict[str, dict] = {
         "label": "RED Metrics (Rate / Errors / Duration)",
         "tags": ["red-metrics", "red", "golden-signals"],
         "folder_hints": [],
-        "keywords": ["red method", "red metrics", "golden signals", "four signals"],
+        "keywords": ["red method", "red metrics", "red dashboard", "red analysis",
+                     "golden signals", "four signals", "rate errors duration"],
     },
     "performance": {
         "label": "Performance",

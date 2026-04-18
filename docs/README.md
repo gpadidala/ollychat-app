@@ -2,8 +2,9 @@
 
 | Doc | Purpose |
 |---|---|
-| [TESTING.md](TESTING.md) | **All 147 tests** across 7 suites — every expected output documented |
+| [TESTING.md](TESTING.md) | **All 160+ tests** across 8 suites — every expected output documented |
 | [VALIDATION.md](VALIDATION.md) | **20 end-to-end validation scenarios** — manual reproduction guide |
+| [RBAC.md](RBAC.md) | Single MCP + multi-role tokens design + SA setup steps |
 | [API_REFERENCE.md](API_REFERENCE.md) | All REST endpoints, SSE event types, MCP tools |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | How to deploy to any Grafana instance |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System diagrams and data flow |

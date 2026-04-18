@@ -150,6 +150,50 @@ def fmt_generic(data: Any) -> str:
     return str(data)
 
 
+def fmt_capabilities(data: Any) -> str:
+    """Static capabilities response — shows the bot's REAL abilities.
+
+    Used when user asks 'what can you do?', 'help', etc.
+    Avoids LLM hallucinating made-up abilities.
+    """
+    return """**I'm O11yBot — your Grafana observability assistant.**
+
+I can help you with real Grafana data via MCP tools. Try asking:
+
+**📊 Dashboards**
+- `list all dashboards` → see all 113 dashboards
+- `list AKS dashboards` · `Azure dashboards` · `Loki dashboards`
+- `search dashboards postgres` → text search
+- `payment-service dashboards` → find service-specific
+
+**🗂️ Folders & Organization**
+- `list folders` → all 15 folders with direct links
+- `list all alerts` · `show firing alerts`
+
+**📡 Datasources**
+- `list datasources` → Mimir, Loki, Tempo
+
+**💓 Grafana Health**
+- `check grafana health` → version + DB status
+- `grafana info` / `mcp server info`
+
+**🏷️ Categories I know (35+)**
+- **Cloud**: AKS, Azure, OCI, GCP, AWS, GKE
+- **Databases**: PostgreSQL, MySQL, Redis, Cosmos, Cassandra
+- **Observability**: Loki, Mimir, Tempo, Pyroscope
+- **SRE**: SLO, RED metrics, performance, errors
+- **Compliance**: PCI, HIPAA, SOC2, GDPR, security
+- **Levels**: L0–L3 (executive → deep-dive)
+
+**📝 PromQL / LogQL / TraceQL help**
+- `promql for error rate by service`
+- `logql to find errors`
+
+**⚠️ Remember:** Only I can fetch LIVE Grafana data. For generic knowledge questions without a tool match, I'll give general answers — if they sound vague, try a specific command from the list above.
+
+**Keyboard shortcuts:** press `⌘/` (Mac) or `Ctrl/` (Windows/Linux)"""
+
+
 def fmt_dashboards_filtered(data: Any, category_label: str | None = None,
                              service_name: str | None = None) -> str:
     """Format filtered dashboards with category context header."""
@@ -196,6 +240,28 @@ def fmt_dashboards_filtered(data: Any, category_label: str | None = None,
 
 # Order matters: most specific patterns MUST come first, generic ones last
 INTENTS = [
+    # ─── HELP / CAPABILITIES — highest priority, static response (no LLM, no MCP) ───
+    # Matches: "help", "what can you do", "how can you help me", "capabilities",
+    #          "what do you do", "what are your tools", "/help", "commands"
+    _m(
+        r"^\s*(/help|/commands|help|capabilities)\s*\??\s*$",
+        "_internal", "help",
+        fmt_fn=fmt_capabilities,
+        desc="Show capabilities",
+    ),
+    _m(
+        r"\b(what\s+(can|do|are|is)|how\s+(can|do)).*\b(help|you\s+do|your\s+tools|your\s+capabilit|commands|available)",
+        "_internal", "help",
+        fmt_fn=fmt_capabilities,
+        desc="Show capabilities",
+    ),
+    _m(
+        r"\b(what\s+tools|list\s+(all\s+)?(tools|commands|capabilities))\b",
+        "_internal", "help",
+        fmt_fn=fmt_capabilities,
+        desc="Show capabilities",
+    ),
+
     # ─── MOST SPECIFIC: MCP server info (must come before "server status") ───
     _m(
         r"\b(mcp|bifrost|bifr[öo]st)\b.*(info|server|status|version|metadata)",
@@ -382,13 +448,58 @@ async def match_intent(user_message: str) -> dict | None:
             return {
                 "server": "bifrost-grafana",
                 "tool": "list_dashboards",
-                "arguments": {"tags": [cat["tags"][0]]},  # primary tag only (Bifrost uses AND)
+                "arguments": {"tags": [cat["tags"][0]]},
                 "formatter": lambda data: fmt_dashboards_filtered(data, category_label=cat["label"]),
                 "desc": f"List {cat['label']} dashboards",
                 "category": cat["key"],
             }
 
+    # ── 5. Dashboard fallthrough — if user mentioned "dashboard" but nothing matched ──
+    # Extract meaningful keywords (not stopwords) and run a search
+    if has_dashboard_keyword:
+        query = _extract_search_keywords(user_message)
+        if query:
+            return {
+                "server": "bifrost-grafana",
+                "tool": "search_dashboards",
+                "arguments": {"query": query},
+                "formatter": lambda data: fmt_dashboards_filtered(data, service_name=query),
+                "desc": f"Fuzzy search dashboards: {query}",
+            }
+
     return None
+
+
+_STOP_WORDS = {
+    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "should",
+    "can", "could", "may", "might", "must", "shall", "to", "of", "in", "on",
+    "at", "by", "for", "with", "about", "against", "between", "into", "through",
+    "during", "before", "after", "above", "below", "from", "up", "down", "out",
+    "off", "over", "under", "again", "further", "then", "once",
+    "and", "but", "or", "nor", "so", "if", "whether",
+    "what", "which", "who", "whom", "whose", "this", "that", "these", "those",
+    "i", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them",
+    "my", "your", "his", "its", "our", "their", "mine", "yours", "ours", "theirs",
+    "show", "list", "get", "find", "give", "tell", "see", "view",
+    "dashboard", "dashboards", "dash", "dashes", "panels",
+    "grafana", "please", "me", "for", "all", "any",
+    "any", "some", "every", "each", "few", "more", "most", "other",
+    "create", "make", "build", "help", "about", "here",
+}
+
+
+def _extract_search_keywords(text: str) -> str:
+    """Extract meaningful keywords from a query for dashboard search.
+
+    E.g. "can you dashboards for this chat app RED dashboard?"
+         → "chat app red"
+    """
+    import re
+    words = re.findall(r"[A-Za-z][A-Za-z0-9_-]{1,}", text.lower())
+    meaningful = [w for w in words if w not in _STOP_WORDS and len(w) >= 2]
+    # Keep at most 4 keywords
+    return " ".join(meaningful[:4])
 
 
 async def execute_intent(intent: dict, role: str | None = None) -> dict:
@@ -403,6 +514,19 @@ async def execute_intent(intent: dict, role: str | None = None) -> dict:
         {ok: bool, content: str (formatted markdown), raw_data: Any (tool data),
          duration_ms: int, tool: str, server: str, arguments: dict, error?: str}
     """
+    # Internal tools — respond without calling MCP (e.g., help/capabilities)
+    if intent.get("server") == "_internal":
+        formatted = intent["formatter"](None)
+        return {
+            "ok": True,
+            "content": formatted,
+            "raw_data": None,
+            "duration_ms": 0,
+            "tool": intent["tool"],
+            "server": intent["server"],
+            "arguments": intent.get("arguments", {}),
+        }
+
     mgr = get_mcp_manager()
     result = await mgr.call_tool(intent["server"], intent["tool"], intent["arguments"], role=role)
     if result.get("ok"):
