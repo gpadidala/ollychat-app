@@ -232,6 +232,12 @@ CATEGORIES: dict[str, dict] = {
         "folder_hints": [],
         "keywords": ["capacity", "planning", "forecast"],
     },
+    "kpi": {
+        "label": "KPI / Business Metrics",
+        "tags": ["kpi", "single-pane", "ultimate"],
+        "folder_hints": ["Observability KPI"],
+        "keywords": ["kpi", "kpis", "key performance", "business metric"],
+    },
     "cost": {
         "label": "Cost / FinOps",
         "tags": ["cost", "finops", "billing"],
