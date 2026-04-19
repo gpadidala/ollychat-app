@@ -132,10 +132,10 @@ Chat with your observability — in the same UI, on every page.
 
 Traditional LLM function calling requires smart models (GPT-4 / Claude). O11yBot includes a **regex-based intent matcher** that routes common queries to MCP tools **before** the LLM runs.
 
-- ⚡ **114ms** to list 113 dashboards (vs 3-8s with LLM function calling)
+- ⚡ **~114ms** to list 113 dashboards (measured, no LLM in the hot path)
 - 💰 **$0 cost** for matched queries (no LLM tokens burned)
 - 🎯 **Deterministic** — `"list dashboards"` always calls `list_dashboards`
-- 🪶 **Works with tiny LLMs** — 500MB qwen2.5:0.5b doesn't need to understand function schemas
+- 🪶 **Works with tiny LLMs** — a 500MB local model is enough; large models are optional
 
 LLM fallback only runs for open-ended questions.
 
@@ -511,21 +511,44 @@ Full testing guide: **[docs/TESTING.md](docs/TESTING.md)**
 
 ---
 
-## 🎯 Comparison
+## 🎯 Advanced capabilities
 
-| Feature | O11yBot | Grafana Assistant | ChatGPT plugin | Bare LLM |
-|---|---|---|---|---|
-| Floating on every page | ✅ | ✅ (paid) | ❌ | ❌ |
-| Open source | ✅ | ❌ | varies | ✅ |
-| Real MCP tool calls | ✅ (16) | ✅ | ❌ | ❌ |
-| Self-hosted LLM option | ✅ Ollama | ❌ cloud only | ❌ | ✅ |
-| User-isolated history | ✅ | ✅ | varies | ❌ |
-| PII redaction | ✅ 15 patterns | ✅ | rarely | ❌ |
-| Intent matcher (no-LLM routing) | ✅ | ❌ | ❌ | ❌ |
-| RBAC per tool | ✅ | ✅ | ❌ | ❌ |
-| 98-test automated suite | ✅ | closed | varies | ❌ |
-| Works with 500MB local model | ✅ | ❌ | ❌ | ❌ |
-| Deploy anywhere (2 mounts) | ✅ | ❌ | ❌ | n/a |
+Everything O11yBot does end-to-end — no external product comparisons, just
+what's in this repo.
+
+- **Floating widget on every Grafana page** — FAB / Normal / Maximized / Fullscreen
+- **53 MCP tools** covering dashboards, alerts, datasources, folders, teams,
+  plugins, library panels, annotations, users, and service accounts
+- **4 compound workflow tools** — `investigate_alert`, `correlate_signals`
+  (Prometheus + Loki + Tempo in one call), `create_slo_dashboard`,
+  `find_dashboards_using_metric`
+- **Slot-filling wizards** for alert and dashboard creation — lists every
+  datasource + folder so the user picks rather than the bot guessing
+- **Metric discovery** before dashboard creation — queries the Prometheus
+  datasource for the real metric names that exist, so panels never render
+  "No data"
+- **LLM-as-judge reranker** for fuzzy search results — top candidates get
+  a relevance score and a one-line "why it fits" reason
+- **Local fuzzy search** over every dashboard with typo-tolerant multi-keyword
+  intersection (e.g. `oracle kpi dashbords`)
+- **Regex intent matcher** routes common queries to the right MCP tool
+  without an LLM round-trip — deterministic, cheap, works with tiny models
+- **Self-owned MCP server** — no external MCP dependency; point `GRAFANA_URL`
+  + role tokens at any Grafana and the stack runs
+- **Role-based tokens** (viewer / editor / admin) enforced at the MCP layer
+  before any Grafana API call
+- **Self-observability** — `/metrics` endpoint exposes
+  `ollychat_mcp_tool_calls_total`, `ollychat_mcp_tool_duration_seconds`,
+  `ollychat_mcp_grafana_requests_total`, plus a structured `tool.call`
+  audit log line per invocation
+- **Per-user chat history** with multi-session support (VSCode-style tabs),
+  isolated by Grafana username in `localStorage`
+- **PII detection** with 15 patterns, redaction mode on by default
+- **Streaming responses** via SSE with CRLF normalisation + graceful abort
+- **160-test automated suite** across 8 suites (API, intents, widget parser,
+  integration, negative, prompt engineering, categories, RBAC)
+- **Authoring cookbooks** — PromQL, LogQL, TraceQL, SLO — static responses,
+  no LLM tokens
 
 ---
 
