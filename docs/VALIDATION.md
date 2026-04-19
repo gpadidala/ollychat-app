@@ -125,7 +125,7 @@ curl -X POST http://localhost:8000/api/v1/chat \
 ```bash
 curl -X POST http://localhost:8000/api/v1/mcp/tools/call \
   -H "Content-Type: application/json" \
-  -d '{"server_name":"bifrost-grafana","tool_name":"health_check","arguments":{}}' \
+  -d '{"server_name":"ollychat-mcp-grafana","tool_name":"health_check","arguments":{}}' \
   | python3 -m json.tool
 # Expected: "version": "11.6.4", "database": "ok"
 ```
@@ -237,10 +237,10 @@ localStorage.getItem("o11ybot-jane.doe")  // jane's 1 message
 
 ### Steps
 ```bash
-# Try calling list_users (requires admin) as the default viewer-role Bifrost
+# Try calling list_users (requires admin) as the default viewer-role O11yBot MCP
 curl -X POST http://localhost:8000/api/v1/mcp/tools/call \
   -H "Content-Type: application/json" \
-  -d '{"server_name":"bifrost-grafana","tool_name":"list_users","arguments":{}}'
+  -d '{"server_name":"ollychat-mcp-grafana","tool_name":"list_users","arguments":{}}'
 ```
 
 ### Expected
@@ -434,7 +434,7 @@ Widget opens at the same top-left position (from `posX`/`posY` in localStorage).
 
 ### Steps
 ```bash
-# Stop Bifrost
+# Stop O11yBot MCP
 pkill -f "grafana-mcp serve"
 
 # Try to query
@@ -447,11 +447,11 @@ curl -X POST http://localhost:8000/api/v1/chat \
 
 Then restart and re-register:
 ```bash
-cd ../Bifrost && .venv/bin/grafana-mcp serve --port 8765 &
+cd ../O11yBot MCP && .venv/bin/grafana-mcp serve --port 8765 &
 sleep 3
 curl -X POST http://localhost:8000/api/v1/mcp/servers \
   -H "Content-Type: application/json" \
-  -d '{"name":"bifrost-grafana","url":"http://host.docker.internal:8765","transport":"sse","auth_method":"none"}'
+  -d '{"name":"ollychat-mcp-grafana","url":"http://host.docker.internal:8765","transport":"sse","auth_method":"none"}'
 ```
 
 ### Expected
@@ -472,7 +472,7 @@ GRAFANA_COUNT=$(curl -s "http://admin:admin@localhost:3200/api/search?type=dash-
 # Via MCP
 MCP_COUNT=$(curl -s -X POST http://localhost:8000/api/v1/mcp/tools/call \
   -H "Content-Type: application/json" \
-  -d '{"server_name":"bifrost-grafana","tool_name":"list_dashboards","arguments":{"limit":200}}' \
+  -d '{"server_name":"ollychat-mcp-grafana","tool_name":"list_dashboards","arguments":{"limit":200}}' \
   | python3 -c "import sys,json;d=json.loads(sys.stdin.read(),strict=False);print(len(d['data']))")
 
 echo "Grafana: $GRAFANA_COUNT · MCP: $MCP_COUNT"
@@ -537,4 +537,4 @@ docker logs -f ollychat-orchestrator | grep -E "intent|query\.classified"
 Send query in widget, watch for matching event.
 
 ### Tool returns 0 results but data exists
-Bifrost uses AND for tag filters. Check the `tags` arg in logs — if it has multiple tags, we might be filtering too strictly. Verify by calling list_dashboards with a single tag manually.
+O11yBot MCP uses AND for tag filters. Check the `tags` arg in logs — if it has multiple tags, we might be filtering too strictly. Verify by calling list_dashboards with a single tag manually.

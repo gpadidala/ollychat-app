@@ -101,7 +101,7 @@ List all configured MCP servers and their connection status.
 {
   "servers": [
     {
-      "name": "bifrost-grafana",
+      "name": "ollychat-mcp-grafana",
       "url": "http://host.docker.internal:8765",
       "transport": "sse",
       "status": "connected",
@@ -120,7 +120,7 @@ Register a new MCP server. Connection attempted immediately; tools discovered.
 **Request:**
 ```json
 {
-  "name": "bifrost-grafana",
+  "name": "ollychat-mcp-grafana",
   "url": "http://host.docker.internal:8765",
   "transport": "sse",
   "auth_method": "none",
@@ -160,7 +160,7 @@ List all discovered tools across all connected MCP servers.
       "name": "list_dashboards",
       "description": "List dashboards, optionally filtered by folder...",
       "inputSchema": {...},
-      "serverName": "bifrost-grafana",
+      "serverName": "ollychat-mcp-grafana",
       "minRole": "viewer"
     }
   ]
@@ -174,7 +174,7 @@ Execute a tool.
 **Request:**
 ```json
 {
-  "server_name": "bifrost-grafana",
+  "server_name": "ollychat-mcp-grafana",
   "tool_name": "list_dashboards",
   "arguments": {}
 }
@@ -303,23 +303,23 @@ The orchestrator intercepts natural-language queries matching these patterns and
 
 | Query pattern | Tool called | Tool server |
 |---|---|---|
-| `list/show/all dashboards` | `list_dashboards` | bifrost-grafana |
-| `search dashboards <query>` | `search_dashboards` | bifrost-grafana |
-| `list/show datasources` | `list_datasources` | bifrost-grafana |
-| `check datasource health` | `list_datasources` | bifrost-grafana |
-| `list alerts` | `list_alert_rules` | bifrost-grafana |
-| `firing/active alerts` | `list_alert_instances` | bifrost-grafana |
-| `list folders` | `list_folders` | bifrost-grafana |
-| `list users` | `list_users` | bifrost-grafana (admin) |
-| `grafana health/status/version` | `health_check` | bifrost-grafana |
-| `health check` / `ping` | `health_check` | bifrost-grafana |
-| `mcp/bifrost info` | `get_server_info` | bifrost-grafana |
+| `list/show/all dashboards` | `list_dashboards` | ollychat-mcp-grafana |
+| `search dashboards <query>` | `search_dashboards` | ollychat-mcp-grafana |
+| `list/show datasources` | `list_datasources` | ollychat-mcp-grafana |
+| `check datasource health` | `list_datasources` | ollychat-mcp-grafana |
+| `list alerts` | `list_alert_rules` | ollychat-mcp-grafana |
+| `firing/active alerts` | `list_alert_instances` | ollychat-mcp-grafana |
+| `list folders` | `list_folders` | ollychat-mcp-grafana |
+| `list users` | `list_users` | ollychat-mcp-grafana (admin) |
+| `grafana health/status/version` | `health_check` | ollychat-mcp-grafana |
+| `health check` / `ping` | `health_check` | ollychat-mcp-grafana |
+| `mcp/ollychat-mcp info` | `get_server_info` | ollychat-mcp-grafana |
 
 Defined in: `orchestrator/intents.py`.
 
 ---
 
-## MCP Tools (16 total from Bifrost)
+## MCP Tools (16 total from O11yBot MCP)
 
 | Tool | Min Role | Description |
 |---|---|---|
@@ -338,7 +338,7 @@ Defined in: `orchestrator/intents.py`.
 | `list_users` | admin | Organization users |
 | `list_service_accounts` | admin | Service accounts |
 | `health_check` | viewer | Ping Grafana |
-| `get_server_info` | viewer | Bifrost metadata |
+| `get_server_info` | viewer | O11yBot MCP metadata |
 
 ---
 

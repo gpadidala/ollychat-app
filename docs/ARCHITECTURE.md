@@ -48,7 +48,7 @@
          │ tool call                   │ LLM fallback
          ▼                             ▼
 ┌────────────────────┐       ┌────────────────────┐
-│  Bifrost MCP       │       │  Ollama (local)    │
+│  O11yBot MCP       │       │  Ollama (local)    │
 │  (port 8765)       │       │  (port 11434)      │
 │                    │       │                    │
 │  16 Grafana tools: │       │  qwen2.5:0.5b      │
@@ -89,7 +89,7 @@
 3. Orchestrator receives, extracts last user message
    └── intent.match_intent("list all Grafana dashboards")
        └── Pattern (list|show|all).*(dashboard) MATCHES
-           └── returns {server:"bifrost-grafana", tool:"list_dashboards", args:{}}
+           └── returns {server:"ollychat-mcp-grafana", tool:"list_dashboards", args:{}}
                          │
 4. Orchestrator emits SSE: {type:"tool_start", name:"list_dashboards"}
                          │
@@ -97,14 +97,14 @@
    └── POST http://host.docker.internal:8765/api/tools/call
        {"name":"list_dashboards","arguments":{}}
                          │
-6. Bifrost receives tool call
+6. O11yBot MCP receives tool call
    └── enforce_role("list_dashboards","viewer") ✓
    └── GrafanaClient (viewer token) calls Grafana REST
        └── GET http://localhost:3200/api/search?type=dash-db
                          │
 7. Grafana returns 113 dashboards as JSON
                          │
-8. Bifrost maps to DashboardSummary[] → returns to orchestrator
+8. O11yBot MCP maps to DashboardSummary[] → returns to orchestrator
                          │
 9. Orchestrator emits SSE: {type:"tool_result", durationMs:114}
                          │
@@ -128,13 +128,13 @@
 ## Data Flow Channels
 
 ```
-Widget <--SSE--> Orchestrator <--REST--> Bifrost <--REST--> Grafana
+Widget <--SSE--> Orchestrator <--REST--> O11yBot MCP <--REST--> Grafana
        (stream)              (request)            (proxy)
 ```
 
 - **Widget ↔ Orchestrator**: SSE streaming over HTTP POST. CORS: `localhost:3200` → `localhost:8000`.
-- **Orchestrator ↔ Bifrost**: REST bridge endpoint `/api/tools/call`. No streaming.
-- **Bifrost ↔ Grafana**: REST API with service account token. Role-aware (viewer/editor/admin).
+- **Orchestrator ↔ O11yBot MCP**: REST bridge endpoint `/api/tools/call`. No streaming.
+- **O11yBot MCP ↔ Grafana**: REST API with service account token. Role-aware (viewer/editor/admin).
 
 ## State Management
 
@@ -150,7 +150,7 @@ Widget <--SSE--> Orchestrator <--REST--> Bifrost <--REST--> Grafana
 - Skills dict (3 defaults + user-created)
 - Rules dict (3 defaults + user-created)
 
-### Bifrost
+### O11yBot MCP
 - HTTP client pool per-environment/role (reused)
 - Status map per server
 
@@ -159,8 +159,8 @@ Widget <--SSE--> Orchestrator <--REST--> Bifrost <--REST--> Grafana
 | Boundary | Mechanism |
 |---|---|
 | Browser → Orchestrator | CORS allowlist |
-| Orchestrator → Bifrost | Network-local (Docker host.docker.internal) |
-| Bifrost → Grafana | SA token, RBAC enforced per tool |
+| Orchestrator → O11yBot MCP | Network-local (Docker host.docker.internal) |
+| O11yBot MCP → Grafana | SA token, RBAC enforced per tool |
 | PII scanning | Applied to user messages before LLM |
 
 ## Technology Stack
@@ -170,7 +170,7 @@ Widget <--SSE--> Orchestrator <--REST--> Bifrost <--REST--> Grafana
 | Widget | Vanilla JavaScript (no framework) |
 | Orchestrator | FastAPI + Pydantic + sse-starlette |
 | Intent matcher | Regex + ordered priority |
-| MCP server | Python FastMCP (Bifrost) |
+| MCP server | Python FastMCP (O11yBot MCP) |
 | Local LLM | Ollama (qwen2.5:0.5b, llama3.2) |
 | Prod LLM | OpenAI / Anthropic (swap via env) |
 | Observability | OpenTelemetry + LGTM stack |
@@ -188,4 +188,4 @@ Widget <--SSE--> Orchestrator <--REST--> Bifrost <--REST--> Grafana
 
 5. **SSE over WebSockets** — simpler, works through proxies, no connection keepalive headaches.
 
-6. **MCP REST bridge pattern** — Bifrost exposes `/api/tools/call` so the orchestrator doesn't need the MCP SDK.
+6. **MCP REST bridge pattern** — O11yBot MCP exposes `/api/tools/call` so the orchestrator doesn't need the MCP SDK.

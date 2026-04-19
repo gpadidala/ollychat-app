@@ -15,7 +15,7 @@
 ### Services
 - **Main Grafana**: http://localhost:3200 (admin/admin) — 113 dashboards
 - **Orchestrator API**: http://localhost:8000
-- **Bifrost MCP**: http://localhost:8765
+- **O11yBot MCP**: http://localhost:8765
 - **Ollama LLM**: http://localhost:11434
 
 ### Run tests

@@ -27,14 +27,14 @@ Browser (User: Jane, Role: Editor)
      │ X-Grafana-Role: Editor
      ▼
 Orchestrator (:8000)
-     │  maps Grafana role → Bifrost role
+     │  maps Grafana role → O11yBot MCP role
      │  → role = "editor"
      ▼
 MCP Client Manager
      │  call_tool(..., role="editor")
      │  POST /api/tools/call with arguments.role = "editor"
      ▼
-Bifrost MCP Server (:8765)
+O11yBot MCP Server (:8765)
      │  picks the EDITOR token from config
      │  GET /api/v1/dashboards  (Authorization: Bearer glsa_editor_...)
      ▼
@@ -48,7 +48,7 @@ Response (with only what Editor can see)
 
 ## Setting Up the 3 Service Account Tokens
 
-Run these commands **once** against your production Grafana to create the three role-based SA tokens Bifrost needs.
+Run these commands **once** against your production Grafana to create the three role-based SA tokens O11yBot MCP needs.
 
 ### 1. Viewer token (read-only)
 
@@ -95,17 +95,17 @@ ADMIN_TOKEN=$(curl -s -X POST "http://admin:admin@your-grafana:3000/api/servicea
 echo "ADMIN: $ADMIN_TOKEN"
 ```
 
-### 4. Wire tokens into Bifrost `.env`
+### 4. Wire tokens into O11yBot MCP `.env`
 
 ```bash
-cat >> Bifrost/.env <<EOF
+cat >> O11yBot MCP/.env <<EOF
 GRAFANA_MCP_ENVIRONMENTS__DEV__SERVICE_ACCOUNTS__VIEWER=$VIEWER_TOKEN
 GRAFANA_MCP_ENVIRONMENTS__DEV__SERVICE_ACCOUNTS__EDITOR=$EDITOR_TOKEN
 GRAFANA_MCP_ENVIRONMENTS__DEV__SERVICE_ACCOUNTS__ADMIN=$ADMIN_TOKEN
 EOF
 ```
 
-Restart Bifrost:
+Restart O11yBot MCP:
 ```bash
 pkill -f grafana-mcp
 .venv/bin/grafana-mcp serve --transport sse --port 8765 &
@@ -163,15 +163,15 @@ curl -s -X POST http://localhost:8000/api/v1/chat \
 | `list_users` | ✗ | ✗ | ✓ |
 | `list_service_accounts` | ✗ | ✗ | ✓ |
 
-Enforced by Bifrost's `TOOL_MINIMUM_ROLE` map in `packages/core/src/grafana_mcp/rbac.py`.
+Enforced by O11yBot MCP's `TOOL_MINIMUM_ROLE` map in `packages/core/src/grafana_mcp/rbac.py`.
 
 ---
 
-## Role Mapping (Grafana → Bifrost)
+## Role Mapping (Grafana → O11yBot MCP)
 
-The orchestrator normalizes Grafana's role headers to Bifrost's role names:
+The orchestrator normalizes Grafana's role headers to O11yBot MCP's role names:
 
-| `X-Grafana-Role` header value | Mapped Bifrost role |
+| `X-Grafana-Role` header value | Mapped O11yBot MCP role |
 |---|---|
 | `Admin` | `admin` |
 | `Grafana Admin` | `admin` |
@@ -191,9 +191,9 @@ To use **custom Enterprise roles** (e.g., a "Dashboard Creator" role without adm
 1. Create the custom role in Grafana Enterprise Admin → Users → Service Accounts
 2. Assign it to a new SA (instead of Viewer/Editor/Admin)
 3. Generate a token from that SA
-4. Add to Bifrost `.env` as one of the 3 slots (or extend Bifrost to support more)
+4. Add to O11yBot MCP `.env` as one of the 3 slots (or extend O11yBot MCP to support more)
 
-Note: Bifrost's `TOOL_MINIMUM_ROLE` model has **exactly 3 roles**. For 4+ custom roles, the cleanest path is to run **multiple Bifrost instances**, one per role bucket — that's the legitimate multi-MCP use case.
+Note: O11yBot MCP's `TOOL_MINIMUM_ROLE` model has **exactly 3 roles**. For 4+ custom roles, the cleanest path is to run **multiple O11yBot MCP instances**, one per role bucket — that's the legitimate multi-MCP use case.
 
 ---
 
@@ -205,7 +205,7 @@ Working as intended — the user's Grafana role doesn't allow this tool. Options
 1. Promote the user in Grafana (Admin → Users)
 2. Assign a Grafana Enterprise role that permits the action
 
-### "HTTP 401: Unauthorized" when calling Bifrost
+### "HTTP 401: Unauthorized" when calling O11yBot MCP
 
 The SA token is invalid or expired. Regenerate with the steps above and update `.env`.
 
@@ -213,13 +213,13 @@ The SA token is invalid or expired. Regenerate with the steps above and update `
 
 This happens when the LLM fallback kicks in (not an MCP tool call). Fixed in v1.7: there's now a `help` intent that answers capabilities questions with real tool info, bypassing the LLM.
 
-### All tools fail with "MCP server bifrost-grafana not connected"
+### All tools fail with "MCP server ollychat-mcp-grafana not connected"
 
 Re-register after container restart:
 ```bash
 curl -X POST http://localhost:8000/api/v1/mcp/servers \
   -H "Content-Type: application/json" \
-  -d '{"name":"bifrost-grafana","url":"http://host.docker.internal:8765","transport":"sse","auth_method":"none"}'
+  -d '{"name":"ollychat-mcp-grafana","url":"http://host.docker.internal:8765","transport":"sse","auth_method":"none"}'
 ```
 
 This is in-memory state — will go away on orchestrator rebuild. For production, persist to Postgres (on roadmap).
@@ -228,8 +228,8 @@ This is in-memory state — will go away on orchestrator rebuild. For production
 
 ## Summary
 
-- **One** Bifrost MCP server — easier, same security
+- **One** O11yBot MCP server — easier, same security
 - **Three** role-based tokens (viewer/editor/admin) in `.env`
-- Orchestrator reads `X-Grafana-Role` → passes to Bifrost → uses right token
-- Bifrost's `TOOL_MINIMUM_ROLE` enforces what each role can do
+- Orchestrator reads `X-Grafana-Role` → passes to O11yBot MCP → uses right token
+- O11yBot MCP's `TOOL_MINIMUM_ROLE` enforces what each role can do
 - 13 automated RBAC tests verify the whole flow

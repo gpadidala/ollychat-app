@@ -193,8 +193,8 @@ docker compose restart grafana
 
 ```bash
 # Clone Bifröst (sibling repo)
-git clone https://github.com/gpadidala/Bifrost.git
-cd Bifrost
+git clone https://github.com/gpadidala/O11yBot MCP.git
+cd O11yBot MCP
 python3 -m venv .venv
 .venv/bin/pip install -e packages/core
 ```
@@ -214,7 +214,7 @@ TOKEN=$(curl -s -X POST "http://admin:admin@localhost:3200/api/serviceaccounts/$
 echo "SA Token: $TOKEN"
 ```
 
-Write `Bifrost/.env` pointing at your Grafana + the SA token:
+Write `O11yBot MCP/.env` pointing at your Grafana + the SA token:
 ```bash
 GRAFANA_MCP_ACTIVE_ENVIRONMENT=dev
 GRAFANA_MCP_ACTIVE_ROLE=viewer
@@ -242,7 +242,7 @@ curl http://localhost:8765/api/tools | python3 -m json.tool | head -20
 # Register Bifröst MCP with the orchestrator
 curl -X POST http://localhost:8000/api/v1/mcp/servers \
   -H "Content-Type: application/json" \
-  -d '{"name":"bifrost-grafana","url":"http://host.docker.internal:8765","transport":"sse","auth_method":"none"}'
+  -d '{"name":"ollychat-mcp-grafana","url":"http://host.docker.internal:8765","transport":"sse","auth_method":"none"}'
 
 # Enable the plugin in Grafana
 curl -X POST http://admin:admin@localhost:3200/api/plugins/gopal-ollychat-app/settings \
@@ -354,7 +354,7 @@ Register Bifröst:
 curl -X POST http://localhost:8000/api/v1/mcp/servers \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "bifrost-grafana",
+    "name": "ollychat-mcp-grafana",
     "url": "http://host.docker.internal:8765",
     "transport": "sse",
     "auth_method": "none"
@@ -373,7 +373,7 @@ Call a tool:
 curl -X POST http://localhost:8000/api/v1/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "server_name": "bifrost-grafana",
+    "server_name": "ollychat-mcp-grafana",
     "tool_name": "list_dashboards",
     "arguments": {}
   }'
@@ -424,7 +424,7 @@ curl -X POST http://localhost:8000/api/v1/guardrails/scan \
 | `list folders` | `list_folders` |
 | `list users` (admin) | `list_users` |
 | `grafana health/status/version` | `health_check` |
-| `mcp/bifrost info` | `get_server_info` |
+| `mcp/ollychat-mcp info` | `get_server_info` |
 
 Full API reference: **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)**
 
@@ -571,7 +571,7 @@ Apache 2.0 — use, modify, deploy, commercial, all fine.
 Built on the shoulders of giants:
 
 - **[Grafana](https://grafana.com)** — the observability platform we all love
-- **[Bifröst](https://github.com/gpadidala/Bifrost)** — Grafana MCP server (sibling project)
+- **[Bifröst](https://github.com/gpadidala/O11yBot MCP)** — Grafana MCP server (sibling project)
 - **[Ollama](https://ollama.com)** — local LLM runtime
 - **[FastAPI](https://fastapi.tiangolo.com)** + **[sse-starlette](https://github.com/sysid/sse-starlette)** — the API layer
 - **[Model Context Protocol](https://modelcontextprotocol.io)** — open tool-calling standard

@@ -7,14 +7,14 @@ How to install O11yBot into any Grafana instance.
 1. **Plugin** (`dist/`) — mounted to `/var/lib/grafana/plugins/gopal-ollychat-app`
 2. **Widget script** (`dist/o11ybot-widget.js`) — injected globally via custom index.html
 3. **Orchestrator** (`orchestrator/`) — FastAPI service on port 8000
-4. **Bifrost MCP** (sibling repo) — MCP server on port 8765
+4. **O11yBot MCP** (sibling repo) — MCP server on port 8765
 5. **Ollama** (optional) — self-hosted LLM for dev
 
 ## Prerequisites
 
 - Docker + Docker Compose
 - Node.js (for testing)
-- Python 3.11+ (for Bifrost)
+- Python 3.11+ (for O11yBot MCP)
 
 ## Installation Steps
 
@@ -28,10 +28,10 @@ docker compose up -d
 
 This starts: orchestrator, ollama, otel-collector, tempo, mimir, loki.
 
-### 2. Start Bifrost MCP server
+### 2. Start O11yBot MCP server
 
 ```bash
-cd /Volumes/Gopalmac/Gopal-aiops/Bifrost
+cd /Volumes/Gopalmac/Gopal-aiops/O11yBot MCP
 python3 -m venv .venv
 .venv/bin/pip install -e packages/core
 .venv/bin/grafana-mcp serve --port 8765 &
@@ -79,7 +79,7 @@ docker compose restart grafana
 ```bash
 curl -X POST http://localhost:8000/api/v1/mcp/servers \
   -H "Content-Type: application/json" \
-  -d '{"name":"bifrost-grafana","url":"http://host.docker.internal:8765","transport":"sse","auth_method":"none"}'
+  -d '{"name":"ollychat-mcp-grafana","url":"http://host.docker.internal:8765","transport":"sse","auth_method":"none"}'
 ```
 
 ### 5. Enable the plugin

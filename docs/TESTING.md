@@ -46,7 +46,7 @@ O11yBot Widget (JavaScript)
 Orchestrator (Python FastAPI :8000)
   │ Intent matcher → Category router → MCP tool OR LLM fallback
   ├──→ Ollama LLM (:11434, qwen2.5:0.5b)
-  └──→ Bifrost MCP Server (:8765)
+  └──→ O11yBot MCP Server (:8765)
            │ REST bridge /api/tools/call
            ↓
          Grafana API (:3200)
@@ -67,9 +67,9 @@ docker ps --filter "name=ollychat"
 # Main Grafana
 docker ps --filter "name=grafana-executive-dashboards"
 
-# Bifrost MCP
-curl -s http://localhost:8765/api/tools >/dev/null && echo "Bifrost OK"
-# (or restart: cd ../Bifrost && .venv/bin/grafana-mcp serve --port 8765 &)
+# O11yBot MCP
+curl -s http://localhost:8765/api/tools >/dev/null && echo "O11yBot MCP OK"
+# (or restart: cd ../O11yBot MCP && .venv/bin/grafana-mcp serve --port 8765 &)
 ```
 
 Run `./tests/preflight.sh` to check everything at once.
@@ -89,8 +89,8 @@ Run `./tests/preflight.sh` to check everything at once.
 | `:8000/api/v1/skills` | GET/POST/PUT/DELETE | Skills CRUD |
 | `:8000/api/v1/rules` | GET/POST/PUT/DELETE | Rules CRUD |
 | `:8000/api/v1/guardrails/scan` | POST | PII detection |
-| `:8765/api/tools` | GET | Bifrost tool catalog |
-| `:8765/api/tools/call` | POST | Bifrost tool invocation |
+| `:8765/api/tools` | GET | O11yBot MCP tool catalog |
+| `:8765/api/tools/call` | POST | O11yBot MCP tool invocation |
 | `:3200/api/plugins/gopal-ollychat-app/settings` | GET | Plugin config |
 | `:3200/public/plugins/gopal-ollychat-app/o11ybot-widget.js` | GET | Widget JS |
 
@@ -105,7 +105,7 @@ Validates REST endpoints respond correctly.
 | T1 | Orchestrator healthy | `GET /api/v1/health` | `{"status":"healthy"}` |
 | T2 | Service name correct | `GET /api/v1/health` | Contains `ollychat-orchestrator` |
 | T3 | Models list | `GET /api/v1/models` | ≥1 model |
-| T4 | MCP Bifrost connected | `GET /api/v1/mcp/servers` | `status=connected` |
+| T4 | MCP O11yBot MCP connected | `GET /api/v1/mcp/servers` | `status=connected` |
 | T5 | 16 MCP tools | `GET /api/v1/mcp/servers` | `toolCount=16` |
 | T6 | Tools endpoint | `GET /api/v1/mcp/tools` | 16 tools |
 | T7 | Skills list | `GET /api/v1/skills` | 3 default skills |
@@ -117,7 +117,7 @@ Validates REST endpoints respond correctly.
 | T13 | Grafana healthy | `GET :3200/api/health` | HTTP 200 |
 | T14 | Widget JS served | `GET /public/plugins/.../widget.js` | HTTP 200 |
 | T15 | Plugin enabled | `GET /api/plugins/.../settings` | `enabled=true` |
-| T16 | Bifrost direct | `GET :8765/api/tools` | 16 tools |
+| T16 | O11yBot MCP direct | `GET :8765/api/tools` | 16 tools |
 | T17 | HTML has widget | `GET :3200/ (auth)` | script tag present |
 
 ### Manual validation
@@ -155,7 +155,7 @@ Validates natural-language queries route to correct MCP tools.
 | T14 | `grafana version` | `health_check` |
 | T15 | `health check` | `health_check` |
 | T16 | `mcp server info` | `get_server_info` |
-| T17 | `bifrost info` | `get_server_info` |
+| T17 | `ollychat-mcp info` | `get_server_info` |
 | T18 | `search dashboards aks` | `search_dashboards` |
 | T19 | `list users` | `list_users` |
 
@@ -437,9 +437,9 @@ curl -N -X POST http://localhost:8000/api/v1/chat \
 **Fix:** Removed overly-generic keywords.
 **Fixed in:** `orchestrator/categories.py`
 
-### Bug #5 — Bifrost Tag Filter AND Semantics
+### Bug #5 — O11yBot MCP Tag Filter AND Semantics
 **Symptom:** `"kubernetes dashboards"` returned 0 results despite 11 tagged `kubernetes`.
-**Cause:** Bifrost uses AND logic for tags; we sent `["kubernetes","k8s"]` needing BOTH tags.
+**Cause:** O11yBot MCP uses AND logic for tags; we sent `["kubernetes","k8s"]` needing BOTH tags.
 **Fix:** Send only primary (first) tag from each category.
 **Fixed in:** `orchestrator/intents.py`
 

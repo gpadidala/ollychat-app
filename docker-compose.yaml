@@ -1,16 +1,19 @@
 version: "3.9"
 
 # ─────────────────────────────────────────────────────────────
-# OllyChat — Grafana Enterprise O11y Chatbot
+# O11yBot — Self-contained Grafana chatbot stack
 #
-# Ports chosen to avoid conflicts with existing stacks:
-#   Grafana:      3002 (existing: 3000, 3001, 3200)
-#   Orchestrator: 8000
-#   Bifrost MCP:  8765
-#   OTEL:         4327/4328 (existing: 4317/4318)
-#   Tempo:        3210/14327
-#   Mimir:        9010
-#   Loki:         3110
+# Every service here is owned by this repo — no external Bifrost
+# or other MCP dependency. Point GRAFANA_URL + GRAFANA_*_TOKEN
+# at any Grafana and the plugin runs.
+#
+# Ports (chosen to avoid conflicts with other local stacks):
+#   Grafana:          3002
+#   Orchestrator:     8000
+#   O11yBot MCP:      8765
+#   Ollama:           11434
+#   OTEL:             4327 / 4328
+#   Tempo / Mimir / Loki: 3210 / 9010 / 3110
 # ─────────────────────────────────────────────────────────────
 
 services:
@@ -39,7 +42,7 @@ services:
     networks:
       - ollychat
 
-  # ─── OllyChat Python Orchestrator ─────────────────────────
+  # ─── O11yBot Python Orchestrator ──────────────────────────
   ollychat-orchestrator:
     build:
       context: ./orchestrator
@@ -50,16 +53,41 @@ services:
     env_file: .env
     environment:
       OLLYCHAT_OTEL_EXPORTER_ENDPOINT: otel-collector:4317
-      OLLYCHAT_GRAFANA_URL: http://grafana:3000
-      OLLYCHAT_BIFROST_URL: http://bifrost-core:8765
+      OLLYCHAT_GRAFANA_URL: ${GRAFANA_URL:-http://grafana:3000}
+      OLLYCHAT_BIFROST_URL: http://ollychat-mcp:8765  # self-owned MCP, not external Bifrost
       OLLYCHAT_OLLAMA_BASE_URL: http://ollama:11434
-      OLLYCHAT_DEFAULT_MODEL: qwen2.5:0.5b
+      OLLYCHAT_DEFAULT_MODEL: ${OLLYCHAT_DEFAULT_MODEL:-qwen2.5:0.5b}
       OLLYCHAT_MIMIR_URL: http://mimir:9009
       OLLYCHAT_LOKI_URL: http://loki:3100
       OLLYCHAT_TEMPO_URL: http://tempo:3200
     depends_on:
       - otel-collector
       - ollama
+      - ollychat-mcp
+    networks:
+      - ollychat
+
+  # ─── O11yBot MCP Server (owns all Grafana tool calls) ─────
+  ollychat-mcp:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    container_name: ollychat-mcp
+    ports:
+      - "8765:8765"
+    environment:
+      # Point at any Grafana instance via env vars — the only coupling.
+      GRAFANA_URL: ${GRAFANA_URL:-http://host.docker.internal:3200}
+      GRAFANA_VIEWER_TOKEN: ${GRAFANA_VIEWER_TOKEN:-}
+      GRAFANA_EDITOR_TOKEN: ${GRAFANA_EDITOR_TOKEN:-}
+      GRAFANA_ADMIN_TOKEN: ${GRAFANA_ADMIN_TOKEN:-}
+      # Single-token fallback for demos: if the role-specific tokens are empty,
+      # this one is used for every role.
+      GRAFANA_TOKEN: ${GRAFANA_TOKEN:-}
+      GRAFANA_TLS_VERIFY: ${GRAFANA_TLS_VERIFY:-true}
+      MCP_SERVER_PORT: "8765"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - ollychat
 
