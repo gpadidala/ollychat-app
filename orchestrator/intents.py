@@ -414,6 +414,7 @@ async def match_intent(user_message: str) -> dict | None:
             "formatter": lambda data: fmt_dashboards_filtered(data, service_name=svc),
             "desc": f"Search dashboards for service: {svc}",
             "service": svc,
+            "judge": True,  # fuzzy service match → rerank by relevance
         }
 
     # ── 2. Category-filtered dashboards ──
@@ -476,6 +477,7 @@ async def match_intent(user_message: str) -> dict | None:
                 "arguments": {"query": query},
                 "formatter": lambda data: fmt_dashboards_filtered(data, service_name=query),
                 "desc": f"Fuzzy search dashboards: {query}",
+                "judge": True,  # fuzzy → pass through LLM-as-judge reranker
             }
 
     return None

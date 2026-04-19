@@ -8,8 +8,10 @@ Adapted from:
 from __future__ import annotations
 
 import json
+import re
 import time
 import uuid
+from types import SimpleNamespace
 from typing import Any
 
 import httpx
@@ -131,7 +133,23 @@ async def chat(request: Request, body: ChatRequest):
                     # For rich queries, pass through LLM for natural language.
                     use_llm_format = _should_use_llm_formatting(intent, result, last_user_msg)
 
-                    if use_llm_format:
+                    # ── LLM-as-judge: rerank fuzzy search results ──
+                    judged_content = None
+                    if intent.get("judge") and isinstance(result.get("raw_data"), list):
+                        ranked = await _judge_rerank(
+                            last_user_msg, result["raw_data"], model, settings
+                        )
+                        if ranked:
+                            judged_content = _format_ranked(
+                                last_user_msg, ranked, result["raw_data"]
+                            )
+                            logger.info("judge.reranked", count=len(ranked), query=last_user_msg[:80])
+
+                    if judged_content:
+                        # Stream the judge-ranked content
+                        for i in range(0, len(judged_content), 40):
+                            yield {"data": json.dumps({"type": "text", "delta": judged_content[i:i+40]})}
+                    elif use_llm_format:
                         # Feed raw tool data to LLM with formatting prompt
                         messages = build_messages(
                             query_type="tool_result_formatting",
@@ -263,6 +281,91 @@ def _should_use_llm_formatting(intent: dict, result: dict, user_msg: str) -> boo
     # For dev with tiny local LLM, skip LLM formatting to avoid slow/weird output
     # Re-enable this when using gpt-4o or claude-sonnet-4-6 in prod
     return False  # TODO: flip to `is_analytical or data_is_large` in prod
+
+
+# ═══════════════════════════════════════════════════════════════
+# LLM-as-judge: rerank tool results by relevance to the user query
+# ═══════════════════════════════════════════════════════════════
+
+async def _judge_rerank(user_msg: str, raw_items: list, model: str, settings) -> list | None:
+    """Ask the LLM to rank and explain tool results relative to user intent.
+
+    Returns [{uid, reason, score}] sorted by score desc, or None on failure.
+    """
+    if not isinstance(raw_items, list) or not raw_items:
+        return None
+
+    compact = []
+    for it in raw_items[:20]:
+        if not isinstance(it, dict):
+            continue
+        compact.append({
+            "uid": it.get("uid") or it.get("UID") or "",
+            "title": it.get("title") or "",
+            "tags": it.get("tags") or [],
+            "folder": it.get("folder_title") or it.get("folderTitle") or it.get("folder") or "",
+        })
+    if not compact:
+        return None
+
+    system = (
+        "You are a relevance judge for a Grafana observability assistant. "
+        "Given a user query and candidate dashboards, rank them by how well each answers the query, "
+        "drop irrelevant ones, and explain why in ≤12 words.\n"
+        'Return ONLY a JSON array (no prose, no code fence) of at most 8 items: '
+        '[{"uid": "...", "reason": "...", "score": 0-100}]. '
+        "Sort highest score first."
+    )
+    user_prompt = (
+        f"User query: {user_msg}\n\n"
+        f"Candidate dashboards:\n{json.dumps(compact, indent=2)}"
+    )
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user_prompt},
+    ]
+    cfg = SimpleNamespace(temperature=0.1, top_p=0.9, max_tokens=800)
+
+    try:
+        buf = ""
+        async for ev in _call_llm(model, messages, cfg, settings):
+            if ev.get("type") == "text":
+                buf += ev.get("delta", "")
+        m = re.search(r"\[[\s\S]*\]", buf)
+        if not m:
+            return None
+        ranked = json.loads(m.group(0))
+        if not isinstance(ranked, list):
+            return None
+        return [r for r in ranked if isinstance(r, dict) and r.get("uid")]
+    except Exception as e:
+        logger.warning("judge_failed", error=str(e))
+        return None
+
+
+def _format_ranked(user_msg: str, ranked: list, raw_items: list) -> str:
+    """Render judge output as markdown with per-result 'why' annotation."""
+    by_uid = {it.get("uid") or it.get("UID"): it for it in raw_items if isinstance(it, dict)}
+    lines = [f"**🎯 Top {len(ranked)} dashboards for _{user_msg}_:**\n"]
+    for r in ranked:
+        uid = r.get("uid")
+        src = by_uid.get(uid, {})
+        title = src.get("title") or uid
+        folder = src.get("folder_title") or src.get("folderTitle") or src.get("folder") or ""
+        url = src.get("url") or (f"/d/{uid}" if uid else "")
+        score = r.get("score") or 0
+        reason = (r.get("reason") or "").strip()
+        # Drop reason if the LLM just echoed the title (common with small models)
+        if reason and reason.lower() == (title or "").lower():
+            reason = ""
+        folder_bit = f" · _{folder}_" if folder else ""
+        lines.append(f"- **{title}**{folder_bit} · score **{score}**")
+        if reason:
+            lines.append(f"  💡 {reason}")
+        if url:
+            lines.append(f"  [Open dashboard]({url})")
+    lines.append("\n_Ranked by LLM-as-judge — lower scores hidden._")
+    return "\n".join(lines)
 
 
 async def _call_llm(model: str, messages: list, cfg, settings):
