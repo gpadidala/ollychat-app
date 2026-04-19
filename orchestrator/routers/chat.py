@@ -8,6 +8,7 @@ Adapted from:
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 import uuid
@@ -493,10 +494,14 @@ async def _stream_openai(model: str, body: ChatRequest, settings):
         "stream_options": {"include_usage": True},
     }
 
+    # Route through LLM O11y Platform gateway if OLLYCHAT_OPENAI_BASE_URL is set
+    _openai_base = os.environ.get("OLLYCHAT_OPENAI_BASE_URL", "https://api.openai.com/v1")
+    _openai_url = f"{_openai_base.rstrip('/')}/chat/completions"
+
     async with httpx.AsyncClient(timeout=120) as client:
         async with client.stream(
             "POST",
-            "https://api.openai.com/v1/chat/completions",
+            _openai_url,
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {settings.openai_api_key}",
