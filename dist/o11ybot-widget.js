@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "2.3.0";
+  var WIDGET_VERSION = "2.3.1";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -264,6 +264,9 @@
 .ob-meta{font-size:11px;color:#555;margin-top:4px;display:flex;gap:8px}\
 .ob-cost{color:#f59e0b;font-family:monospace}\
 .ob-typing{display:flex;gap:4px;padding:4px 10px;color:#888}\
+.ob-tool-running{padding:8px 12px;color:#f59e0b;font-size:12.5px;font-style:italic;animation:ob-pulse 1.4s ease-in-out infinite}\
+.ob-tool-running code{background:rgba(245,158,11,.12);padding:2px 6px;border-radius:4px;color:#ffb566;font-family:\"JetBrains Mono\",monospace;font-style:normal;font-size:11.5px}\
+@keyframes ob-pulse{0%,100%{opacity:.7}50%{opacity:1}}\
 .ob-typing span{width:6px;height:6px;background:#f59e0b;border-radius:50%;animation:ob-b 1.4s infinite}\
 .ob-typing span:nth-child(2){animation-delay:.2s}\
 .ob-typing span:nth-child(3){animation-delay:.4s}\
@@ -1459,6 +1462,18 @@
                   botMsg.content = acc;
                   if (currentBotBubble) currentBotBubble.innerHTML = fmtMd(acc);
                   scrollToBottom();
+                } else if (ev.type === "tool_start") {
+                  botMsg.lastTool = ev.name;
+                  if (currentBotBubble && !acc) {
+                    currentBotBubble.innerHTML = '<div class="ob-tool-running">🔍 Running <code>' + esc(ev.name || "tool") + '</code>…</div>';
+                  }
+                  scrollToBottom();
+                } else if (ev.type === "tool_result") {
+                  // Clear the "running" placeholder; text deltas will replace it
+                  if (currentBotBubble && !acc) {
+                    currentBotBubble.innerHTML = '<div class="ob-tool-running">✓ <code>' + esc(botMsg.lastTool || "tool") + '</code> done · formatting…</div>';
+                  }
+                  scrollToBottom();
                 } else if (ev.type === "usage") {
                   botMsg.cost = ev.costUsd || 0;
                   botMsg.tokens = (ev.usage||{}).totalTokens || 0;
@@ -1467,7 +1482,7 @@
                   botMsg.content = acc;
                   if (currentBotBubble) currentBotBubble.innerHTML = fmtMd(acc);
                 }
-              } catch(e) {}
+              } catch(e) { console.warn("[O11yBot] parse error:", e, js); }
             }
           }
           return read();
@@ -1489,6 +1504,14 @@
       session.updatedAt = Date.now();
       if (currentTypingEl) currentTypingEl.remove();
       currentTypingEl = null;
+      // Fallback: if no text ever arrived, surface a readable message
+      if (currentBotBubble && !botMsg.content) {
+        var fallback = botMsg.lastTool
+          ? "⚠️ `" + botMsg.lastTool + "` ran but no response was generated. Try rephrasing, or check the orchestrator logs."
+          : "⚠️ No response received. Is the orchestrator reachable at " + ORCHESTRATOR + "?";
+        botMsg.content = fallback;
+        currentBotBubble.innerHTML = fmtMd(fallback);
+      }
       saveState();
       // Update footer (msg count)
       var footer = root.querySelector(".ob-footer");
