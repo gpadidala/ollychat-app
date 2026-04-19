@@ -888,6 +888,13 @@ async def match_intent(user_message: str) -> dict | None:
                     "desc": intent["desc"],
                 }
 
+    # ── 0.5. Mutation intents (create/delete) — HIGHEST priority ──
+    # Route "create X dashboard(s)" / "delete dashboard <uid>" BEFORE fuzzy search
+    # so we never list when the user wants to create.
+    mutation_intent = _match_mutation_intent(user_message, has_dashboard_keyword)
+    if mutation_intent:
+        return mutation_intent
+
     # ── 1. Service-specific search — HIGH priority ──
     svc = extract_service_name(user_message)
     if svc and has_dashboard_keyword:
@@ -1055,6 +1062,76 @@ def _extract_keyword_list(text: str) -> list[str]:
             seen.add(w)
             uniq.append(w)
     return uniq
+
+
+def _extract_dashboard_title(body: str) -> str:
+    """Clean the body of a 'create ... dashboard' request down to a usable title.
+
+    Strips articles, dashboard-indicator words, typos, and quote chars.
+    Returns a Title-Cased string or '' if nothing meaningful remains.
+    """
+    # Drop surrounding quotes
+    cleaned = re.sub(r"[\"']", "", body).strip()
+    # Drop dashboard indicators + common glue words
+    cleaned = re.sub(
+        r"\b(dash\w*|boards?|panels?|a|an|the|some|any|new|called|named|titled|for|me|please)\b",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -·—:,")
+    if not cleaned:
+        return ""
+    # Preserve existing uppercase tokens (acronyms like "AKS", "KPI", "SLO")
+    parts = cleaned.split()
+    title_parts = [p if p.isupper() else p.capitalize() for p in parts]
+    return " ".join(title_parts)
+
+
+def _match_mutation_intent(user_message: str, has_dashboard_keyword: bool) -> dict | None:
+    """Detect create/delete/update dashboard requests.
+
+    Runs before fuzzy search so `create the grafana admin dashboard` doesn't
+    accidentally list dashboards.
+    """
+    msg = user_message.strip()
+
+    # Delete: "delete dashboard <uid>"
+    dm = re.match(r"^\s*(delete|remove|drop)\s+(?:the\s+)?dash\w*\s+([a-zA-Z0-9_-]{6,})", msg, re.IGNORECASE)
+    if dm:
+        return {
+            "server": "bifrost-grafana",
+            "tool": "delete_dashboard",
+            "arguments": {"uid": dm.group(2)},
+            "formatter": fmt_mutation,
+            "desc": f"Delete dashboard {dm.group(2)}",
+        }
+
+    # Create folder: "create folder <name>" or "new folder <name>"
+    fm = re.match(r"^\s*(create|make|build|new|add)\s+folder\s+[\"']?([^\"']+?)[\"']?\s*$", msg, re.IGNORECASE)
+    if fm:
+        return {
+            "server": "bifrost-grafana",
+            "tool": "create_folder",
+            "arguments": {"title": fm.group(2).strip()},
+            "formatter": fmt_mutation,
+            "desc": f"Create folder: {fm.group(2).strip()}",
+        }
+
+    # Create dashboard — broad: any "create/new/make/build/add … dashboard …"
+    cm = re.match(r"^\s*(create|make|build|new|add)\s+(.*?)\s*$", msg, re.IGNORECASE)
+    if cm and has_dashboard_keyword:
+        title = _extract_dashboard_title(cm.group(2))
+        if title:
+            tag = title.lower().replace(" ", "-")[:40]
+            return {
+                "server": "bifrost-grafana",
+                "tool": "create_dashboard",
+                "arguments": {"title": title, "tags": [tag]},
+                "formatter": fmt_mutation,
+                "desc": f"Create dashboard: {title}",
+            }
+    return None
 
 
 async def execute_intent(intent: dict, role: str | None = None) -> dict:
