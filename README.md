@@ -13,19 +13,22 @@
   <a href="#-demo">Demo</a> •
   <a href="#-why-o11ybot">Why</a> •
   <a href="#-features">Features</a> •
-  <a href="#-installation-guide">Install</a> •
-  <a href="#-api-guide">API</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-testing">Testing</a>
+  <a href="docs/INSTALLATION.md">Install</a> •
+  <a href="docs/DEPLOYMENT.md">Deploy</a> •
+  <a href="docs/USE_CASES.md">Use cases</a> •
+  <a href="docs/API_REFERENCE.md">API</a> •
+  <a href="docs/ARCHITECTURE.md">Architecture</a> •
+  <a href="https://github.com/gpadidala/ollychat-app/issues">Report bug</a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-98%2F98_passing-22c55e?style=flat-square" alt="Tests"/>
-  <img src="https://img.shields.io/badge/grafana-11.x-F46800?style=flat-square" alt="Grafana"/>
-  <img src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square" alt="Python"/>
-  <img src="https://img.shields.io/badge/MCP-16_tools-8b5cf6?style=flat-square" alt="MCP"/>
+  <img src="https://img.shields.io/badge/tests-160%2F160_passing-22c55e?style=flat-square" alt="Tests"/>
+  <img src="https://img.shields.io/badge/grafana-10.0%2B-F46800?style=flat-square" alt="Grafana"/>
+  <img src="https://img.shields.io/badge/python-3.12%2B-3776AB?style=flat-square" alt="Python"/>
+  <img src="https://img.shields.io/badge/MCP-53_tools-8b5cf6?style=flat-square" alt="MCP"/>
   <img src="https://img.shields.io/badge/LLM-self--hosted_or_cloud-f59e0b?style=flat-square" alt="LLM"/>
   <img src="https://img.shields.io/badge/license-Apache_2.0-blue?style=flat-square" alt="License"/>
+  <img src="https://img.shields.io/badge/PRs-welcome-green?style=flat-square" alt="PRs welcome"/>
 </p>
 
 ---
@@ -143,13 +146,14 @@ LLM fallback only runs for open-ended questions.
 
 ## 📦 Installation Guide
 
-### Prerequisites
-- **Docker + Docker Compose** (for the stack)
-- **Node.js 20+** (for running tests)
-- **Python 3.11+** (for Bifröst MCP server)
-- **An existing Grafana 10.x+ instance** (or use the provided one)
+Two paths — pick one. Full step-by-step is in **[docs/INSTALLATION.md](docs/INSTALLATION.md)**.
 
-### Step 1 — Clone and boot the stack
+### Prerequisites
+- **Docker + Docker Compose** (Engine ≥ 24, Compose ≥ v2.20)
+- **An existing Grafana 10.0+ instance** (OSS or Enterprise) — *or* use the bundled one
+- **Admin access to Grafana** — to create three service-account tokens
+
+### Option A — 60-second local demo (bundled stack)
 
 ```bash
 git clone https://github.com/gpadidala/ollychat-app.git
@@ -158,129 +162,56 @@ cp .env.example .env
 docker compose up -d
 ```
 
-This starts **6 services**:
-- `ollychat-orchestrator` (port 8000) — FastAPI chat gateway
-- `ollychat-ollama` (port 11434) — local LLM runtime (auto-pulls `qwen2.5:0.5b`)
-- `ollychat-otel-collector` (port 4327) — OTEL gRPC/HTTP
-- `ollychat-tempo` (port 3210) — traces
-- `ollychat-mimir` (port 9010) — metrics
-- `ollychat-loki` (port 3110) — logs
+Brings up Grafana on `http://localhost:3002` with the plugin already mounted
+and a bundled LGTM stack. Zero SA tokens needed for the demo.
 
-### Step 2 — Install the plugin into your Grafana
+Open Grafana → click the orange bubble bottom-right → ask **`list all dashboards`**.
 
-Add two volume mounts to your Grafana's `docker-compose.yml`:
+### Option B — Production install (your own Grafana)
 
-```yaml
-services:
-  grafana:
-    image: grafana/grafana:11.6.4
-    environment:
-      # Allow unsigned plugin loading
-      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=gopal-ollychat-app
-    volumes:
-      # Mount the plugin directory
-      - /path/to/ollychat-app/dist:/var/lib/grafana/plugins/gopal-ollychat-app:ro
-      # Inject the floating widget into every page
-      - /path/to/ollychat-app/grafana-index.html:/usr/share/grafana/public/views/index.html:ro
-```
+Four steps — complete walkthrough in [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
-Restart Grafana:
-```bash
-docker compose restart grafana
-```
+1. **Create 3 SA tokens** in the target Grafana (viewer / editor / admin roles) — or use the one-liner loop in [INSTALLATION.md §3c](docs/INSTALLATION.md#3c-cli-shortcut-oss--enterprise-grafana-api).
 
-### Step 3 — Start Bifröst MCP server
+2. **Configure `.env`** — point at your Grafana:
 
-```bash
-# Clone Bifröst (sibling repo)
-git clone https://github.com/gpadidala/O11yBot MCP.git
-cd O11yBot MCP
-python3 -m venv .venv
-.venv/bin/pip install -e packages/core
-```
+   ```env
+   GRAFANA_URL=https://grafana.yourco.com
+   GRAFANA_VIEWER_TOKEN=glsa_xxx
+   GRAFANA_EDITOR_TOKEN=glsa_yyy
+   GRAFANA_ADMIN_TOKEN=glsa_zzz
+   ```
 
-Create a Grafana service account token for Bifröst:
-```bash
-# Create service account
-SA=$(curl -s -X POST http://admin:admin@localhost:3200/api/serviceaccounts \
-  -H "Content-Type: application/json" \
-  -d '{"name":"ollybot-mcp","role":"Viewer"}')
-SA_ID=$(echo "$SA" | python3 -c "import sys,json;print(json.load(sys.stdin)['id'])")
+3. **Install the plugin** into your Grafana host — [INSTALLATION.md §5](docs/INSTALLATION.md#5-install-the-plugin) covers OSS, Enterprise, Helm, systemd.
 
-# Create token
-TOKEN=$(curl -s -X POST "http://admin:admin@localhost:3200/api/serviceaccounts/$SA_ID/tokens" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"ollybot-token"}' | python3 -c "import sys,json;print(json.load(sys.stdin)['key'])")
-echo "SA Token: $TOKEN"
-```
+4. **Boot the stack + register MCP**:
 
-Write `O11yBot MCP/.env` pointing at your Grafana + the SA token:
-```bash
-GRAFANA_MCP_ACTIVE_ENVIRONMENT=dev
-GRAFANA_MCP_ACTIVE_ROLE=viewer
-GRAFANA_MCP_TRANSPORT__MODE=sse
-GRAFANA_MCP_TRANSPORT__HOST=0.0.0.0
-GRAFANA_MCP_TRANSPORT__PORT=8765
-GRAFANA_MCP_ENVIRONMENTS__DEV__BASE_URL=http://localhost:3200
-GRAFANA_MCP_ENVIRONMENTS__DEV__SERVICE_ACCOUNTS__VIEWER=glsa_yourtoken_here
-```
+   ```bash
+   docker compose up -d
+   curl -X POST http://localhost:8000/api/v1/mcp/servers \
+     -H 'Content-Type: application/json' \
+     -d '{"name":"bifrost-grafana","url":"http://ollychat-mcp:8765","enabled":true}'
+   ```
 
-Start Bifröst:
-```bash
-.venv/bin/grafana-mcp serve --transport sse --port 8765 &
-```
+Expected response: `{"ok":true,"server":{"status":"connected","toolCount":53}}`.
 
-Verify:
-```bash
-curl http://localhost:8765/api/tools | python3 -m json.tool | head -20
-# Should show 16 tools
-```
-
-### Step 4 — Wire it all together
+### Verify with the test suite
 
 ```bash
-# Register Bifröst MCP with the orchestrator
-curl -X POST http://localhost:8000/api/v1/mcp/servers \
-  -H "Content-Type: application/json" \
-  -d '{"name":"ollychat-mcp-grafana","url":"http://host.docker.internal:8765","transport":"sse","auth_method":"none"}'
-
-# Enable the plugin in Grafana
-curl -X POST http://admin:admin@localhost:3200/api/plugins/gopal-ollychat-app/settings \
-  -H "Content-Type: application/json" \
-  -d '{"enabled":true,"pinned":true}'
+cd tests
+./preflight.sh          # service health
+./run-all-tests.sh      # 160 assertions across 8 suites
 ```
 
-### Step 5 — Verify with the test suite
-
-```bash
-cd ollychat-app/tests
-./preflight.sh        # verify all services up
-./run-all-tests.sh    # full 98-test suite
-```
-
-Expected output:
-```
-Suite 1 Results: 17 passed, 0 failed   (API endpoints)
-Suite 2 Results: 19 passed, 0 failed   (Intent matcher)
-Suite 3 Results: 22 passed, 0 failed   (UI Widget / SSE)
-Suite 4 Results: 18 passed, 0 failed   (Integration / E2E)
-Suite 5 Results: 22 passed, 0 failed   (Negative / Errors)
-```
-
-### Step 6 — Open Grafana → click the orange bubble 🎉
-
-Open http://localhost:3200 → see the orange bubble in the bottom-right.
-Click it. Ask:
-```
-list all Grafana dashboards
-```
+Expected tail: `RESULT: ALL SUITES PASSED`. See [docs/VALIDATION.md](docs/VALIDATION.md)
+for a 9-command post-deploy smoke test covering every critical code path.
 
 ### Configuring the LLM (admin-only)
 
-Edit `.env` — users never see this:
+Edit `.env`:
 
 ```bash
-# Dev (self-hosted, free, no API key)
+# Dev (self-hosted, free)
 OLLYCHAT_DEFAULT_MODEL=qwen2.5:0.5b
 
 # Prod — OpenAI
@@ -294,7 +225,38 @@ OLLYCHAT_ANTHROPIC_API_KEY=sk-ant-...
 
 Then: `docker restart ollychat-orchestrator`
 
-Full deploy options: **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
+---
+
+## ⚙️ Configuration reference
+
+Every knob is a env var — no config files, no secrets in git.
+
+### Target Grafana (required)
+
+| Var | Purpose | Example |
+|---|---|---|
+| `GRAFANA_URL` | Base URL of the target Grafana | `https://grafana.yourco.com` |
+| `GRAFANA_VIEWER_TOKEN` | SA token, Viewer role | `glsa_…` |
+| `GRAFANA_EDITOR_TOKEN` | SA token, Editor role | `glsa_…` |
+| `GRAFANA_ADMIN_TOKEN` | SA token, Admin role | `glsa_…` |
+| `GRAFANA_TOKEN` | Single-token fallback for demos (used for every role) | `glsa_…` |
+| `GRAFANA_TLS_VERIFY` | Verify Grafana TLS cert | `true` (default) |
+| `GRAFANA_TIMEOUT_S` | Per-request timeout seconds | `30` |
+| `MCP_SERVER_PORT` | Port the MCP binds to | `8765` |
+
+### Orchestrator / LLM
+
+| Var | Purpose |
+|---|---|
+| `OLLYCHAT_DEFAULT_MODEL` | `qwen2.5:0.5b` · `gpt-4o` · `claude-sonnet-4-6` |
+| `OLLYCHAT_ANTHROPIC_API_KEY` · `OLLYCHAT_OPENAI_API_KEY` · `OLLYCHAT_GOOGLE_API_KEY` | Cloud LLM keys |
+| `OLLYCHAT_OLLAMA_BASE_URL` | Local LLM endpoint |
+| `OLLYCHAT_DEFAULT_MAX_TOKENS` · `OLLYCHAT_DEFAULT_TEMPERATURE` | Generation config |
+| `OLLYCHAT_PII_ENABLED` · `OLLYCHAT_PII_MODE` | PII scanner (`redact` / `block` / `log`) |
+| `OLLYCHAT_BIFROST_URL` | Where the orchestrator finds the MCP server (default: `http://ollychat-mcp:8765`) |
+| `OLLYCHAT_OTEL_EXPORTER_ENDPOINT` | OTLP collector endpoint |
+
+Full list with defaults in [.env.example](.env.example).
 
 ---
 
@@ -349,13 +311,13 @@ curl http://localhost:8000/api/v1/health
 | `DELETE` | `/api/v1/mcp/servers/{name}` | Remove an MCP server |
 | `POST` | `/api/v1/mcp/servers/{name}/toggle` | Enable / disable |
 
-Register Bifröst:
+Register the MCP server:
 ```bash
 curl -X POST http://localhost:8000/api/v1/mcp/servers \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "ollychat-mcp-grafana",
-    "url": "http://host.docker.internal:8765",
+    "name": "bifrost-grafana",
+    "url": "http://ollychat-mcp:8765",
     "transport": "sse",
     "auth_method": "none"
   }'
@@ -443,13 +405,13 @@ Full API reference: **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)**
 3. **Orchestrator pipeline**:
    1. CORS + user identity check
    2. PII scan (redact before LLM)
-   3. **Intent matcher** — 12 regex patterns → MATCH or LLM fallback
+   3. **Intent matcher** — 60+ regex patterns → MATCH or LLM fallback
    4. If MATCH → call MCP tool via HTTP bridge
    5. Format result as markdown, stream back as SSE
-4. **Bifröst MCP** receives tool call → enforces RBAC (viewer/editor/admin)
-5. **Bifröst** calls **Grafana REST API** with SA token
-6. Grafana returns data → Bifröst → Orchestrator → Widget
-7. Widget renders markdown in the bubble — streaming text, link, tool metadata
+4. **O11yBot MCP server** receives tool call → enforces RBAC (viewer / editor / admin)
+5. MCP server calls **Grafana REST API** with the role-appropriate SA token
+6. Grafana returns data → MCP → Orchestrator → Widget
+7. Widget renders markdown in the bubble — streaming text, links, tool metadata
 
 ### Key design decisions
 
@@ -480,7 +442,7 @@ cd tests
 | **1. API Endpoints** | 17 | REST health, models, MCP, skills, rules, CORS, plugin registration |
 | **2. Intent Matcher** | 19 | Every NL query → correct MCP tool |
 | **3. UI Widget / SSE** | 22 | Event types, CRLF parsing, markdown, multi-query |
-| **4. Integration E2E** | 18 | Full chain: widget → orchestrator → MCP → Bifröst → Grafana |
+| **4. Integration E2E** | 18 | Full chain: widget → orchestrator → MCP → Grafana |
 | **5. Negative** | 22 | RBAC, errors, Unicode, 10KB payloads, 5x concurrent |
 
 ### Run individual suites
@@ -595,18 +557,53 @@ Apache 2.0 — use, modify, deploy, commercial, all fine.
 
 ---
 
+## 🧱 Tech stack
+
+<p align="center">
+  <a href="https://grafana.com"><img src="https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white"/></a>
+  <a href="https://www.python.org"><img src="https://img.shields.io/badge/Python_3.12-3776AB?style=flat-square&logo=python&logoColor=white"/></a>
+  <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white"/></a>
+  <a href="https://www.docker.com"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white"/></a>
+  <a href="https://react.dev"><img src="https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black"/></a>
+  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white"/></a>
+  <a href="https://ollama.com"><img src="https://img.shields.io/badge/Ollama-000000?style=flat-square&logo=ollama&logoColor=white"/></a>
+  <a href="https://www.anthropic.com"><img src="https://img.shields.io/badge/Anthropic-191717?style=flat-square&logo=anthropic&logoColor=white"/></a>
+  <a href="https://openai.com"><img src="https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white"/></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-8b5cf6?style=flat-square"/></a>
+  <a href="https://opentelemetry.io"><img src="https://img.shields.io/badge/OpenTelemetry-425CC7?style=flat-square&logo=opentelemetry&logoColor=white"/></a>
+  <a href="https://prometheus.io"><img src="https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white"/></a>
+</p>
+
+- **Python 3.12 + FastAPI** — orchestrator + MCP server, both async-native
+- **httpx** with per-role token pooling — outbound Grafana API calls
+- **Vanilla JS widget** — zero framework dependencies, loads on every Grafana page
+- **React 18 + TypeScript** — optional plugin shell pages (Config, Investigate, Skills)
+- **Model Context Protocol** — tool-calling contract; `/api/tools` + `/api/tools/call`
+- **OpenTelemetry** — orchestrator emits traces + metrics to any OTLP collector
+- **Prometheus client** — MCP exports `/metrics` for self-observability
+- **Ollama / OpenAI / Anthropic / Google** — LLM backends, one env var to switch
+
+---
+
 ## 🙏 Credits
 
-Built on the shoulders of giants:
-
-- **[Grafana](https://grafana.com)** — the observability platform we all love
-- **[Bifröst](https://github.com/gpadidala/O11yBot MCP)** — Grafana MCP server (sibling project)
-- **[Ollama](https://ollama.com)** — local LLM runtime
-- **[FastAPI](https://fastapi.tiangolo.com)** + **[sse-starlette](https://github.com/sysid/sse-starlette)** — the API layer
-- **[Model Context Protocol](https://modelcontextprotocol.io)** — open tool-calling standard
+- **[Grafana Labs](https://grafana.com)** — the observability platform everything plugs into
+- **[Model Context Protocol](https://modelcontextprotocol.io)** — the open tool-calling standard
+- **[Ollama](https://ollama.com)** — local LLM runtime that makes self-hosted LLMs painless
+- **[FastAPI](https://fastapi.tiangolo.com)** + **[sse-starlette](https://github.com/sysid/sse-starlette)** — the async API layer
+- **[Prometheus](https://prometheus.io)** + **[OpenTelemetry](https://opentelemetry.io)** — the observability substrate
 
 ---
 
 <p align="center">
-  <sub>Made with ⚡ by <a href="https://github.com/gpadidala">Gopal</a></sub>
+  <sub>If O11yBot saves your team time,&nbsp;<a href="https://github.com/gpadidala/ollychat-app">give it a ⭐ on GitHub</a>.</sub><br/><br/>
+  <a href="https://github.com/gpadidala"><img src="https://img.shields.io/badge/GitHub-gpadidala-181717?style=flat-square&logo=github" alt="GitHub"/></a>
+  &nbsp;
+  <a href="https://github.com/gpadidala/ollychat-app/issues"><img src="https://img.shields.io/badge/Report_a_bug-EF4444?style=flat-square&logo=github" alt="Report a bug"/></a>
+  &nbsp;
+  <a href="https://github.com/gpadidala/ollychat-app/discussions"><img src="https://img.shields.io/badge/Ask_a_question-22c55e?style=flat-square&logo=github" alt="Discussions"/></a>
+</p>
+
+<p align="center">
+  <sub>Built with ⚡ by <a href="https://github.com/gpadidala">Gopal</a></sub>
 </p>
