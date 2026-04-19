@@ -417,18 +417,22 @@ async def match_intent(user_message: str) -> dict | None:
             "judge": True,  # fuzzy service match → rerank by relevance
         }
 
-    # ── 2. Category-filtered dashboards ──
+    # ── 2. Category-filtered dashboards (single-keyword queries only) ──
+    # For multi-keyword queries like "oracle kpi dashboards", skip this
+    # and go to Phase 5 local fuzzy search so ALL keywords must hit.
     if has_dashboard_keyword:
-        cat = find_category(user_message)
-        if cat:
-            return {
-                "server": "bifrost-grafana",
-                "tool": "list_dashboards",
-                "arguments": {"tags": [cat["tags"][0]]},
-                "formatter": lambda data: fmt_dashboards_filtered(data, category_label=cat["label"]),
-                "desc": f"List dashboards filtered by: {cat['label']}",
-                "category": cat["key"],
-            }
+        keyword_count = len(_extract_keyword_list(user_message))
+        if keyword_count <= 1:
+            cat = find_category(user_message)
+            if cat:
+                return {
+                    "server": "bifrost-grafana",
+                    "tool": "list_dashboards",
+                    "arguments": {"tags": [cat["tags"][0]]},
+                    "formatter": lambda data: fmt_dashboards_filtered(data, category_label=cat["label"]),
+                    "desc": f"List dashboards filtered by: {cat['label']}",
+                    "category": cat["key"],
+                }
 
     # ── 3. All other exact intent patterns ──
     for intent in INTENTS:
@@ -448,7 +452,8 @@ async def match_intent(user_message: str) -> dict | None:
 
     # ── 4. Category-only query (no explicit "dashboard" word) ──
     # e.g. "show me AKS stuff", "view kubernetes", "Oracle", "what's in AKS"
-    if cat := find_category(user_message):
+    # Skip when 2+ meaningful keywords — prefer Phase 5 local fuzzy (all must hit).
+    if len(_extract_keyword_list(user_message)) <= 1 and (cat := find_category(user_message)):
         # Be generous: if message is short OR has an action word, treat as category query
         word_count = len(msg_lower.split())
         has_trigger = any(trigger in msg_lower for trigger in [
@@ -466,21 +471,54 @@ async def match_intent(user_message: str) -> dict | None:
                 "category": cat["key"],
             }
 
-    # ── 5. Dashboard fallthrough — if user mentioned "dashboard" but nothing matched ──
-    # Extract meaningful keywords (not stopwords) and run a search
+    # ── 5. Dashboard fallthrough — local fuzzy search over every dashboard ──
+    # We fetch the full dashboard list and score by how many user keywords
+    # appear in (title + tags + folder). This catches typos and random
+    # keyword combos that Bifrost's literal search would miss.
     if has_dashboard_keyword:
-        query = _extract_search_keywords(user_message)
-        if query:
+        keywords = _extract_keyword_list(user_message)
+        if keywords:
+            query_label = " ".join(keywords[:4])
             return {
                 "server": "bifrost-grafana",
-                "tool": "search_dashboards",
-                "arguments": {"query": query},
-                "formatter": lambda data: fmt_dashboards_filtered(data, service_name=query),
-                "desc": f"Fuzzy search dashboards: {query}",
-                "judge": True,  # fuzzy → pass through LLM-as-judge reranker
+                "tool": "list_dashboards",
+                "arguments": {},  # no tag filter — pull everything, filter locally
+                "formatter": lambda data: fmt_dashboards_filtered(
+                    _local_fuzzy_match(data, keywords), service_name=query_label
+                ),
+                "raw_transform": lambda data: _local_fuzzy_match(data, keywords),
+                "desc": f"Local fuzzy search: {query_label}",
+                "judge": True,  # rerank the pre-filtered candidates
             }
 
     return None
+
+
+def _local_fuzzy_match(data: Any, keywords: list[str]) -> list[dict]:
+    """Score each dashboard by how many of the user's keywords appear in
+    its title, tags, or folder name. Returns dashboards with ≥1 hit,
+    highest-scoring first, up to 20.
+
+    Handles any random word combination without requiring exact Bifrost
+    substring matches — so typos in filler words don't zero out results.
+    """
+    if not isinstance(data, list) or not keywords:
+        return data if isinstance(data, list) else []
+    scored: list[tuple[int, dict]] = []
+    kws = [k.lower() for k in keywords]
+    for d in data:
+        if not isinstance(d, dict):
+            continue
+        haystack = " ".join([
+            (d.get("title") or "").lower(),
+            " ".join(d.get("tags") or []).lower(),
+            (d.get("folder_title") or "").lower(),
+        ])
+        hits = sum(1 for k in kws if k in haystack)
+        if hits > 0:
+            scored.append((hits, d))
+    scored.sort(key=lambda x: -x[0])
+    return [d for _, d in scored[:20]]
 
 
 _STOP_WORDS = {
@@ -503,16 +541,36 @@ _STOP_WORDS = {
 
 
 def _extract_search_keywords(text: str) -> str:
-    """Extract meaningful keywords from a query for dashboard search.
+    """Return a space-joined list of up to 4 meaningful tokens."""
+    return " ".join(_extract_keyword_list(text)[:4])
 
-    E.g. "can you dashboards for this chat app RED dashboard?"
-         → "chat app red"
+
+def _extract_keyword_list(text: str) -> list[str]:
+    """Extract meaningful keyword tokens — stopwords + dashboard-indicator
+    typos removed so Bifrost/local search doesn't dilute on "dashbords" etc.
+
+    E.g. "show me oracle kpi dashbords"  → ["oracle", "kpi"]
     """
     import re
     words = re.findall(r"[A-Za-z][A-Za-z0-9_-]{1,}", text.lower())
-    meaningful = [w for w in words if w not in _STOP_WORDS and len(w) >= 2]
-    # Keep at most 4 keywords
-    return " ".join(meaningful[:4])
+    out: list[str] = []
+    for w in words:
+        if len(w) < 2:
+            continue
+        if w in _STOP_WORDS:
+            continue
+        # Drop dashboard-indicator variants and their typos (dash*, board*, panel*)
+        if re.match(r"^(dash\w*|boards?|panels?)$", w):
+            continue
+        out.append(w)
+    # Dedupe preserving order
+    seen: set[str] = set()
+    uniq: list[str] = []
+    for w in out:
+        if w not in seen:
+            seen.add(w)
+            uniq.append(w)
+    return uniq
 
 
 async def execute_intent(intent: dict, role: str | None = None) -> dict:
@@ -545,10 +603,18 @@ async def execute_intent(intent: dict, role: str | None = None) -> dict:
     if result.get("ok"):
         data = result.get("data", result)
         formatted = intent["formatter"](data)
+        # Expose the post-transformed data (e.g. locally-fuzzy-matched list)
+        # so downstream consumers (judge, LLM formatter) see the filtered view.
+        raw_for_downstream = data
+        if "raw_transform" in intent:
+            try:
+                raw_for_downstream = intent["raw_transform"](data)
+            except Exception:
+                pass
         return {
             "ok": True,
             "content": formatted,
-            "raw_data": data,  # raw tool data for LLM post-processing
+            "raw_data": raw_for_downstream,  # filtered tool data for LLM post-processing
             "duration_ms": result.get("duration_ms", 0),
             "tool": intent["tool"],
             "server": intent["server"],
