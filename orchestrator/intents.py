@@ -377,9 +377,13 @@ async def match_intent(user_message: str) -> dict | None:
         return None
 
     msg_lower = user_message.lower()
-    has_dashboard_keyword = any(k in msg_lower for k in [
-        "dashboard", "dashes", "panels"
-    ])
+    # Typo-tolerant dashboard keyword matcher
+    # Accepts: dashboard, dashboards, dashbord, dashbords, dashbaord, dashbaords,
+    #          dashboad, dashborad, dash, dashes, panels, boards
+    has_dashboard_keyword = bool(re.search(
+        r"\b(dash\w{0,8}|boards?|panels?)\b",
+        msg_lower,
+    ))
     starts_with_search = re.match(r"^\s*(search|find)\b", msg_lower) is not None
 
     # ── 0. Explicit "search" — check INTENTS first for search_dashboards ──
@@ -442,9 +446,16 @@ async def match_intent(user_message: str) -> dict | None:
             }
 
     # ── 4. Category-only query (no explicit "dashboard" word) ──
-    # e.g. "show me AKS stuff", "view kubernetes"
+    # e.g. "show me AKS stuff", "view kubernetes", "Oracle", "what's in AKS"
     if cat := find_category(user_message):
-        if any(trigger in msg_lower for trigger in ["show", "list", "get", "see", "view", "find"]):
+        # Be generous: if message is short OR has an action word, treat as category query
+        word_count = len(msg_lower.split())
+        has_trigger = any(trigger in msg_lower for trigger in [
+            "show", "list", "get", "see", "view", "find", "whats", "what's",
+            "have", "give", "tell", "in ", "all ", "any",
+        ])
+        # Single-word or short query (≤3 words) that matches a category → list it
+        if has_trigger or word_count <= 3:
             return {
                 "server": "bifrost-grafana",
                 "tool": "list_dashboards",
