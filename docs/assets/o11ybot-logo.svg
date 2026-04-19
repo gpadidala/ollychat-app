@@ -1,16 +1,87 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="O11yBot logo">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#FF6600"/>
-      <stop offset="100%" stop-color="#F59E0B"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0d0d12"/>
     </linearGradient>
+    <linearGradient id="orb" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff7a00"/>
+      <stop offset="50%" stop-color="#ff6600"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.3" cy="0.25" r="0.55">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="innerGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#fff7ed" stop-opacity="0"/>
+      <stop offset="70%" stop-color="#ff6600" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ff6600" stop-opacity="0.4"/>
+    </radialGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="halo" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <rect width="64" height="64" rx="12" fill="#1a1a2e"/>
-  <circle cx="32" cy="28" r="14" fill="url(#g)" opacity="0.9"/>
-  <rect x="20" y="38" width="24" height="14" rx="4" fill="url(#g)" opacity="0.7"/>
-  <circle cx="27" cy="26" r="2.5" fill="#1a1a2e"/>
-  <circle cx="37" cy="26" r="2.5" fill="#1a1a2e"/>
-  <path d="M27 32 Q32 36 37 32" stroke="#1a1a2e" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <rect x="26" y="42" width="12" height="2" rx="1" fill="#1a1a2e"/>
-  <rect x="28" y="46" width="8" height="2" rx="1" fill="#1a1a2e"/>
+
+  <!-- Dark rounded square frame -->
+  <rect x="0" y="0" width="200" height="200" rx="44" fill="url(#bg)"/>
+  <rect x="1" y="1" width="198" height="198" rx="43" fill="none" stroke="#2a2a3e" stroke-width="1"/>
+
+  <!-- Radar signal arcs (from bottom-left emanating outward) -->
+  <g>
+    <path d="M 38 148 Q 100 100 152 58" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 6" opacity="0.35"/>
+    <path d="M 48 148 Q 100 110 148 72" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 5" opacity="0.5"/>
+    <path d="M 60 148 Q 100 120 142 86" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 4" opacity="0.65"/>
+  </g>
+
+  <!-- Halo behind orb -->
+  <circle cx="100" cy="100" r="56" fill="url(#orb)" opacity="0.25" filter="url(#halo)"/>
+
+  <!-- Main orb -->
+  <circle cx="100" cy="100" r="46" fill="url(#orb)"/>
+  <circle cx="100" cy="100" r="46" fill="url(#innerGlow)"/>
+  <circle cx="100" cy="100" r="46" fill="url(#shine)"/>
+
+  <!-- Bot face — two glowing eyes -->
+  <g>
+    <circle cx="86" cy="94" r="9" fill="#0d0d12"/>
+    <circle cx="86" cy="94" r="6" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.35"/>
+    <circle cx="87" cy="93" r="3.5" fill="#fff"/>
+    <circle cx="88" cy="92" r="1.5" fill="#ffd480"/>
+
+    <circle cx="114" cy="94" r="9" fill="#0d0d12"/>
+    <circle cx="114" cy="94" r="6" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.35"/>
+    <circle cx="115" cy="93" r="3.5" fill="#fff"/>
+    <circle cx="116" cy="92" r="1.5" fill="#ffd480"/>
+  </g>
+
+  <!-- Friendly smile -->
+  <path d="M 86 114 Q 100 124 114 114" fill="none" stroke="#0d0d12" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Antenna + signal dot -->
+  <g filter="url(#softGlow)">
+    <line x1="100" y1="54" x2="100" y2="46" stroke="#0d0d12" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="100" cy="42" r="4.5" fill="#22c55e"/>
+    <circle cx="100" cy="42" r="2" fill="#d4f7d4"/>
+  </g>
+
+  <!-- AI sparkle (top-right) -->
+  <g transform="translate(158, 46)" opacity="0.9">
+    <path d="M 0 -7 L 1.5 -1.5 L 7 0 L 1.5 1.5 L 0 7 L -1.5 1.5 L -7 0 L -1.5 -1.5 Z" fill="#ff6600"/>
+    <circle cx="0" cy="0" r="2" fill="#fff7ed"/>
+  </g>
+
+  <!-- Secondary mini-sparkle -->
+  <g transform="translate(40, 58)" opacity="0.6">
+    <path d="M 0 -4 L 0.8 -0.8 L 4 0 L 0.8 0.8 L 0 4 L -0.8 0.8 L -4 0 L -0.8 -0.8 Z" fill="#f59e0b"/>
+  </g>
+
+  <!-- Pulse dot bottom right -->
+  <circle cx="158" cy="158" r="5" fill="#22c55e"/>
 </svg>

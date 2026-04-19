@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "1.9.0";
+  var WIDGET_VERSION = "2.0.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -124,10 +124,13 @@
   var css = document.createElement("style");
   css.textContent = "\
 #o11ybot-root{position:fixed;z-index:999999;font-family:Inter,-apple-system,sans-serif;font-size:14px;color:#e0e0e0}\
-.ob-fab{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff6600,#f59e0b);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(255,102,0,.4),0 2px 8px rgba(0,0,0,.3);transition:transform .2s;position:relative}\
-.ob-fab:hover{transform:scale(1.1)}\
-.ob-fab svg{width:28px;height:28px;fill:#fff}\
-.ob-dot{position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:#22c55e;border:2px solid #111}\
+.ob-fab{width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 30% 25%, #ffb366 0%, #ff7a00 40%, #f59e0b 100%);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(255,102,0,.45), 0 3px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.3), inset 0 -2px 6px rgba(0,0,0,.2);transition:transform .2s, box-shadow .2s;position:relative;color:#fff}\
+.ob-fab::before{content:'';position:absolute;inset:-4px;border-radius:50%;background:radial-gradient(circle, rgba(255,102,0,.4) 0%, transparent 70%);z-index:-1;animation:ob-pulse 2.5s ease-in-out infinite}\
+@keyframes ob-pulse{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.15);opacity:.7}}\
+.ob-fab:hover{transform:scale(1.08);box-shadow:0 10px 32px rgba(255,102,0,.55), 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 6px rgba(0,0,0,.2)}\
+.ob-fab:active{transform:scale(0.96)}\
+.ob-fab svg{width:28px;height:28px;stroke:#fff;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}\
+.ob-dot{position:absolute;top:0;right:0;width:14px;height:14px;border-radius:50%;background:#22c55e;border:2.5px solid #0d0d12;box-shadow:0 0 8px rgba(34,197,94,.5)}\
 .ob-panel{width:460px;height:620px;background:#111217;border:1px solid #2a2a3e;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.5);overflow:hidden;resize:both;min-width:320px;min-height:380px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px)}\
 .ob-panel.ob-maximized{width:75vw!important;height:85vh!important;resize:none}\
 .ob-panel.ob-fullscreen{width:100vw!important;height:100vh!important;border-radius:0;resize:none;border:none}\
@@ -158,8 +161,9 @@
 }\
 .ob-hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,#1a1025,#111217);border-bottom:1px solid #2a2a3e;cursor:grab;user-select:none}\
 .ob-hdr:active{cursor:grabbing}\
-.ob-hdr-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff6600,#f59e0b);display:flex;align-items:center;justify-content:center;flex-shrink:0}\
-.ob-hdr-icon svg{width:18px;height:18px;fill:#fff}\
+.ob-hdr-icon{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 30% 25%, #ffb366 0%, #ff7a00 40%, #f59e0b 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(255,102,0,.3), inset 0 1px 0 rgba(255,255,255,.3);color:#fff;position:relative}\
+.ob-hdr-icon::after{content:'';position:absolute;width:6px;height:6px;background:#22c55e;border:1.5px solid #0d0d12;border-radius:50%;top:-1px;right:-1px;box-shadow:0 0 6px rgba(34,197,94,.6)}\
+.ob-hdr-icon svg{width:20px;height:20px;stroke:#fff;color:#fff;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2))}\
 .ob-title{font-weight:600;font-size:15px}\
 .ob-sub{font-size:11px;color:#888;margin-top:1px}\
 .ob-acts{display:flex;gap:4px}\
@@ -291,7 +295,28 @@
   // ═══════════════════════════════════════════════════════════
   // Icons
   // ═══════════════════════════════════════════════════════════
-  var ICO_BOT = '<svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 012 2v1h4a3 3 0 013 3v8a3 3 0 01-3 3H6a3 3 0 01-3-3V8a3 3 0 013-3h4V4a2 2 0 012-2zm-3 9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg>';
+  // Modern bot icon: rounded head, glowing eyes, antenna with pulse dot, radar arcs
+  // Scales from 16px (header) to 28px (FAB) — all strokes/sizes optimized.
+  var ICO_BOT = (
+    '<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+    // Antenna line + pulse dot
+    '<line x1="16" y1="4" x2="16" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.85"/>' +
+    '<circle cx="16" cy="3" r="1.8" fill="currentColor" opacity="0.95"/>' +
+    // Bot head (rounded square)
+    '<rect x="6" y="8" width="20" height="18" rx="5" fill="currentColor" opacity="0.15"/>' +
+    '<rect x="6" y="8" width="20" height="18" rx="5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>' +
+    // Eyes (with inner dot for depth)
+    '<circle cx="12" cy="16.5" r="2.2" fill="currentColor"/>' +
+    '<circle cx="12.6" cy="15.9" r="0.8" fill="#0d0d12" opacity="0.7"/>' +
+    '<circle cx="20" cy="16.5" r="2.2" fill="currentColor"/>' +
+    '<circle cx="20.6" cy="15.9" r="0.8" fill="#0d0d12" opacity="0.7"/>' +
+    // Smile curve
+    '<path d="M11 21 Q16 23.5 21 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.85"/>' +
+    // Side radar arcs (signal emanating)
+    '<path d="M4 13 Q3 16 4 19" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>' +
+    '<path d="M28 13 Q29 16 28 19" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>' +
+    '</svg>'
+  );
   var ICO_SEND = '<svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICO_STOP = '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="#fff"/></svg>';
   var ICO_NEW = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
