@@ -40,6 +40,15 @@ class GrafanaClient:
 
     async def request(self, method: str, path: str, **kw: Any) -> Any:
         r = await self._client.request(method, path, **kw)
+        # Count outbound requests by status class for self-observability
+        try:
+            from observability import GRAFANA_REQUESTS
+            GRAFANA_REQUESTS.labels(
+                method=method.upper(),
+                status_class=f"{r.status_code // 100}xx",
+            ).inc()
+        except Exception:
+            pass
         if r.status_code >= 400:
             raise GrafanaError(r.status_code, r.text[:400], path)
         if not r.content:

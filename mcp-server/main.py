@@ -10,10 +10,11 @@ import inspect
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from config import get_settings
 from grafana_client import close_all
+from observability import metrics_payload, record_tool_call
 from rbac import enforce, normalize_role
 from registry import get_tool, list_tools, tool_count
 
@@ -53,6 +54,12 @@ async def _shutdown() -> None:
 async def health() -> dict:
     s = get_settings()
     return {"ok": True, "grafana_url": s.grafana_url, "tools": tool_count()}
+
+
+@app.get("/metrics")
+async def metrics() -> Response:
+    body, ct = metrics_payload()
+    return Response(content=body, media_type=ct)
 
 
 @app.get("/api/tools")
@@ -96,7 +103,8 @@ async def api_call_tool(request: Request) -> JSONResponse:
         call_args["role"] = role
 
     try:
-        result = await tool_def.fn(**call_args)
+        with record_tool_call(name, role):
+            result = await tool_def.fn(**call_args)
     except PermissionError as e:
         return JSONResponse({"ok": False, "error": "PermissionError", "message": str(e)}, status_code=403)
     except Exception as e:  # noqa: BLE001

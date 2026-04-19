@@ -407,6 +407,168 @@ def fmt_mutation(data: Any) -> str:
     return "\n".join(lines)
 
 
+def fmt_teams(data: Any) -> str:
+    if not isinstance(data, list) or not data:
+        return "No teams found."
+    lines = [f"**Found {len(data)} team{'s' if len(data) != 1 else ''}:**\n"]
+    for t in data:
+        name = t.get("name", "?")
+        email = t.get("email", "")
+        mc = t.get("member_count", 0)
+        lines.append(f"- **{name}** — members: `{mc}`" + (f" · email: `{email}`" if email else ""))
+    return "\n".join(lines)
+
+
+def fmt_plugins(data: Any) -> str:
+    if not isinstance(data, list) or not data:
+        return "No plugins found."
+    lines = [f"**Found {len(data)} plugin{'s' if len(data) != 1 else ''}:**\n"]
+    for p in data[:30]:
+        name = p.get("name", "?")
+        pid = p.get("id", "")
+        ptype = p.get("type", "?")
+        enabled = "✅" if p.get("enabled") else "○"
+        version = p.get("version", "")
+        update = " 🔔 update available" if p.get("hasUpdate") else ""
+        lines.append(f"- {enabled} **{name}** `{pid}` · _{ptype}_ · v`{version}`{update}")
+    if len(data) > 30:
+        lines.append(f"\n_… and {len(data) - 30} more_")
+    return "\n".join(lines)
+
+
+def fmt_annotations(data: Any) -> str:
+    if not isinstance(data, list) or not data:
+        return "No annotations found in that window."
+    import datetime as _dt
+    lines = [f"**{len(data)} annotation{'s' if len(data) != 1 else ''}:**\n"]
+    for a in data[:20]:
+        ts_ms = a.get("time") or 0
+        ts = _dt.datetime.fromtimestamp(ts_ms / 1000).strftime("%Y-%m-%d %H:%M") if ts_ms else "?"
+        tags = a.get("tags") or []
+        tags_str = f" `[{', '.join(tags[:5])}]`" if tags else ""
+        text = (a.get("text") or "")[:120]
+        lines.append(f"- `{ts}` — {text}{tags_str}")
+    return "\n".join(lines)
+
+
+def fmt_contact_points(data: Any) -> str:
+    if not isinstance(data, list) or not data:
+        return "No contact points configured."
+    lines = [f"**{len(data)} contact point{'s' if len(data) != 1 else ''}:**\n"]
+    for cp in data:
+        lines.append(f"- **{cp.get('name', '?')}** (`{cp.get('type', '?')}`)")
+    return "\n".join(lines)
+
+
+def fmt_silences(data: Any) -> str:
+    if not isinstance(data, list) or not data:
+        return "No active silences."
+    lines = [f"**{len(data)} silence{'s' if len(data) != 1 else ''}:**\n"]
+    for s in data[:15]:
+        sid = s.get("id", "")
+        state = s.get("status", "")
+        who = s.get("createdBy", "?")
+        comment = (s.get("comment") or "")[:80]
+        lines.append(f"- `{sid[:12]}…` · {state} · by `{who}` — {comment}")
+    return "\n".join(lines)
+
+
+def fmt_library_panels(data: Any) -> str:
+    if not isinstance(data, list) or not data:
+        return "No library panels found."
+    lines = [f"**{len(data)} library panel{'s' if len(data) != 1 else ''}:**\n"]
+    for p in data[:30]:
+        lines.append(f"- **{p.get('name', '?')}** · type `{p.get('type', '?')}` · UID `{p.get('uid', '')}`")
+    return "\n".join(lines)
+
+
+def fmt_investigate_alert(data: Any) -> str:
+    if not isinstance(data, dict):
+        return "Could not investigate that alert."
+    rule = data.get("rule") or {}
+    lines = [f"**🔎 Investigating alert `{rule.get('title', '?')}`**\n"]
+    lines.append(f"- UID: `{rule.get('uid', '')}` · group: _{rule.get('group', '?')}_ · for: `{rule.get('for', '')}`")
+    if rule.get("expr"):
+        lines.append(f"- Expr: `{rule['expr'][:160]}`")
+    if rule.get("labels"):
+        lines.append(f"- Labels: `{rule['labels']}`")
+    lines.append(f"\n**🔴 Firing instances: {data.get('firing_count', 0)}**")
+    dashes = data.get("dashboards") or []
+    if dashes:
+        lines.append(f"\n**📊 Related dashboards ({len(dashes)}):**")
+        for d in dashes[:5]:
+            lines.append(f"- [{d.get('title', '?')}]({d.get('url', '')})")
+    steps = data.get("suggested_next_steps") or []
+    if steps:
+        lines.append("\n**💡 Next steps:**")
+        for s in steps:
+            lines.append(f"- {s}")
+    return "\n".join(lines)
+
+
+def fmt_correlate(data: Any) -> str:
+    if not isinstance(data, dict):
+        return "Correlation returned no data."
+    svc = data.get("service", "?")
+    lines = [f"**🔗 Signal correlation for `{svc}`**  ({data.get('time_from', '')} → {data.get('time_to', '')})\n"]
+    lines.append(f"- 📈 Metric frames: **{data.get('metrics_frames', 0)}**")
+    lines.append(f"- 📜 Error log lines: **{data.get('log_error_lines', 0)}**")
+    lines.append(f"- 🔎 Slow traces: **{data.get('slow_traces', 0)}**")
+    for k in ("metrics_error", "logs_error", "traces_error"):
+        if data.get(k):
+            lines.append(f"- ⚠️ {k}: `{data[k][:120]}`")
+    return "\n".join(lines)
+
+
+def fmt_metric_names(data: Any) -> str:
+    if not isinstance(data, list) or not data:
+        return "No metrics found."
+    lines = [f"**{len(data)} metric name{'s' if len(data) != 1 else ''}:**\n"]
+    for n in data[:40]:
+        lines.append(f"- `{n}`")
+    if len(data) > 40:
+        lines.append(f"\n_… and {len(data) - 40} more_")
+    return "\n".join(lines)
+
+
+def fmt_loki(data: Any) -> str:
+    if not isinstance(data, dict):
+        return "No log lines."
+    lines_list = data.get("lines") or []
+    total = data.get("total", 0)
+    out = [f"**📜 {total} log line{'s' if total != 1 else ''} (showing up to {min(total, 20)}):**\n"]
+    for l in lines_list[:20]:
+        line_txt = l.get("Line") or l.get("line") or str(l)
+        out.append(f"- `{str(line_txt)[:200]}`")
+    return "\n".join(out)
+
+
+def fmt_tempo(data: Any) -> str:
+    if not isinstance(data, dict):
+        return "No traces."
+    traces = data.get("traces") or []
+    total = data.get("total", 0)
+    out = [f"**🔎 {total} trace{'s' if total != 1 else ''}:**\n"]
+    for t in traces[:10]:
+        tid = t.get("traceID") or t.get("TraceID") or ""
+        name = t.get("traceName") or t.get("spanName") or ""
+        dur = t.get("traceDuration") or t.get("durationMs") or ""
+        out.append(f"- `{str(tid)[:16]}` · {name} · {dur}")
+    return "\n".join(out)
+
+
+def fmt_metric_usage(data: Any) -> str:
+    if not isinstance(data, list) or not data:
+        return "No dashboards reference that metric."
+    lines = [f"**Metric used in {len(data)} dashboard{'s' if len(data) != 1 else ''}:**\n"]
+    for d in data:
+        mp = d.get("matched_panels") or []
+        lines.append(f"- [{d.get('title', '?')}]({d.get('url', '')}) · {d.get('match_count', 0)} panel(s)")
+        if mp:
+            lines.append(f"  _{' · '.join(mp[:3])}_")
+    return "\n".join(lines)
+
+
 def fmt_navigation(_data: Any) -> str:
     """Static navigation map — where to find things in Grafana."""
     return """**🧭 Finding things in Grafana**
@@ -830,6 +992,148 @@ INTENTS = [
         "_internal", "error_decode",
         fmt_fn=fmt_error_decode,
         desc="Error decoder help",
+    ),
+
+    # ─── Teams ───
+    _m(
+        r"(list|show|all)\s+teams?\b",
+        "bifrost-grafana", "list_teams",
+        fmt_fn=fmt_teams,
+        desc="List all teams",
+    ),
+    _m(
+        r"(create|new)\s+team\s+[\"']?([^\"']+?)[\"']?$",
+        "bifrost-grafana", "create_team",
+        args_fn=lambda m: {"name": m.group(2).strip()},
+        fmt_fn=fmt_mutation,
+        desc="Create a team",
+    ),
+
+    # ─── Plugins ───
+    _m(
+        r"(list|show|all)\s+plugins?\b",
+        "bifrost-grafana", "list_plugins",
+        fmt_fn=fmt_plugins,
+        desc="List all Grafana plugins",
+    ),
+    _m(
+        r"(list|show)\s+(datasource|panel)\s+plugins?",
+        "bifrost-grafana", "list_plugins",
+        args_fn=lambda m: {"type_filter": m.group(2)},
+        fmt_fn=fmt_plugins,
+        desc="List plugins of type",
+    ),
+
+    # ─── Annotations ───
+    _m(
+        r"(list|show|recent)\s+annotations?\b",
+        "bifrost-grafana", "list_annotations",
+        fmt_fn=fmt_annotations,
+        desc="List recent annotations",
+    ),
+
+    # ─── Contact points / notification policies / silences ───
+    _m(
+        r"(list|show)\s+contact\s*points?",
+        "bifrost-grafana", "list_contact_points",
+        fmt_fn=fmt_contact_points,
+        desc="List alert contact points",
+    ),
+    _m(
+        r"(list|show)\s+notification\s+polic(y|ies)",
+        "bifrost-grafana", "list_notification_policies",
+        fmt_fn=fmt_generic,
+        desc="Show alert notification policy tree",
+    ),
+    _m(
+        r"(list|show|active)\s+silences?\b",
+        "bifrost-grafana", "list_silences",
+        fmt_fn=fmt_silences,
+        desc="List active alert silences",
+    ),
+    _m(
+        r"(list|show)\s+mute\s+timings?",
+        "bifrost-grafana", "list_mute_timings",
+        fmt_fn=fmt_generic,
+        desc="List mute timings",
+    ),
+
+    # ─── Alert rule mutations (editor/admin) ───
+    _m(
+        r"(delete|remove|drop)\s+alert\s+(rule\s+)?([a-zA-Z0-9_-]{6,})",
+        "bifrost-grafana", "delete_alert_rule",
+        args_fn=lambda m: {"uid": m.group(3)},
+        fmt_fn=fmt_mutation,
+        desc="Delete an alert rule",
+    ),
+
+    # ─── Library panels ───
+    _m(
+        r"(list|show)\s+library\s+panels?",
+        "bifrost-grafana", "list_library_panels",
+        fmt_fn=fmt_library_panels,
+        desc="List library panels",
+    ),
+
+    # ─── Query wrappers ───
+    _m(
+        r"(list|show)\s+(all\s+)?metric\s*names?\b",
+        "bifrost-grafana", "list_metric_names",
+        fmt_fn=fmt_metric_names,
+        desc="List Prometheus metric names",
+    ),
+    _m(
+        r"(list|show)\s+(all\s+)?metrics?\s+match(ing)?\s+(.+)$",
+        "bifrost-grafana", "list_metric_names",
+        args_fn=lambda m: {"match": m.group(4).strip()},
+        fmt_fn=fmt_metric_names,
+        desc="List metrics matching pattern",
+    ),
+    _m(
+        r"(search|find|show)\s+logs?\s+for\s+(.+)$",
+        "bifrost-grafana", "query_loki",
+        args_fn=lambda m: {"datasource_uid": "loki", "logql": f'{{service="{m.group(2).strip()}"}} |~ "(?i)error"'},
+        fmt_fn=fmt_loki,
+        desc="Search error logs for a service",
+    ),
+    _m(
+        r"(find|show)\s+slow\s+traces?\s+(?:for\s+)?(.+)?$",
+        "bifrost-grafana", "query_tempo",
+        args_fn=lambda m: {"datasource_uid": "tempo",
+                            "traceql": (f'{{ resource.service.name = "{m.group(2).strip()}" && duration > 500ms }}'
+                                         if m.group(2) else '{ duration > 1s }')},
+        fmt_fn=fmt_tempo,
+        desc="Find slow traces",
+    ),
+
+    # ─── Workflows: investigation + correlation ───
+    _m(
+        r"(investigate|analyze|analyse|explain)\s+(alert|rule)\s+([a-zA-Z0-9_-]{6,})",
+        "bifrost-grafana", "investigate_alert",
+        args_fn=lambda m: {"uid": m.group(3)},
+        fmt_fn=fmt_investigate_alert,
+        desc="Investigate an alert end-to-end",
+    ),
+    _m(
+        r"(correlate|debug|investigate)\s+(service|svc)?\s*([a-zA-Z][a-zA-Z0-9_-]{2,})",
+        "bifrost-grafana", "correlate_signals",
+        args_fn=lambda m: {"service": m.group(3).strip()},
+        fmt_fn=fmt_correlate,
+        desc="Correlate metrics + logs + traces for a service",
+    ),
+    _m(
+        r"(create|build|make|new)\s+slo\s+(dashboard\s+)?for\s+([a-zA-Z][a-zA-Z0-9_-]+)",
+        "bifrost-grafana", "create_slo_dashboard",
+        args_fn=lambda m: {"service": m.group(3).strip()},
+        fmt_fn=fmt_mutation,
+        desc="Create an SLO dashboard for a service",
+    ),
+    _m(
+        r"(which|what|find)\s+dashboards?\s+use\s+(?:the\s+)?metric\s+([a-zA-Z_][a-zA-Z0-9_:]+)",
+        "bifrost-grafana", "find_dashboards_using_metric",
+        args_fn=lambda m: {"metric_name": m.group(2).strip()},
+        fmt_fn=fmt_metric_usage,
+        desc="Find dashboards that reference a metric",
     ),
 
     # ─── Grafana Health / Status (LAST — very generic) ───

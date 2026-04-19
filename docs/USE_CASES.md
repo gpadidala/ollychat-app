@@ -1,111 +1,159 @@
-# O11yBot — Use Case Matrix
+# O11yBot — Enterprise Use Case Matrix
 
-Every row below is a real intent match — no fabricated answers. When a user asks something
-that matches, the orchestrator routes to the listed MCP tool (or static authoring help), applies
-RBAC, streams the result back, and (for fuzzy paths) reranks via LLM-as-judge.
+Every row is a real intent match that lands on a real MCP tool. Nothing is
+fabricated. RBAC is enforced per tool — `viewer`, `editor`, `admin`.
 
-## Read operations (role: viewer+)
+## Dashboards (8 tools)
 
-| Use case | Example prompt | MCP tool |
+| Use case | Example prompt | MCP tool | Role |
+|---|---|---|---|
+| List every dashboard | `list all dashboards` | `list_dashboards` | viewer |
+| Filter by category | `list AKS dashboards` · `list Loki dashboards` | `list_dashboards(tags=…)` | viewer |
+| Search by title | `search dashboards postgres` | `search_dashboards` | viewer |
+| Service-specific search | `payment-service dashboards` | `search_dashboards(query=svc)` | viewer |
+| Multi-keyword fuzzy | `oracle kpi dashbords` (typo-tolerant) | local fuzzy + judge | viewer |
+| Dashboard detail | `show dashboard <uid>` | `get_dashboard` | viewer |
+| Panel inventory | `panels in <uid>` | `get_dashboard_panels` | viewer |
+| Create empty dashboard | `create a dashboard called "X"` | `create_dashboard` | editor |
+| Create smart dashboard | `create a payment-service dashboard` | `create_smart_dashboard` (metric-aware) | editor |
+| Update dashboard | `update dashboard <uid> …` | `update_dashboard` | editor |
+| Delete dashboard | `delete dashboard <uid>` | `delete_dashboard` | admin |
+
+## Alerts (11 tools)
+
+| Use case | Example prompt | MCP tool | Role |
+|---|---|---|---|
+| List all rules | `list all alert rules` | `list_alert_rules` | viewer |
+| Firing instances | `show firing alerts` | `list_alert_instances` | viewer |
+| Explain a rule | `explain alert <uid>` · `why is <uid> firing?` | `get_alert_rule` | viewer |
+| **Investigate** (compound) | `investigate alert <uid>` | `investigate_alert` — rule + firing + related dashboards + next steps | viewer |
+| Create rule | `create alert rule …` | `create_alert_rule` | editor |
+| Update rule | `update alert rule <uid> …` | `update_alert_rule` | editor |
+| Delete rule | `delete alert rule <uid>` | `delete_alert_rule` | admin |
+| Silence alert | `silence alert <uid>` | `silence_alert` | editor |
+| List active silences | `list silences` | `list_silences` | viewer |
+| Unmute | (tool) | `delete_silence` | editor |
+| List contact points | `list contact points` | `list_contact_points` | viewer |
+| List notification policies | `list notification policies` | `list_notification_policies` | viewer |
+| List mute timings | `list mute timings` | `list_mute_timings` | viewer |
+
+## Datasources & queries (8 tools)
+
+| Use case | Example prompt | MCP tool | Role |
+|---|---|---|---|
+| List datasources | `list datasources` | `list_datasources` | viewer |
+| Datasource detail | `get datasource <uid>` | `get_datasource` | viewer |
+| Generic query | `run promql <expr>` | `query_datasource` | viewer |
+| List metric names | `list all metric names` | `list_metric_names` | viewer |
+| Match metrics | `list metrics matching <regex>` | `list_metric_names(match=…)` | viewer |
+| Label values | (tool) | `list_label_values` | viewer |
+| LogQL | `search logs for <service>` | `query_loki` | viewer |
+| TraceQL | `find slow traces for <service>` | `query_tempo` | viewer |
+
+## Folders (5 tools)
+
+| Use case | Example prompt | MCP tool | Role |
+|---|---|---|---|
+| List folders | `list folders` | `list_folders` | viewer |
+| Folder detail | (tool) | `get_folder` | viewer |
+| Create folder | `create folder "My team"` | `create_folder` | editor |
+| Rename folder | (tool) | `update_folder` | editor |
+| Delete folder | (tool, destructive) | `delete_folder` | admin |
+
+## Teams (4 tools)
+
+| Use case | Example prompt | MCP tool | Role |
+|---|---|---|---|
+| List teams | `list teams` | `list_teams` | viewer |
+| Create team | `create team "Platform"` | `create_team` | admin |
+| List members | (tool) | `list_team_members` | viewer |
+| Add member | (tool) | `add_team_member` | admin |
+
+## Plugins (2 tools)
+
+| Use case | Example prompt | MCP tool | Role |
+|---|---|---|---|
+| List plugins | `list all plugins` | `list_plugins` | viewer |
+| Filter by type | `list datasource plugins` · `list panel plugins` | `list_plugins(type_filter=…)` | viewer |
+| Plugin detail | (tool) | `get_plugin` | viewer |
+
+## Library panels (2 tools)
+
+| Use case | Example prompt | MCP tool | Role |
+|---|---|---|---|
+| List reusable panels | `list library panels` | `list_library_panels` | viewer |
+| Get panel model | (tool) | `get_library_panel` | viewer |
+
+## Annotations (3 tools)
+
+| Use case | Example prompt | MCP tool | Role |
+|---|---|---|---|
+| List annotations | `list annotations` | `list_annotations` | viewer |
+| Create annotation | (tool) | `create_annotation` | editor |
+| Delete annotation | (tool) | `delete_annotation` | editor |
+
+## Users / admin (2 tools)
+
+| Use case | Example prompt | MCP tool | Role |
+|---|---|---|---|
+| List users | `list users` | `list_users` | admin |
+| List service accounts | `list service accounts` | `list_service_accounts` | admin |
+
+## Enterprise workflow tools (4 compound tools)
+
+These chain multiple Grafana API calls into a single MCP round-trip, giving
+the LLM structured investigation payloads instead of raw JSON dumps.
+
+| Workflow | Example prompt | What it does |
 |---|---|---|
-| List every dashboard | `list all dashboards` | `list_dashboards` |
-| Filter by category | `list AKS dashboards` · `Azure dashboards` · `Loki` | `list_dashboards(tags=…)` |
-| Search by title | `search dashboards postgres` | `search_dashboards` |
-| Service-specific search | `payment-service dashboards` | `search_dashboards(query=svc)` |
-| Multi-keyword fuzzy | `oracle kpi dashbords` (typo-tolerant) | `list_dashboards` + local fuzzy + judge |
-| Dashboard detail by UID | `show dashboard abc123XYZ` · `describe dashboard abc123XYZ` | `get_dashboard` |
-| Panel inventory | `panels in abc123XYZ` · `what panels in abc123XYZ` | `get_dashboard_panels` |
-| List alert rules | `list all alert rules` | `list_alert_rules` |
-| Firing instances | `show firing alerts` · `active alerts` | `list_alert_instances` |
-| Explain an alert | `explain alert abc123XYZ` · `why is abc123XYZ firing?` | `get_alert_rule` |
-| List datasources | `list datasources` | `list_datasources` |
-| Datasource detail | `get datasource prometheus` | `get_datasource` |
-| Run a PromQL query | `run promql sum(rate(http_requests_total[5m]))` | `query_datasource` |
-| List folders | `list folders` | `list_folders` |
-| Grafana health | `check grafana health` · `ping` | `health_check` |
-| MCP / server info | `mcp server info` · `grafana info` | `get_server_info` |
+| **Alert investigation** | `investigate alert <uid>` | Fetch rule → pull firing instances → find dashboards tagged with the rule's service → suggest LogQL / TraceQL next steps |
+| **Multi-signal correlation** | `correlate service payment-service` | Query Prometheus / Loki / Tempo for the service in one call → return counts + error breadcrumbs |
+| **SLO dashboard authoring** | `create slo dashboard for checkout-service` | 8-panel SLO tracking (SLI, error budget, fast + slow burn rate) with label-aware queries |
+| **Metric impact analysis** | `which dashboards use metric http_requests_total` | Scans panel JSON across every dashboard — find out what breaks before renaming a metric |
 
-## Write operations (role: editor+)
-
-| Use case | Example prompt | MCP tool |
-|---|---|---|
-| Create a dashboard | `create a dashboard called "Payment SLOs"` | `create_dashboard` |
-| Create service dashboard | `create dashboard for checkout-service` | `create_dashboard(title, tags=[svc])` |
-| Create folder | `create folder "Platform team"` | `create_folder` |
-| Silence an alert | `silence alert abc123XYZ` | `silence_alert` |
-
-## Admin operations (role: admin)
-
-| Use case | Example prompt | MCP tool |
-|---|---|---|
-| List users | `list users` | `list_users` |
-| List service accounts | `list service accounts` | `list_service_accounts` |
-| Delete a dashboard | `delete dashboard abc123XYZ` | `delete_dashboard` |
-
-## Authoring help (static — no tool call)
+## Authoring help (static, no tool call)
 
 | Use case | Example prompt | Response |
 |---|---|---|
-| PromQL cookbook | `promql cookbook` · `promql examples` | Copy-paste-ready PromQL patterns |
-| LogQL cookbook | `logql examples` | Labels, JSON parsing, regex extraction |
+| PromQL cookbook | `promql cookbook` | Copy-paste-ready patterns |
+| LogQL cookbook | `logql examples` | Labels, JSON parsing, regex |
 | TraceQL cookbook | `traceql templates` | Duration filters, service chaining |
 | SLO authoring | `slo cheat sheet` | SLI/SLO/burn-rate recipe |
+| Grafana navigation | `where do I find <feature>?` | UI map |
+| Error decoder | `decode error: <msg>` | Common causes + fixes |
 
-## Navigation & diagnostics
+## Totals
 
-| Use case | Example prompt | Response |
-|---|---|---|
-| Where to find a feature | `where do I find alert rules?` | Grafana UI map |
-| Decode an error | `decode error: context deadline exceeded` | Common causes + fixes |
+- **~40 MCP tools** registered
+- **60+ orchestrator intents** route natural language to those tools
+- **LLM-as-judge** reranks fuzzy searches
+- **4 enterprise workflow tools** for compound investigations
+- **Per-role SA tokens** enforce RBAC at the MCP layer before Grafana ever sees the request
 
-## How the orchestrator routes a query
+## Routing pipeline
 
 ```
 user message
    │
    ▼
-[Phase 0]  "search dashboards …"   → search_dashboards      (exact)
-[Phase 1]  "xyz-service dashboards" → search_dashboards     (fuzzy + judge)
-[Phase 2]  "list AKS dashboards"   → list_dashboards(tags)  (single category)
-[Phase 3]  exact patterns (list datasources, show firing alerts, etc.)
-[Phase 4]  "oracle" (≤ 1 keyword)  → list_dashboards(tags)  (category-only)
-[Phase 5]  "random multi-word"     → list_dashboards()      (local fuzzy + judge)
+[0.5] mutation intents   (create/delete dashboard or folder)
+[0]   explicit search
+[1]   service-specific search                   (fuzzy + judge)
+[2]   single-category dashboards
+[3]   exact patterns  (25+ read, 10+ write, 4 workflows)
+[4]   single-keyword category fallback
+[5]   local fuzzy over every dashboard          (fuzzy + judge)
    │
    ▼
-no match → classify → LLM answer (PromQL explainer, incident analysis, chit-chat)
+no match → LLM fallback with role-tuned prompt (PromQL help, chit-chat, incident analysis)
 ```
 
-Multi-keyword queries skip Phase 2/4 so every keyword must intersect in the local fuzzy score —
-that's why `oracle kpi dashbords` returns only KPI-on-OCI dashboards, not all 20 OCI ones.
+## Self-observability
 
-## LLM-as-judge reranker
+The MCP server exports its own Prometheus metrics at `/metrics`:
 
-Fuzzy paths (Phase 1 + Phase 5) send the top 20 candidates through a low-temperature (0.1)
-judge prompt that returns JSON:
+- `ollychat_mcp_tool_calls_total{tool,role,status}` — counter
+- `ollychat_mcp_tool_duration_seconds{tool,role}` — histogram
+- `ollychat_mcp_grafana_requests_total{method,status_class}` — outbound Grafana API calls
 
-```json
-[{"uid": "…", "reason": "…", "score": 0-100}]
-```
-
-The widget then renders:
-
-```
-🎯 Top N dashboards for <query>:
-- Title · Folder · score 93
-  💡 short reason
-  [Open dashboard](/d/…)
-```
-
-If the judge errors or returns junk, the original deterministic formatter output is used —
-never a regression.
-
-## RBAC
-
-| Role | Can do | Cannot do |
-|---|---|---|
-| `viewer` | all read ops, PromQL help, navigation | any mutation, user listing |
-| `editor` | + `silence_alert`, `create_dashboard`, `update_dashboard`, `create_folder` | delete dashboards, list users |
-| `admin` | everything above + `delete_dashboard`, `list_users`, `list_service_accounts` | — |
-
-Role comes from the Grafana session (`X-Grafana-Role` header), forwarded by the widget,
-validated by the orchestrator, enforced at the MCP layer before the tool runs.
+Every tool call also emits a structured `tool.call` audit log line.

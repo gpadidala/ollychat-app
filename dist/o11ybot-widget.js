@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "2.4.0";
+  var WIDGET_VERSION = "3.0.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -690,6 +690,43 @@
           actions: [
             { icon: "🗺️", label: "Find in Grafana", q: "where do I find alert rules?" },
             { icon: "🩺", label: "Decode error", q: "decode error: " },
+          ],
+        },
+        {
+          title: "🔎 Investigate",
+          actions: [
+            { icon: "🧩", label: "Correlate service", q: "correlate service " },
+            { icon: "🔬", label: "Investigate alert", q: "investigate alert " },
+            { icon: "📜", label: "Logs for service", q: "search logs for " },
+            { icon: "🐢", label: "Slow traces", q: "find slow traces for " },
+            { icon: "🎯", label: "SLO for service", q: "create slo dashboard for " },
+            { icon: "🔗", label: "Metric usage", q: "which dashboards use metric " },
+          ],
+        },
+        {
+          title: "🧰 Plugins & Teams",
+          actions: [
+            { icon: "🔌", label: "Plugins", q: "list all plugins" },
+            { icon: "📡", label: "DS plugins", q: "list datasource plugins" },
+            { icon: "🖼️", label: "Library panels", q: "list library panels" },
+            { icon: "👥", label: "Teams", q: "list teams" },
+          ],
+        },
+        {
+          title: "🔔 Alert authoring",
+          actions: [
+            { icon: "📇", label: "Contact points", q: "list contact points" },
+            { icon: "🧵", label: "Policies", q: "list notification policies" },
+            { icon: "🔕", label: "Silences", q: "list silences" },
+            { icon: "⏰", label: "Mute timings", q: "list mute timings" },
+          ],
+        },
+        {
+          title: "🔍 Metrics",
+          actions: [
+            { icon: "📇", label: "Metric names", q: "list all metric names" },
+            { icon: "🔎", label: "Match pattern", q: "list metrics matching " },
+            { icon: "📌", label: "Annotations", q: "list annotations" },
           ],
         },
         {
