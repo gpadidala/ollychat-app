@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "1.8.0";
+  var WIDGET_VERSION = "1.9.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -128,11 +128,34 @@
 .ob-fab:hover{transform:scale(1.1)}\
 .ob-fab svg{width:28px;height:28px;fill:#fff}\
 .ob-dot{position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:#22c55e;border:2px solid #111}\
-.ob-panel{width:460px;height:620px;background:#111217;border:1px solid #2a2a3e;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.5);overflow:hidden;resize:both;min-width:360px;min-height:420px;max-width:90vw;max-height:85vh}\
+.ob-panel{width:460px;height:620px;background:#111217;border:1px solid #2a2a3e;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.5);overflow:hidden;resize:both;min-width:320px;min-height:380px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px)}\
 .ob-panel.ob-maximized{width:75vw!important;height:85vh!important;resize:none}\
 .ob-panel.ob-fullscreen{width:100vw!important;height:100vh!important;border-radius:0;resize:none;border:none}\
 #o11ybot-root.ob-maximized,#o11ybot-root.ob-fullscreen{display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);backdrop-filter:blur(3px)}\
 #o11ybot-root.ob-fullscreen{background:#0d0d12}\
+/* Tablet breakpoint */\
+@media (max-width:768px){\
+  .ob-panel{width:calc(100vw - 16px)!important;height:calc(100vh - 80px)!important;max-width:none;max-height:none;resize:none;border-radius:10px}\
+  .ob-fab{width:52px;height:52px}\
+  .ob-fab svg{width:26px;height:26px}\
+}\
+/* Mobile breakpoint — take over screen */\
+@media (max-width:480px){\
+  .ob-panel{width:100vw!important;height:100vh!important;border-radius:0;border:none;max-width:none;max-height:none}\
+  #o11ybot-root.ob-open{left:0!important;top:0!important;right:0!important;bottom:0!important;width:100vw!important;height:100vh!important}\
+  .ob-fab{width:48px;height:48px}\
+  .ob-fab svg{width:24px;height:24px}\
+  .ob-hdr-icon{width:28px;height:28px}\
+  .ob-title{font-size:14px}\
+  .ob-sub{font-size:10px}\
+  .ob-hbtn{width:32px;height:32px}  /* bigger touch targets */\
+  .ob-in{font-size:14px;padding:12px 14px}\
+  .ob-send,.ob-stop{width:42px;height:42px}\
+  .ob-qa-grid{grid-template-columns:1fr}\
+  .ob-qa-btn{padding:10px 12px;font-size:13px}\
+  .ob-msgs{padding:12px}\
+  .ob-msg-wrap{max-width:88%}\
+}\
 .ob-hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,#1a1025,#111217);border-bottom:1px solid #2a2a3e;cursor:grab;user-select:none}\
 .ob-hdr:active{cursor:grabbing}\
 .ob-hdr-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff6600,#f59e0b);display:flex;align-items:center;justify-content:center;flex-shrink:0}\
@@ -329,19 +352,82 @@
     return s;
   }
 
+  // Detect mobile/tablet for responsive decisions
+  function isMobile() { return window.innerWidth <= 480; }
+  function isTablet() { return window.innerWidth <= 768 && window.innerWidth > 480; }
+
+  // Panel dimensions (match CSS)
+  function panelSize() {
+    if (isMobile()) return { w: window.innerWidth, h: window.innerHeight };
+    if (isTablet()) return { w: window.innerWidth - 16, h: window.innerHeight - 80 };
+    return { w: 460, h: 620 };
+  }
+
+  // Viewport-aware position clamping
+  function clampToViewport(x, y, w, h) {
+    var margin = 8;
+    var maxX = Math.max(margin, window.innerWidth - w - margin);
+    var maxY = Math.max(margin, window.innerHeight - h - margin);
+    return {
+      x: Math.max(margin, Math.min(maxX, x)),
+      y: Math.max(margin, Math.min(maxY, y)),
+    };
+  }
+
   function applyPos() {
-    root.classList.remove("ob-maximized", "ob-fullscreen");
+    root.classList.remove("ob-maximized", "ob-fullscreen", "ob-open");
+
     if (state.mode === "maximized" || state.mode === "fullscreen") {
       root.style.cssText = "position:fixed;z-index:999999;left:0;top:0;right:0;bottom:0;width:100vw;height:100vh;" +
         (state.mode === "fullscreen" ? "background:#0d0d12;" : "background:rgba(0,0,0,.35);backdrop-filter:blur(3px);");
       root.classList.add("ob-" + state.mode);
       return;
     }
-    var posStyle = (state.posX != null && state.posY != null)
-      ? "left:" + state.posX + "px;top:" + state.posY + "px;"
-      : "bottom:24px;right:24px;";
+
+    // ── Mobile: always fullscreen-like ──
+    if (isMobile() && state.open) {
+      root.classList.add("ob-open");
+      root.style.cssText = "position:fixed;z-index:999999;left:0;top:0;right:0;bottom:0;width:100vw;height:100vh;";
+      return;
+    }
+
+    // ── When open on desktop/tablet: smart positioning ──
+    if (state.open) {
+      var size = panelSize();
+      var w = size.w, h = size.h;
+
+      var pos;
+      if (state.posX != null && state.posY != null) {
+        // User has a custom position — clamp it to viewport
+        pos = clampToViewport(state.posX, state.posY, w, h);
+      } else {
+        // Default: bottom-right corner with 24px margin, but clamp
+        var defaultX = window.innerWidth - w - 24;
+        var defaultY = window.innerHeight - h - 24;
+        pos = clampToViewport(defaultX, defaultY, w, h);
+      }
+
+      root.style.cssText = "position:fixed;z-index:999999;left:" + pos.x + "px;top:" + pos.y + "px;";
+      return;
+    }
+
+    // ── FAB (closed): bottom-right corner, clamped ──
+    var fabSize = isMobile() ? 48 : isTablet() ? 52 : 56;
+    var posStyle;
+    if (state.posX != null && state.posY != null) {
+      // Use dragged position, clamped
+      var pos = clampToViewport(state.posX, state.posY, fabSize, fabSize);
+      posStyle = "left:" + pos.x + "px;top:" + pos.y + "px;";
+    } else {
+      posStyle = "bottom:24px;right:24px;";
+    }
     root.style.cssText = "position:fixed;z-index:999999;" + posStyle;
   }
+
+  // Re-clamp on window resize
+  window.addEventListener("resize", function() {
+    if (state.open) applyPos();
+  });
 
   // ═══════════════════════════════════════════════════════════
   // Render: FAB (closed state)
@@ -351,24 +437,28 @@
     root.innerHTML = '<button class="ob-fab" title="O11yBot (drag to move, click to chat)">' + ICO_BOT + '<div class="ob-dot"></div></button>';
     var fab = root.querySelector(".ob-fab");
 
-    // Click to open — but only if not dragged
+    // Click/tap to open — but only if not dragged
     var dragStarted = false;
-    fab.addEventListener("mousedown", function(ev) {
+    var fabSize = isMobile() ? 48 : isTablet() ? 52 : 56;
+
+    var onDown = function(ev) {
       dragStarted = false;
-      var startX = ev.clientX, startY = ev.clientY;
+      var xy = ptrXY(ev);
+      var startX = xy.x, startY = xy.y;
       var rect = root.getBoundingClientRect();
-      var ox = ev.clientX - rect.left, oy = ev.clientY - rect.top;
+      var ox = xy.x - rect.left, oy = xy.y - rect.top;
 
       var onMove = function(e2) {
-        if (!dragStarted && (Math.abs(e2.clientX - startX) > 3 || Math.abs(e2.clientY - startY) > 3)) {
+        var xy2 = ptrXY(e2);
+        if (!dragStarted && (Math.abs(xy2.x - startX) > 4 || Math.abs(xy2.y - startY) > 4)) {
           dragStarted = true;
           document.body.style.userSelect = "none";
         }
         if (dragStarted) {
-          var nx = Math.max(0, Math.min(window.innerWidth - 60, e2.clientX - ox));
-          var ny = Math.max(0, Math.min(window.innerHeight - 60, e2.clientY - oy));
-          state.posX = nx; state.posY = ny;
-          root.style.left = nx + "px"; root.style.top = ny + "px";
+          e2.preventDefault && e2.preventDefault();
+          var pos = clampToViewport(xy2.x - ox, xy2.y - oy, fabSize, fabSize);
+          state.posX = pos.x; state.posY = pos.y;
+          root.style.left = pos.x + "px"; root.style.top = pos.y + "px";
           root.style.right = "auto"; root.style.bottom = "auto";
         }
       };
@@ -376,11 +466,18 @@
         document.body.style.userSelect = "";
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
+        document.removeEventListener("touchmove", onMove);
+        document.removeEventListener("touchend", onUp);
         if (dragStarted) saveState();
       };
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
-    });
+      document.addEventListener("touchmove", onMove, { passive: false });
+      document.addEventListener("touchend", onUp);
+    };
+
+    fab.addEventListener("mousedown", onDown);
+    fab.addEventListener("touchstart", onDown, { passive: true });
 
     fab.onclick = function() {
       if (dragStarted) return;  // don't open if user dragged
@@ -784,10 +881,11 @@
   }
 
   function wireEvents() {
-    // Header drag — use addEventListener to not get overridden
+    // Header drag — mouse + touch
     var hdr = document.getElementById("ob-hdr");
     if (hdr) {
       hdr.addEventListener("mousedown", startDrag);
+      hdr.addEventListener("touchstart", startDrag, { passive: false });
     }
 
     // Shortcuts button + overlay
@@ -964,33 +1062,44 @@
     if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight;
   }
 
+  // Unified pointer event extractor (works for mouse + touch)
+  function ptrXY(ev) {
+    if (ev.touches && ev.touches[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+    if (ev.changedTouches && ev.changedTouches[0]) return { x: ev.changedTouches[0].clientX, y: ev.changedTouches[0].clientY };
+    return { x: ev.clientX, y: ev.clientY };
+  }
+
   function startDrag(ev) {
     // Don't drag if clicking on a button or interactive element
     if (ev.target.tagName === "BUTTON" || ev.target.closest("button")) return;
     if (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA" || ev.target.tagName === "SELECT") return;
-    // Can't drag while maximized/fullscreen
+    // Can't drag while maximized/fullscreen (or mobile — it's fullscreen anyway)
     if (state.mode === "maximized" || state.mode === "fullscreen") return;
+    if (isMobile()) return;
 
     ev.preventDefault();
     ev.stopPropagation();
 
+    var xy = ptrXY(ev);
     var rect = root.getBoundingClientRect();
     drag = {
       active: true,
-      ox: ev.clientX - rect.left,
-      oy: ev.clientY - rect.top,
+      ox: xy.x - rect.left,
+      oy: xy.y - rect.top,
     };
     document.body.style.userSelect = "none";
+
+    var size = panelSize();
 
     var onMove = function(ev2) {
       if (!drag.active) return;
       ev2.preventDefault();
-      var nx = Math.max(0, Math.min(window.innerWidth - 60, ev2.clientX - drag.ox));
-      var ny = Math.max(0, Math.min(window.innerHeight - 60, ev2.clientY - drag.oy));
-      state.posX = nx;
-      state.posY = ny;
-      root.style.left = nx + "px";
-      root.style.top = ny + "px";
+      var xy2 = ptrXY(ev2);
+      var pos = clampToViewport(xy2.x - drag.ox, xy2.y - drag.oy, size.w, size.h);
+      state.posX = pos.x;
+      state.posY = pos.y;
+      root.style.left = pos.x + "px";
+      root.style.top = pos.y + "px";
       root.style.right = "auto";
       root.style.bottom = "auto";
     };
@@ -999,10 +1108,14 @@
       document.body.style.userSelect = "";
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onUp);
       saveState();
     };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onUp);
   }
 
   // ═══════════════════════════════════════════════════════════
