@@ -6,7 +6,7 @@ from typing import Any
 from grafana_client import client_for
 from registry import tool
 
-from ._panel_templates import build_red_panels
+from ._panel_templates import build_panels_from_metrics, build_red_panels
 
 
 def _summary(raw: dict) -> dict:
@@ -194,6 +194,127 @@ async def _default_prometheus_uid(role: str) -> str:
     return ""
 
 
+# Intent synonyms — map user-facing observability terms to the tokens that
+# typically appear in Prometheus metric names. So "latency" / "slow" / "p95"
+# all expand to match {duration, latency, seconds, time, ms}.
+_SYNONYMS: dict[str, list[str]] = {
+    "latency": ["latency", "duration", "seconds", "time", "ms"],
+    "duration": ["duration", "latency", "seconds"],
+    "slow": ["latency", "duration", "seconds"],
+    "p95": ["bucket", "duration", "latency"],
+    "p99": ["bucket", "duration", "latency"],
+    "errors": ["error", "errors", "fail", "failed", "failure"],
+    "failure": ["error", "fail", "failed", "failure"],
+    "5xx": ["error", "status"],
+    "4xx": ["error", "status"],
+    "requests": ["requests", "request", "http", "rpc", "api"],
+    "rate": ["total", "count", "rate", "requests"],
+    "throughput": ["total", "count", "requests"],
+    "qps": ["requests", "total", "count"],
+    "cpu": ["cpu", "process_cpu"],
+    "memory": ["memory", "mem", "heap", "rss", "bytes"],
+    "mem": ["memory", "mem", "heap", "bytes"],
+    "disk": ["disk", "fs", "filesystem", "io"],
+    "network": ["network", "net", "bytes", "packets"],
+    "connections": ["connections", "conn", "sockets"],
+    "queue": ["queue", "queued", "pending", "backlog"],
+    "cache": ["cache", "hit", "miss"],
+    "db": ["db", "database", "sql", "pg", "postgres", "mysql", "redis"],
+    "database": ["database", "db", "sql"],
+    "goroutines": ["goroutines", "threads"],
+    "saturation": ["inflight", "in_flight", "queue", "pending"],
+    "availability": ["up", "healthy", "ready"],
+    "uptime": ["uptime", "up", "start_time"],
+}
+
+
+def _expand_token(tok: str) -> set[str]:
+    """Return the token plus any semantic synonyms."""
+    variants = {tok}
+    variants.update(_SYNONYMS.get(tok, []))
+    # Also handle short forms: "mem" → cover "memory", etc.
+    for key, expansions in _SYNONYMS.items():
+        if tok == key or tok in expansions:
+            variants.update(expansions)
+    return {v.lower() for v in variants if v}
+
+
+async def _discover_topic_metrics(role: str, ds_uid: str, topic: str) -> list[str]:
+    """Query the datasource for metric names, then score each by how well it
+    matches the user's topic (including semantic synonyms).
+
+    Strategy — in order, stop as soon as we have ≥5 candidates:
+      1. All topic tokens match (strongest)
+      2. At least one "anchor" token (non-synonym-expanded) matches
+      3. Any synonym matches (weakest fallback)
+
+    This way "grafana latency" finds metrics with BOTH grafana AND
+    duration/seconds/latency — not just anything with "grafana".
+    """
+    if not ds_uid or not topic:
+        return []
+    c = client_for(role)
+    try:
+        raw = await c.get(f"/api/datasources/proxy/uid/{ds_uid}/api/v1/label/__name__/values")
+    except Exception:
+        return []
+    all_names: list[str] = list((raw or {}).get("data") or [])
+    if not all_names:
+        return []
+
+    # Normalise topic → tokens, drop filler
+    filler = {"a", "an", "the", "dashboard", "dashboards", "dash", "panel", "panels", "for", "of", "on"}
+    raw_tokens = [
+        t.lower()
+        for t in topic.replace("-", " ").replace("_", " ").split()
+        if t and t.lower() not in filler
+    ]
+    if not raw_tokens:
+        raw_tokens = [topic.lower()]
+
+    expanded_per_token: list[set[str]] = [_expand_token(t) for t in raw_tokens]
+
+    # Strategy 1: every token (or its synonyms) must hit
+    strict: list[str] = []
+    for name in all_names:
+        nlow = name.lower()
+        if all(any(v in nlow for v in variants) for variants in expanded_per_token):
+            strict.append(name)
+
+    # Strategy 2: if too few, keep strict ∪ "at least 1 raw token matches"
+    if len(strict) < 5:
+        loose = [n for n in all_names if any(t in n.lower() for t in raw_tokens)]
+        # Merge, strict first (highest relevance)
+        merged: list[str] = []
+        seen: set[str] = set()
+        for n in strict + loose:
+            if n not in seen:
+                seen.add(n)
+                merged.append(n)
+        candidates = merged
+    else:
+        candidates = strict
+
+    # Strategy 3: if still nothing, match any synonym
+    if not candidates:
+        all_synonyms: set[str] = set().union(*expanded_per_token) if expanded_per_token else set()
+        candidates = [n for n in all_names if any(s in n.lower() for s in all_synonyms)]
+
+    # Priority: histograms → durations → counters → gauges
+    def _priority(n: str) -> int:
+        low = n.lower()
+        if n.endswith("_bucket"):
+            return 0
+        if "duration" in low or "latency" in low or "seconds" in low:
+            return 1
+        if n.endswith("_total") or n.endswith("_count"):
+            return 2
+        return 3
+
+    candidates.sort(key=_priority)
+    return candidates[:50]
+
+
 @tool()
 async def create_smart_dashboard(
     title: str,
@@ -218,7 +339,16 @@ async def create_smart_dashboard(
             "message": "No Prometheus datasource found. Pass datasource_uid explicitly.",
         }
     topic_str = (topic or title).strip().lower()
-    panels = build_red_panels(topic_str, ds_uid)
+
+    # Discover real metrics first so panels never render 'No data' when live
+    # metrics exist. Falls back to the RED template when nothing matches.
+    discovered = await _discover_topic_metrics(role, ds_uid, topic_str)
+    if discovered:
+        panels = build_panels_from_metrics(topic_str, ds_uid, discovered)
+        panel_kind = f"{len(panels)} panels from {len(discovered)} live metrics"
+    else:
+        panels = build_red_panels(topic_str, ds_uid)
+        panel_kind = f"{len(panels)} RED template panels (no matching metrics found yet)"
     all_tags = sorted({*(tags or []), topic_str.replace(" ", "-"), "o11ybot", "auto-generated"})
 
     body: dict[str, Any] = {
@@ -250,7 +380,7 @@ async def create_smart_dashboard(
         "version": (raw or {}).get("version", 0),
         "status": (raw or {}).get("status", "success"),
         "message": (
-            f"Smart dashboard '{title}' created with {len(panels)} panels "
-            f"(RED + resources) filtered for '{topic_str}'"
+            f"Smart dashboard '{title}' created with {panel_kind} "
+            f"for topic '{topic_str}'"
         ),
     }
