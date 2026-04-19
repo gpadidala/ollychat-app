@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 540" width="1600" height="540" role="img" aria-labelledby="title">
+  <title id="title">O11yBot — AI assistant for Grafana, on every page</title>
+
+  <defs>
+    <!-- Layered night-sky gradient base -->
+    <linearGradient id="bg-base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A0B10"/>
+      <stop offset="60%" stop-color="#0D0E18"/>
+      <stop offset="100%" stop-color="#05060A"/>
+    </linearGradient>
+
+    <!-- Glass panel gradient -->
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#FFFFFF" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.02"/>
+    </linearGradient>
+
+    <!-- Headline gradient — orange → violet → cyan -->
+    <linearGradient id="text-g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#F46800"/>
+      <stop offset="45%"  stop-color="#EC4899"/>
+      <stop offset="70%"  stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+      <animate attributeName="x1" values="0;-0.5;0" dur="8s" repeatCount="indefinite"/>
+      <animate attributeName="x2" values="1;1.5;1" dur="8s" repeatCount="indefinite"/>
+    </linearGradient>
+
+    <!-- Node glows for the background constellation -->
+    <radialGradient id="g-orange" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#F46800" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#F46800" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g-blue" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#06B6D4" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g-violet" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#A78BFA" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#A78BFA" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g-pink" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#EC4899" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#EC4899" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Dot-grid pattern -->
+    <pattern id="dots" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+      <circle cx="1.2" cy="1.2" r="1" fill="#FFFFFF" fill-opacity="0.05"/>
+    </pattern>
+
+    <!-- Soft blur for the aura behind the logo -->
+    <filter id="soft-blur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+
+    <!-- Orb gradient for the logo mark -->
+    <linearGradient id="orb" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#FF8A2A"/>
+      <stop offset="60%"  stop-color="#F46800"/>
+      <stop offset="100%" stop-color="#B94A00"/>
+    </linearGradient>
+    <radialGradient id="orb-highlight" cx="0.3" cy="0.25" r="0.6">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="60%"  stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Backdrop -->
+  <rect width="1600" height="540" fill="url(#bg-base)"/>
+  <rect width="1600" height="540" fill="url(#dots)"/>
+
+  <!-- Constellation glows -->
+  <g>
+    <circle cx="200"  cy="120" r="180" fill="url(#g-orange)"/>
+    <circle cx="1420" cy="160" r="220" fill="url(#g-blue)"/>
+    <circle cx="280"  cy="460" r="200" fill="url(#g-violet)"/>
+    <circle cx="1340" cy="460" r="170" fill="url(#g-pink)"/>
+  </g>
+
+  <!-- Faint trace lines -->
+  <g stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="1" fill="none">
+    <path d="M200,120 L1420,160"/>
+    <path d="M1420,160 L1340,460"/>
+    <path d="M1340,460 L280,460"/>
+    <path d="M280,460 L200,120"/>
+    <path d="M200,120 L1340,460"/>
+    <path d="M1420,160 L280,460"/>
+  </g>
+  <g fill="#FFFFFF" fill-opacity="0.4">
+    <circle cx="200"  cy="120" r="2"/>
+    <circle cx="1420" cy="160" r="2"/>
+    <circle cx="280"  cy="460" r="2"/>
+    <circle cx="1340" cy="460" r="2"/>
+  </g>
+
+  <!-- Glass panel -->
+  <g transform="translate(120, 90)">
+    <rect width="1360" height="360" rx="28"
+          fill="url(#glass)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1"/>
+    <!-- Inner top highlight -->
+    <rect x="1" y="1" width="1358" height="1" fill="#FFFFFF" fill-opacity="0.15"/>
+
+    <!-- Logo aura -->
+    <circle cx="190" cy="180" r="96" fill="url(#g-orange)" filter="url(#soft-blur)"/>
+
+    <!-- O11yBot orb logo (centred at 190,180) -->
+    <g transform="translate(190,180)">
+      <!-- outer halo ring -->
+      <circle r="78" fill="none" stroke="#F46800" stroke-opacity="0.35" stroke-width="1" stroke-dasharray="2 6"/>
+      <!-- orbiting nodes -->
+      <g>
+        <circle cx="72" cy="0"  r="4" fill="#06B6D4">
+          <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="22s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="-68" cy="8" r="3" fill="#A78BFA">
+          <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="28s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+      <!-- main orb -->
+      <circle r="62" fill="url(#orb)"/>
+      <circle r="62" fill="url(#orb-highlight)"/>
+      <!-- antenna + signal dot -->
+      <line x1="0" y1="-62" x2="0" y2="-82" stroke="#0A0B10" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="0" cy="-88" r="5" fill="#22C55E"/>
+      <circle cx="0" cy="-88" r="2.4" fill="#D4F7D4"/>
+      <!-- eyes -->
+      <g>
+        <circle cx="-16" cy="-6" r="9" fill="#0A0B10"/>
+        <circle cx="-13" cy="-8" r="3.6" fill="#FFFFFF"/>
+        <circle cx="16"  cy="-6" r="9" fill="#0A0B10"/>
+        <circle cx="19"  cy="-8" r="3.6" fill="#FFFFFF"/>
+      </g>
+      <!-- smile -->
+      <path d="M -18,18 Q 0,30 18,18" stroke="#0A0B10" stroke-width="3"
+            stroke-linecap="round" fill="none"/>
+    </g>
+
+    <!-- Headline -->
+    <text x="330" y="130" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif"
+          font-weight="800" font-size="92" fill="url(#text-g)" letter-spacing="-2">O11yBot</text>
+
+    <!-- Tagline -->
+    <text x="332" y="188" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif"
+          font-weight="500" font-size="26" fill="#D6DAE5" letter-spacing="0.2">
+      The floating AI assistant for Grafana — on every page, every dashboard.
+    </text>
+    <text x="332" y="224" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif"
+          font-weight="400" font-size="18" fill="#8B93A6">
+      53 MCP tools · 160/160 tests · Deploy anywhere · Open source
+    </text>
+
+    <!-- Feature chips -->
+    <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif"
+       font-weight="600" font-size="13" letter-spacing="0.5">
+      <g transform="translate(332, 260)">
+        <rect x="0"   width="176" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.06" stroke="#F46800" stroke-opacity="0.4"/>
+        <text x="88"  y="22" text-anchor="middle" fill="#FF8A2A">⚡  Intent matcher</text>
+      </g>
+      <g transform="translate(520, 260)">
+        <rect x="0"   width="186" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.06" stroke="#06B6D4" stroke-opacity="0.4"/>
+        <text x="93"  y="22" text-anchor="middle" fill="#7DD3FC">🔎  Metric discovery</text>
+      </g>
+      <g transform="translate(718, 260)">
+        <rect x="0"   width="176" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.06" stroke="#A78BFA" stroke-opacity="0.4"/>
+        <text x="88"  y="22" text-anchor="middle" fill="#C4B5FD">🧠  LLM-as-judge</text>
+      </g>
+      <g transform="translate(906, 260)">
+        <rect x="0"   width="176" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.06" stroke="#EC4899" stroke-opacity="0.4"/>
+        <text x="88"  y="22" text-anchor="middle" fill="#F9A8D4">🛡️  Role-based RBAC</text>
+      </g>
+      <g transform="translate(1094, 260)">
+        <rect x="0"   width="176" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.06" stroke="#22C55E" stroke-opacity="0.4"/>
+        <text x="88"  y="22" text-anchor="middle" fill="#86EFAC">📊  Self-observable</text>
+      </g>
+    </g>
+
+    <!-- Terminal chip — animated prompt -->
+    <g transform="translate(330, 305)">
+      <rect x="0" y="0" width="940" height="32" rx="8" fill="#0A0B10" stroke="#2A2A3E"/>
+      <text x="16" y="22" font-family="JetBrains Mono, SF Mono, monospace" font-size="14" fill="#88C0D0">$ </text>
+      <text x="36" y="22" font-family="JetBrains Mono, SF Mono, monospace" font-size="14" fill="#E5E9F0">
+        <tspan>create a payment-service dashboard</tspan>
+      </text>
+      <rect x="336" y="12" width="8" height="14" fill="#F46800">
+        <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+
+    <!-- Status strip bottom-right inside glass panel -->
+    <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif">
+      <circle cx="1226" cy="322" r="5" fill="#22C55E">
+        <animate attributeName="opacity" values="0.4;1;0.4" dur="2.2s" repeatCount="indefinite"/>
+      </circle>
+      <text x="1240" y="326" font-size="12" fill="#8B93A6">mcp connected · 53 tools online</text>
+    </g>
+  </g>
+
+  <!-- Version strip at the very bottom -->
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif" font-size="11">
+    <text x="140"  y="495" fill="#6B7280">v3.0.0</text>
+    <text x="200"  y="495" fill="#6B7280">·</text>
+    <text x="215"  y="495" fill="#6B7280">Grafana 10.0+</text>
+    <text x="320"  y="495" fill="#6B7280">·</text>
+    <text x="335"  y="495" fill="#6B7280">Apache 2.0</text>
+    <text x="1460" y="495" fill="#6B7280" text-anchor="end">github.com/gpadidala/ollychat-app</text>
+  </g>
+</svg>

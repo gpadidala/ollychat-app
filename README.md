@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/assets/o11ybot-logo.svg" alt="O11yBot" width="100" />
+  <img src="docs/assets/hero-banner.svg" alt="O11yBot — AI assistant for Grafana, on every page" width="100%" />
 </p>
 
 <h1 align="center">O11yBot</h1>
 
 <p align="center">
-  <b>The floating AI chatbot for Grafana — on every page, every dashboard.</b><br/>
+  <b>The floating AI assistant for Grafana — on every page, every dashboard.</b><br/>
   <sub>Ask about metrics, logs, traces, dashboards, alerts in natural language.</sub>
 </p>
 
@@ -36,11 +36,19 @@
 ## 🎬 Demo
 
 <p align="center">
-  <img src="docs/assets/o11ybot-demo.gif" alt="O11yBot in action" width="900"/>
+  <img src="docs/assets/demo.gif" alt="O11yBot in action — 20-second live capture" width="100%"/>
 </p>
 
 <p align="center"><sub>
-  <b>o11Y Place Home</b> → <b>user asks "list dashboards"</b> → <b>streams 113 real results</b> → <b>navigates to AKS dashboard</b> → <b>bot follows!</b> → <b>asks "check grafana health"</b> → <b>goes to Logs</b> → <b>maximizes</b> → <b>fullscreen advantages</b>
+  Real recording against a live Grafana at <code>localhost:3200</code> — login → open the widget →
+  <b>list dashboards</b> → <b>metric impact analysis</b> → maximised view → <b>create a smart dashboard with live metrics</b>.
+</sub></p>
+
+<p align="center"><sub>
+  Reproduce it yourself:
+  <code>python3 docs/assets/capture-demo.py --grafana-url http://localhost:3200</code>
+  &nbsp;·&nbsp;
+  <a href="docs/assets/RECORD_DEMO.md">RECORD_DEMO.md</a>
 </sub></p>
 
 ### 📸 Screenshots — every page, same bot
@@ -48,32 +56,28 @@
 <table>
 <tr>
 <td align="center" width="50%">
-  <img src="docs/assets/screenshot-home-bubble.png" alt="O11yBot on Grafana Home" width="100%"/>
-  <br/><sub><b>🏠 Home page</b> — "Welcome to o11Y Place" · pulsing bubble</sub>
+  <img src="docs/assets/hero-home.png" alt="O11yBot on Grafana Home" width="100%"/>
+  <br/><sub><b>🏠 Home</b> — pulsing bubble always-on, never in the way</sub>
 </td>
 <td align="center" width="50%">
-  <img src="docs/assets/screenshot-home-chat.png" alt="O11yBot chat on Home" width="100%"/>
-  <br/><sub><b>💬 Chat on Home</b> — 113 dashboards streamed in 114ms</sub>
-</td>
-</tr>
-<tr>
-<td align="center" width="50%">
-  <img src="docs/assets/screenshot-aks-bubble.png" alt="O11yBot on AKS dashboard" width="100%"/>
-  <br/><sub><b>📊 AKS dashboard</b> — bot follows across pages · no context switch</sub>
-</td>
-<td align="center" width="50%">
-  <img src="docs/assets/screenshot-aks-chat.png" alt="O11yBot health check on AKS" width="100%"/>
-  <br/><sub><b>💓 Health check</b> — version 11.6.4 · 3 datasources · 42ms</sub>
+  <img src="docs/assets/hero-chat.png" alt="O11yBot chat listing dashboards" width="100%"/>
+  <br/><sub><b>💬 Chat</b> — 113 real dashboards, links click through to Grafana</sub>
 </td>
 </tr>
 <tr>
 <td align="center" width="50%">
-  <img src="docs/assets/screenshot-logs-maximized.png" alt="Maximized on Logs page" width="100%"/>
-  <br/><sub><b>⚡ Maximized on Logs</b> — 75% viewport with blur backdrop</sub>
+  <img src="docs/assets/hero-response.png" alt="Metric impact analysis mid-stream" width="100%"/>
+  <br/><sub><b>🔗 Metric impact</b> — find every dashboard that references a PromQL metric</sub>
 </td>
 <td align="center" width="50%">
-  <img src="docs/assets/screenshot-fullscreen.png" alt="Fullscreen advantages" width="100%"/>
-  <br/><sub><b>⛶ Fullscreen</b> — all advantages at a glance</sub>
+  <img src="docs/assets/hero-wizard.png" alt="Dashboard creation wizard" width="100%"/>
+  <br/><sub><b>✨ Smart create</b> — 21 panels built from discovered Grafana metrics</sub>
+</td>
+</tr>
+<tr>
+<td align="center" colspan="2">
+  <img src="docs/assets/hero-maximized.png" alt="Maximised workspace" width="90%"/>
+  <br/><sub><b>⚡ Maximised workspace</b> — 75% of the viewport, blur backdrop, full tool metadata</sub>
 </td>
 </tr>
 </table>
