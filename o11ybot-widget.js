@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "2.1.0";
+  var WIDGET_VERSION = "2.2.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -231,6 +231,9 @@
 .ob-hbtn{width:28px;height:28px;border-radius:6px;background:0 0;border:1px solid transparent;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center}\
 .ob-hbtn:hover{background:rgba(255,255,255,.06);color:#ccc}\
 .ob-hbtn svg{width:16px;height:16px;fill:currentColor}\
+.ob-hbtn-new{color:#f59e0b;border:1px solid rgba(245,158,11,.3);margin-right:4px}\
+.ob-hbtn-new:hover{background:rgba(245,158,11,.15);color:#ff6600;border-color:rgba(245,158,11,.5)}\
+.ob-hbtn-new svg{stroke:currentColor;fill:none;stroke-width:2.5}\
 .ob-tabs{display:flex;border-bottom:1px solid #2a2a3e;background:#0d0d12}\
 .ob-tab{flex:1;padding:10px 14px;cursor:pointer;color:#888;font-size:12.5px;font-weight:500;text-align:center;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}\
 .ob-tab:hover{color:#ccc;background:rgba(255,255,255,.03)}\
@@ -1005,6 +1008,7 @@
           '<div class="ob-hdr-icon">' + ICO_BOT + '</div>' +
           '<div style="flex:1"><div class="ob-title">O11yBot</div><div class="ob-sub">' + (grafanaUser.role) + ' · drag to move</div></div>' +
           '<div class="ob-acts">' +
+            (state.view === "chat" ? '<button class="ob-hbtn ob-hbtn-new" id="ob-new-chat-hdr" title="New chat (⌘N)">' + ICO_NEW + '</button>' : '') +
             '<button class="ob-hbtn" id="ob-min" title="Minimize">' + ICO_MIN + '</button>' +
             '<button class="ob-hbtn" id="ob-max" title="' + (state.mode === "maximized" ? "Restore" : "Maximize") + '">' + ICO_MAX + '</button>' +
             '<button class="ob-hbtn" id="ob-full" title="' + (state.mode === "fullscreen" ? "Exit fullscreen" : "Fullscreen") + '">' + ICO_FULL + '</button>' +
@@ -1058,6 +1062,19 @@
     var kbdOverlay = document.getElementById("ob-shortcuts-overlay");
     if (kbdOverlay) kbdOverlay.onclick = function() {
       state.showShortcuts = false;
+      renderPanel();
+    };
+
+    // New chat (header) — active session auto-saves to history
+    var newHdrBtn = document.getElementById("ob-new-chat-hdr");
+    if (newHdrBtn) newHdrBtn.onclick = function(ev) {
+      ev.stopPropagation();
+      if (state.streaming && abortCtrl) abortCtrl.abort();
+      var cur = getActiveSession();
+      // Only create a new session if current one has messages; otherwise reuse the empty one
+      if (cur && cur.msgs.length > 0) newSession();
+      state.view = "chat";
+      saveState();
       renderPanel();
     };
 
