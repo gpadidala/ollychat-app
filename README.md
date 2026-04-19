@@ -398,32 +398,49 @@ Full API reference: **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)**
 
 ## 🏗️ Architecture
 
+### Layered view — six horizontal layers, top to bottom
+
 <p align="center">
-  <img src="docs/assets/architecture.svg" alt="O11yBot Architecture" width="1100"/>
+  <img src="docs/assets/architecture-layers.svg" alt="O11yBot layered architecture — six horizontal layers on a white backdrop" width="100%"/>
 </p>
 
-### Request flow (step-by-step)
+<p align="center"><sub>
+  Widget is the only piece that touches the user · Orchestrator runs the intent matcher + LLM router · MCP owns every Grafana call · LLM providers + Grafana/LGTM sit behind it · self-observability rides on the same rails.
+</sub></p>
 
-1. **User** types query in floating widget → Browser sends `POST /api/v1/chat` with SSE
-2. **Widget** adds `X-Grafana-User` header, JSON body with messages
+### Request flow — 10-step left-to-right pipeline
+
+<p align="center">
+  <img src="docs/assets/architecture-request-flow.svg" alt="O11yBot end-to-end request flow — 10 steps with latency annotations" width="100%"/>
+</p>
+
+<p align="center"><sub>
+  Fast path exits at step 6 (intent match → MCP → render, typical ~60 ms). Reasoning path adds the LLM-as-judge reranker (0.8–2 s) only when a fuzzy search asks for it.
+</sub></p>
+
+### Request flow — narrative
+
+1. **User** types a query in the floating widget → browser sends `POST /api/v1/chat` with SSE.
+2. **Widget** adds `X-Grafana-User` + `X-Grafana-Role` headers from the live Grafana session.
 3. **Orchestrator pipeline**:
    1. CORS + user identity check
    2. PII scan (redact before LLM)
-   3. **Intent matcher** — 60+ regex patterns → MATCH or LLM fallback
-   4. If MATCH → call MCP tool via HTTP bridge
+   3. **Intent matcher** — 60+ regex patterns → tool, category, wizard, or LLM fallback
+   4. If a tool matches → call MCP over REST
    5. Format result as markdown, stream back as SSE
-4. **O11yBot MCP server** receives tool call → enforces RBAC (viewer / editor / admin)
-5. MCP server calls **Grafana REST API** with the role-appropriate SA token
-6. Grafana returns data → MCP → Orchestrator → Widget
-7. Widget renders markdown in the bubble — streaming text, links, tool metadata
+4. **O11yBot MCP server** receives the tool call → enforces RBAC (viewer / editor / admin) → routes to the right async function.
+5. MCP calls the **Grafana REST API** with the role-appropriate SA token.
+6. Grafana returns data → MCP → orchestrator → widget.
+7. Widget renders streaming markdown — tool badge, latency, clickable links.
 
 ### Key design decisions
 
-- **Intent matcher before LLM** — reliable tool calls even with 500MB local models
-- **Widget injection via custom index.html** — works on every page without touching Grafana core
-- **Per-user localStorage** — no server-side session needed, privacy by default
-- **SSE over WebSockets** — simpler, works through proxies, no keepalive issues
-- **MCP REST bridge** — orchestrator doesn't need MCP SDK
+- **Intent matcher before LLM** — reliable tool calls even with a 500 MB local model.
+- **Widget injection via custom index.html** — works on every Grafana page without touching core.
+- **Per-user localStorage** — no server-side session, privacy by default.
+- **SSE over WebSockets** — simpler, works through any proxy, no keepalive issues.
+- **MCP REST bridge** — orchestrator never needs the MCP SDK, just two JSON endpoints.
+- **Self-owned MCP** — no external dependency; point `GRAFANA_URL` + SA tokens at any Grafana.
 
 Full details: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 

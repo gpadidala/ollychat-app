@@ -1,0 +1,298 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img" aria-labelledby="title">
+  <title id="title">O11yBot layered architecture</title>
+
+  <defs>
+    <style>
+      .layer-title  { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-weight: 700; font-size: 18px; }
+      .layer-sub    { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-size: 12px; fill: #64748B; }
+      .chip-label   { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-weight: 600; font-size: 13px; fill: #0F172A; }
+      .chip-meta    { font-family: JetBrains Mono, SF Mono, monospace; font-size: 11px; fill: #64748B; }
+      .header       { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-weight: 800; font-size: 28px; fill: #0F172A; }
+      .sub          { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-size: 15px; fill: #475569; }
+    </style>
+
+    <!-- Layer backgrounds -->
+    <linearGradient id="l-user" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#EDE9FE"/><stop offset="1" stop-color="#F5F3FF"/>
+    </linearGradient>
+    <linearGradient id="l-api" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#DBEAFE"/><stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <linearGradient id="l-mcp" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#FFEDD5"/><stop offset="1" stop-color="#FFF7ED"/>
+    </linearGradient>
+    <linearGradient id="l-llm" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#FCE7F3"/><stop offset="1" stop-color="#FDF2F8"/>
+    </linearGradient>
+    <linearGradient id="l-gra" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#D1FAE5"/><stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <linearGradient id="l-obs" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#FEE2E2"/><stop offset="1" stop-color="#FEF2F2"/>
+    </linearGradient>
+
+    <!-- Arrow marker -->
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0,0 L 10,5 L 0,10 z" fill="#0F172A"/>
+    </marker>
+
+    <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="140%">
+      <feGaussianBlur stdDeviation="2" in="SourceAlpha"/>
+      <feOffset dy="2"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.12"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- White canvas -->
+  <rect width="1600" height="1000" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <text x="800" y="52" class="header" text-anchor="middle">O11yBot — Layered Architecture</text>
+  <text x="800" y="84" class="sub"    text-anchor="middle">Every request traverses six layers. Widget is the only piece that touches the user.</text>
+
+  <!-- ═══ Layer 1 — User ═══ -->
+  <g transform="translate(80, 128)">
+    <rect width="1440" height="110" rx="18" fill="url(#l-user)" stroke="#C4B5FD" stroke-width="1"/>
+    <circle cx="40" cy="55" r="18" fill="#A78BFA"/>
+    <text x="40" y="60" text-anchor="middle" font-size="18" fill="#FFFFFF" font-weight="700">🟣</text>
+    <text x="80" y="40" class="layer-title" fill="#5B21B6">User Layer</text>
+    <text x="80" y="60" class="layer-sub">Any Grafana page (OSS or Enterprise). Widget loaded globally via custom index.html.</text>
+    <!-- Chips -->
+    <g transform="translate(80, 72)" filter="url(#card-shadow)">
+      <g transform="translate(0,0)">
+        <rect width="240" height="30" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="20" class="chip-label">🪟 Floating widget</text>
+        <text x="152" y="20" class="chip-meta">o11ybot-widget.js</text>
+      </g>
+      <g transform="translate(260,0)">
+        <rect width="260" height="30" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="20" class="chip-label">💬 Per-user chat history</text>
+        <text x="182" y="20" class="chip-meta">localStorage</text>
+      </g>
+      <g transform="translate(540,0)">
+        <rect width="230" height="30" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="20" class="chip-label">🎛️ 4 window modes</text>
+        <text x="144" y="20" class="chip-meta">FAB · normal · max · fs</text>
+      </g>
+      <g transform="translate(790,0)">
+        <rect width="220" height="30" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="20" class="chip-label">⌨️ Keyboard shortcuts</text>
+        <text x="152" y="20" class="chip-meta">⌘K ⌘/ ⌘N</text>
+      </g>
+      <g transform="translate(1030,0)">
+        <rect width="230" height="30" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="20" class="chip-label">🔐 Role from session</text>
+        <text x="158" y="20" class="chip-meta">X-Grafana-Role</text>
+      </g>
+    </g>
+  </g>
+  <line x1="800" y1="246" x2="800" y2="272" stroke="#0F172A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══ Layer 2 — API / Orchestrator ═══ -->
+  <g transform="translate(80, 284)">
+    <rect width="1440" height="130" rx="18" fill="url(#l-api)" stroke="#93C5FD" stroke-width="1"/>
+    <circle cx="40" cy="55" r="18" fill="#3B82F6"/>
+    <text x="40" y="60" text-anchor="middle" font-size="18" fill="#FFFFFF" font-weight="700">🔵</text>
+    <text x="80" y="40" class="layer-title" fill="#1E40AF">Orchestrator API</text>
+    <text x="80" y="60" class="layer-sub">FastAPI + SSE. Intent matcher fires before the LLM — cheap, deterministic tool calls.</text>
+    <g transform="translate(80, 72)" filter="url(#card-shadow)">
+      <g transform="translate(0,0)">
+        <rect width="250" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">📡 POST /api/v1/chat</text>
+        <text x="14" y="36" class="chip-meta">SSE · CRLF-safe parser</text>
+      </g>
+      <g transform="translate(270,0)">
+        <rect width="250" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">🛡️ PII scanner</text>
+        <text x="14" y="36" class="chip-meta">15 patterns · redact / block / log</text>
+      </g>
+      <g transform="translate(540,0)">
+        <rect width="260" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">🎯 Intent matcher (60+ regex)</text>
+        <text x="14" y="36" class="chip-meta">categories.py · local fuzzy · judge</text>
+      </g>
+      <g transform="translate(820,0)">
+        <rect width="240" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">🧠 LLM router</text>
+        <text x="14" y="36" class="chip-meta">prompts.py · 5 tuned categories</text>
+      </g>
+      <g transform="translate(1080,0)">
+        <rect width="250" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">🔌 MCP client manager</text>
+        <text x="14" y="36" class="chip-meta">register / list / call_tool</text>
+      </g>
+    </g>
+  </g>
+  <line x1="800" y1="422" x2="800" y2="448" stroke="#0F172A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══ Layer 3 — MCP Server ═══ -->
+  <g transform="translate(80, 460)">
+    <rect width="1440" height="130" rx="18" fill="url(#l-mcp)" stroke="#FDBA74" stroke-width="1"/>
+    <circle cx="40" cy="55" r="18" fill="#F97316"/>
+    <text x="40" y="60" text-anchor="middle" font-size="18" fill="#FFFFFF" font-weight="700">🟠</text>
+    <text x="80" y="40" class="layer-title" fill="#9A3412">O11yBot MCP Server (self-owned)</text>
+    <text x="80" y="60" class="layer-sub">53 tools over REST · RBAC enforcement · per-role token pool · /metrics for self-observability.</text>
+    <g transform="translate(80, 72)" filter="url(#card-shadow)">
+      <g transform="translate(0,0)">
+        <rect width="210" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">📊 Dashboards · 8</text>
+        <text x="14" y="36" class="chip-meta">list · search · create smart · delete</text>
+      </g>
+      <g transform="translate(230,0)">
+        <rect width="200" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">🚨 Alerts · 11</text>
+        <text x="14" y="36" class="chip-meta">CRUD · silence · contacts</text>
+      </g>
+      <g transform="translate(450,0)">
+        <rect width="200" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">📡 Datasources · 8</text>
+        <text x="14" y="36" class="chip-meta">PromQL · LogQL · TraceQL</text>
+      </g>
+      <g transform="translate(670,0)">
+        <rect width="200" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">🗂️ Folders · 5</text>
+        <text x="14" y="36" class="chip-meta">get · create · rename · delete</text>
+      </g>
+      <g transform="translate(890,0)">
+        <rect width="210" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">🧰 Teams · Plugins · Libs</text>
+        <text x="14" y="36" class="chip-meta">list · create · members</text>
+      </g>
+      <g transform="translate(1120,0)">
+        <rect width="210" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="19" class="chip-label">🔎 Workflows · 6</text>
+        <text x="14" y="36" class="chip-meta">investigate · correlate · SLO</text>
+      </g>
+    </g>
+  </g>
+  <line x1="520" y1="598" x2="520" y2="624" stroke="#0F172A" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="1080" y1="598" x2="1080" y2="624" stroke="#0F172A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══ Layer 4 — Split: LLM + Grafana API ═══ -->
+  <g transform="translate(80, 636)">
+    <!-- LLM providers -->
+    <g transform="translate(0,0)">
+      <rect width="700" height="130" rx="18" fill="url(#l-llm)" stroke="#F9A8D4" stroke-width="1"/>
+      <circle cx="40" cy="55" r="18" fill="#EC4899"/>
+      <text x="40" y="60" text-anchor="middle" font-size="18" fill="#FFFFFF" font-weight="700">🩷</text>
+      <text x="80" y="40" class="layer-title" fill="#9D174D">LLM Providers</text>
+      <text x="80" y="60" class="layer-sub">One env var switch · local Ollama · managed cloud · per-category temperature.</text>
+      <g transform="translate(80, 72)" filter="url(#card-shadow)">
+        <g transform="translate(0,0)">
+          <rect width="140" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <text x="14" y="19" class="chip-label">🦙 Ollama</text>
+          <text x="14" y="36" class="chip-meta">qwen2.5 · llama3</text>
+        </g>
+        <g transform="translate(150,0)">
+          <rect width="150" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <text x="14" y="19" class="chip-label">🤖 Anthropic</text>
+          <text x="14" y="36" class="chip-meta">claude-sonnet-4-6</text>
+        </g>
+        <g transform="translate(310,0)">
+          <rect width="140" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <text x="14" y="19" class="chip-label">✳️ OpenAI</text>
+          <text x="14" y="36" class="chip-meta">gpt-4o · mini</text>
+        </g>
+        <g transform="translate(460,0)">
+          <rect width="140" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <text x="14" y="19" class="chip-label">🟦 Google</text>
+          <text x="14" y="36" class="chip-meta">gemini · vertex</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Grafana API + LGTM -->
+    <g transform="translate(740,0)">
+      <rect width="700" height="130" rx="18" fill="url(#l-gra)" stroke="#6EE7B7" stroke-width="1"/>
+      <circle cx="40" cy="55" r="18" fill="#10B981"/>
+      <text x="40" y="60" text-anchor="middle" font-size="18" fill="#FFFFFF" font-weight="700">🟢</text>
+      <text x="80" y="40" class="layer-title" fill="#065F46">Target Grafana + LGTM</text>
+      <text x="80" y="60" class="layer-sub">The Grafana you point at. MCP calls /api/dashboards, /api/datasources/proxy, alertmanager, …</text>
+      <g transform="translate(80, 72)" filter="url(#card-shadow)">
+        <g transform="translate(0,0)">
+          <rect width="150" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <text x="14" y="19" class="chip-label">📈 Mimir</text>
+          <text x="14" y="36" class="chip-meta">metrics · PromQL</text>
+        </g>
+        <g transform="translate(160,0)">
+          <rect width="140" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <text x="14" y="19" class="chip-label">📜 Loki</text>
+          <text x="14" y="36" class="chip-meta">logs · LogQL</text>
+        </g>
+        <g transform="translate(310,0)">
+          <rect width="140" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <text x="14" y="19" class="chip-label">🔗 Tempo</text>
+          <text x="14" y="36" class="chip-meta">traces · TraceQL</text>
+        </g>
+        <g transform="translate(460,0)">
+          <rect width="140" height="44" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+          <text x="14" y="19" class="chip-label">🔥 Pyroscope</text>
+          <text x="14" y="36" class="chip-meta">profiles</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <line x1="800" y1="776" x2="800" y2="802" stroke="#0F172A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══ Layer 5 — Self observability ═══ -->
+  <g transform="translate(80, 814)">
+    <rect width="1440" height="110" rx="18" fill="url(#l-obs)" stroke="#FCA5A5" stroke-width="1"/>
+    <circle cx="40" cy="55" r="18" fill="#EF4444"/>
+    <text x="40" y="60" text-anchor="middle" font-size="18" fill="#FFFFFF" font-weight="700">🔴</text>
+    <text x="80" y="40" class="layer-title" fill="#991B1B">Self-observability</text>
+    <text x="80" y="60" class="layer-sub">MCP exports its own metrics + structured audit log — same stack O11yBot watches for your users.</text>
+    <g transform="translate(80, 72)" filter="url(#card-shadow)">
+      <g transform="translate(0,0)">
+        <rect width="310" height="30" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="20" class="chip-label">📊 /metrics</text>
+        <text x="110" y="20" class="chip-meta">ollychat_mcp_tool_calls_total</text>
+      </g>
+      <g transform="translate(330,0)">
+        <rect width="320" height="30" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="20" class="chip-label">📝 Audit log</text>
+        <text x="108" y="20" class="chip-meta">tool.call {user, tool, role, ms}</text>
+      </g>
+      <g transform="translate(670,0)">
+        <rect width="280" height="30" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="20" class="chip-label">🔭 OTLP traces</text>
+        <text x="128" y="20" class="chip-meta">OTEL_EXPORTER_ENDPOINT</text>
+      </g>
+      <g transform="translate(970,0)">
+        <rect width="290" height="30" rx="6" fill="#FFFFFF" stroke="#E5E7EB"/>
+        <text x="14" y="20" class="chip-label">🩺 /health probes</text>
+        <text x="130" y="20" class="chip-meta">liveness + readiness</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Side badge rail at right — latency, cost, scale annotations -->
+  <g transform="translate(1472, 128)">
+    <line x1="20" y1="0" x2="20" y2="800" stroke="#E5E7EB" stroke-dasharray="3 4"/>
+    <g transform="translate(0, 80)">
+      <rect width="100" height="28" rx="14" fill="#F5F3FF" stroke="#C4B5FD"/>
+      <text x="50" y="19" text-anchor="middle" class="chip-meta" fill="#5B21B6">&lt; 16 ms</text>
+    </g>
+    <g transform="translate(0, 240)">
+      <rect width="100" height="28" rx="14" fill="#EFF6FF" stroke="#93C5FD"/>
+      <text x="50" y="19" text-anchor="middle" class="chip-meta" fill="#1E40AF">~ 8 ms</text>
+    </g>
+    <g transform="translate(0, 410)">
+      <rect width="100" height="28" rx="14" fill="#FFF7ED" stroke="#FDBA74"/>
+      <text x="50" y="19" text-anchor="middle" class="chip-meta" fill="#9A3412">~ 60 ms</text>
+    </g>
+    <g transform="translate(0, 570)">
+      <rect width="100" height="28" rx="14" fill="#ECFDF5" stroke="#6EE7B7"/>
+      <text x="50" y="19" text-anchor="middle" class="chip-meta" fill="#065F46">~ 30 ms</text>
+    </g>
+    <g transform="translate(0, 720)">
+      <rect width="100" height="28" rx="14" fill="#FEF2F2" stroke="#FCA5A5"/>
+      <text x="50" y="19" text-anchor="middle" class="chip-meta" fill="#991B1B">async</text>
+    </g>
+  </g>
+
+  <!-- Footer credit -->
+  <text x="800" y="980" text-anchor="middle" class="layer-sub">
+    Six layers · one repo · one env file. Deploy against any Grafana (OSS or Enterprise) with GRAFANA_URL + 3 SA tokens.
+  </text>
+</svg>

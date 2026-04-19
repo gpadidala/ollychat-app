@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 640" width="1800" height="640" role="img" aria-labelledby="title">
+  <title id="title">O11yBot end-to-end request flow</title>
+
+  <defs>
+    <style>
+      .header    { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-weight: 800; font-size: 28px; fill: #0F172A; }
+      .sub       { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-size: 15px; fill: #475569; }
+      .step-num  { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-weight: 800; font-size: 14px; fill: #FFFFFF; }
+      .step-t    { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-weight: 700; font-size: 14px; fill: #0F172A; }
+      .step-s    { font-family: JetBrains Mono, SF Mono, monospace; font-size: 11px; fill: #475569; }
+      .lane      { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif; font-weight: 700; font-size: 13px; fill: #64748B; letter-spacing: 1px; }
+    </style>
+    <marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0,0 L 10,5 L 0,10 z" fill="#0F172A"/>
+    </marker>
+    <filter id="card" x="-10%" y="-10%" width="120%" height="140%">
+      <feGaussianBlur stdDeviation="2" in="SourceAlpha"/>
+      <feOffset dy="2"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.12"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- White backdrop -->
+  <rect width="1800" height="640" fill="#FFFFFF"/>
+
+  <!-- Header -->
+  <text x="900" y="52" class="header" text-anchor="middle">Request Flow — 10 steps, one SSE stream</text>
+  <text x="900" y="84" class="sub" text-anchor="middle">
+    Every chat turn walks left → right. Fast path exits at step 6; LLM path + judge run when needed.
+  </text>
+
+  <!-- Lane labels (left rail) -->
+  <g transform="translate(24, 200)">
+    <text class="lane">BROWSER</text>
+  </g>
+  <g transform="translate(24, 320)">
+    <text class="lane">ORCHESTRATOR</text>
+  </g>
+  <g transform="translate(24, 440)">
+    <text class="lane">MCP · LLM · GRAFANA</text>
+  </g>
+
+  <!-- Lane divider lines -->
+  <line x1="170" y1="240" x2="1780" y2="240" stroke="#F1F5F9"/>
+  <line x1="170" y1="360" x2="1780" y2="360" stroke="#F1F5F9"/>
+
+  <!-- ====== Nodes ====== -->
+  <!-- Helper: each step is a rounded card with a colored badge. -->
+
+  <!-- 1. User types -->
+  <g transform="translate(180, 160)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#F5F3FF" stroke="#C4B5FD"/>
+    <circle cx="22" cy="22" r="14" fill="#A78BFA"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">1</text>
+    <text x="46" y="28" class="step-t">User types</text>
+    <text x="16" y="56" class="step-s">widget.ob-in</text>
+    <text x="16" y="72" class="step-s">"list all dashboards"</text>
+    <text x="16" y="90" class="step-s"></text>
+    <text x="16" y="110" class="step-s" fill="#A78BFA">⏱ &lt; 1 ms</text>
+  </g>
+
+  <!-- 2. SSE POST -->
+  <g transform="translate(360, 160)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#F5F3FF" stroke="#C4B5FD"/>
+    <circle cx="22" cy="22" r="14" fill="#A78BFA"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">2</text>
+    <text x="46" y="28" class="step-t">SSE POST</text>
+    <text x="16" y="56" class="step-s">/api/v1/chat</text>
+    <text x="16" y="72" class="step-s">X-Grafana-User</text>
+    <text x="16" y="88" class="step-s">X-Grafana-Role</text>
+    <text x="16" y="110" class="step-s" fill="#A78BFA">⏱ ~ 4 ms</text>
+  </g>
+
+  <!-- 3. PII scan -->
+  <g transform="translate(540, 280)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#EFF6FF" stroke="#93C5FD"/>
+    <circle cx="22" cy="22" r="14" fill="#3B82F6"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">3</text>
+    <text x="46" y="28" class="step-t">PII scan</text>
+    <text x="16" y="56" class="step-s">15 regexes</text>
+    <text x="16" y="72" class="step-s">email · SSN · key</text>
+    <text x="16" y="88" class="step-s">redact / block</text>
+    <text x="16" y="110" class="step-s" fill="#3B82F6">⏱ ~ 2 ms</text>
+  </g>
+
+  <!-- 4. Intent matcher -->
+  <g transform="translate(720, 280)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#EFF6FF" stroke="#93C5FD"/>
+    <circle cx="22" cy="22" r="14" fill="#3B82F6"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">4</text>
+    <text x="46" y="28" class="step-t">Intent match</text>
+    <text x="16" y="56" class="step-s">60+ regex</text>
+    <text x="16" y="72" class="step-s">35 categories</text>
+    <text x="16" y="88" class="step-s">local fuzzy · judge</text>
+    <text x="16" y="110" class="step-s" fill="#3B82F6">⏱ ~ 3 ms</text>
+  </g>
+
+  <!-- 5. Decide path -->
+  <g transform="translate(900, 280)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#EFF6FF" stroke="#93C5FD"/>
+    <circle cx="22" cy="22" r="14" fill="#3B82F6"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">5</text>
+    <text x="46" y="28" class="step-t">Router</text>
+    <text x="16" y="56" class="step-s">match → tool</text>
+    <text x="16" y="72" class="step-s">miss → LLM</text>
+    <text x="16" y="88" class="step-s">wizard → form</text>
+    <text x="16" y="110" class="step-s" fill="#3B82F6">⏱ &lt; 1 ms</text>
+  </g>
+
+  <!-- 6. MCP tool call -->
+  <g transform="translate(1080, 400)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#FFF7ED" stroke="#FDBA74"/>
+    <circle cx="22" cy="22" r="14" fill="#F97316"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">6</text>
+    <text x="46" y="28" class="step-t">MCP call</text>
+    <text x="16" y="56" class="step-s">POST /api/tools/call</text>
+    <text x="16" y="72" class="step-s">role-token pool</text>
+    <text x="16" y="88" class="step-s">audit log + metric</text>
+    <text x="16" y="110" class="step-s" fill="#F97316">⏱ ~ 3 ms</text>
+  </g>
+
+  <!-- 7. RBAC + Grafana API -->
+  <g transform="translate(1260, 400)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#ECFDF5" stroke="#6EE7B7"/>
+    <circle cx="22" cy="22" r="14" fill="#10B981"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">7</text>
+    <text x="46" y="28" class="step-t">Grafana API</text>
+    <text x="16" y="56" class="step-s">viewer · editor · admin</text>
+    <text x="16" y="72" class="step-s">/api/dashboards</text>
+    <text x="16" y="88" class="step-s">/api/v1/provisioning</text>
+    <text x="16" y="110" class="step-s" fill="#10B981">⏱ 40–120 ms</text>
+  </g>
+
+  <!-- 8. LLM judge (optional) -->
+  <g transform="translate(1080, 160)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#FDF2F8" stroke="#F9A8D4"/>
+    <circle cx="22" cy="22" r="14" fill="#EC4899"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">8</text>
+    <text x="46" y="28" class="step-t">LLM-as-judge</text>
+    <text x="16" y="56" class="step-s">only on fuzzy paths</text>
+    <text x="16" y="72" class="step-s">temp 0.1 · json</text>
+    <text x="16" y="88" class="step-s">{ uid, score, reason }</text>
+    <text x="16" y="110" class="step-s" fill="#EC4899">⏱ 0.8–2 s</text>
+  </g>
+
+  <!-- 9. Format + telemetry -->
+  <g transform="translate(1440, 280)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#EFF6FF" stroke="#93C5FD"/>
+    <circle cx="22" cy="22" r="14" fill="#3B82F6"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">9</text>
+    <text x="46" y="28" class="step-t">Format + SSE</text>
+    <text x="16" y="56" class="step-s">markdown render</text>
+    <text x="16" y="72" class="step-s">OTLP span emit</text>
+    <text x="16" y="88" class="step-s">Prometheus counter</text>
+    <text x="16" y="110" class="step-s" fill="#3B82F6">⏱ ~ 1 ms</text>
+  </g>
+
+  <!-- 10. Widget render -->
+  <g transform="translate(1620, 160)" filter="url(#card)">
+    <rect width="160" height="130" rx="12" fill="#F5F3FF" stroke="#C4B5FD"/>
+    <circle cx="22" cy="22" r="14" fill="#A78BFA"/>
+    <text x="22" y="26" class="step-num" text-anchor="middle">10</text>
+    <text x="50" y="28" class="step-t">Render</text>
+    <text x="16" y="56" class="step-s">streaming markdown</text>
+    <text x="16" y="72" class="step-s">tool card · timestamp</text>
+    <text x="16" y="88" class="step-s">scroll + auto-title</text>
+    <text x="16" y="110" class="step-s" fill="#A78BFA">⏱ each token</text>
+  </g>
+
+  <!-- ====== Arrows ====== -->
+  <!-- 1 → 2 -->
+  <line x1="340" y1="225" x2="358" y2="225" stroke="#0F172A" stroke-width="1.5" marker-end="url(#a2)"/>
+  <!-- 2 → 3 (down + right) -->
+  <path d="M 520 290 L 538 290 L 538 318 L 538 344" fill="none" stroke="#0F172A" stroke-width="1.5" marker-end="url(#a2)"/>
+  <!-- 3 → 4 -->
+  <line x1="700" y1="345" x2="718" y2="345" stroke="#0F172A" stroke-width="1.5" marker-end="url(#a2)"/>
+  <!-- 4 → 5 -->
+  <line x1="880" y1="345" x2="898" y2="345" stroke="#0F172A" stroke-width="1.5" marker-end="url(#a2)"/>
+
+  <!-- 5 → 6 (down) tool path -->
+  <path d="M 980 410 L 980 460 L 1078 460" fill="none" stroke="#0F172A" stroke-width="1.5" marker-end="url(#a2)"/>
+  <!-- 5 → 8 (up) LLM path -->
+  <path d="M 980 280 L 980 230 L 1078 230" fill="none" stroke="#EC4899" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a2)"/>
+  <text x="1000" y="258" class="step-s" fill="#EC4899">fuzzy only</text>
+
+  <!-- 6 → 7 -->
+  <line x1="1240" y1="465" x2="1258" y2="465" stroke="#0F172A" stroke-width="1.5" marker-end="url(#a2)"/>
+  <!-- 7 → 9 (up) -->
+  <path d="M 1340 400 L 1340 370 L 1440 370 L 1440 344" fill="none" stroke="#0F172A" stroke-width="1.5" marker-end="url(#a2)"/>
+  <!-- 8 → 9 (down) -->
+  <path d="M 1240 230 L 1340 230 L 1340 270 L 1440 270 L 1440 290" fill="none" stroke="#EC4899" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a2)"/>
+  <!-- 9 → 10 -->
+  <path d="M 1600 290 L 1620 290 L 1620 220" fill="none" stroke="#0F172A" stroke-width="1.5" marker-end="url(#a2)"/>
+
+  <!-- Legend -->
+  <g transform="translate(180, 564)">
+    <text class="lane">PATHS</text>
+    <g transform="translate(0, 16)">
+      <line x1="0" y1="10" x2="40" y2="10" stroke="#0F172A" stroke-width="1.5"/>
+      <text x="50" y="14" class="step-s">Fast path — intent match → MCP tool → render (typical: 60 ms)</text>
+    </g>
+    <g transform="translate(0, 36)">
+      <line x1="0" y1="10" x2="40" y2="10" stroke="#EC4899" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="50" y="14" class="step-s">Reasoning path — LLM-as-judge reranks fuzzy search results (adds 0.8–2 s)</text>
+    </g>
+  </g>
+
+  <!-- Observability ribbon -->
+  <g transform="translate(1180, 564)">
+    <rect width="580" height="40" rx="8" fill="#FEF2F2" stroke="#FCA5A5"/>
+    <text x="14" y="16" class="step-t" fill="#991B1B">🔴 Self-observability (every step)</text>
+    <text x="14" y="32" class="step-s">counter · histogram · otlp span · structured audit log</text>
+  </g>
+</svg>
