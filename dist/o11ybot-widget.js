@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "1.7.0";
+  var WIDGET_VERSION = "1.8.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -63,7 +63,9 @@
   state.open = false;       // re-opened by user each page load
   state.view = "chat";      // "chat" | "history"
   state.streaming = false;
-  state.showShortcuts = false;  // shortcuts modal visibility
+  state.showShortcuts = false;
+  state.historySearch = "";     // current search filter
+  state.starredIds = state.starredIds || [];  // pinned/favorite sessions
   state.mode = state.mode || "normal";
   state.posX = state.posX != null ? state.posX : null;
   state.posY = state.posY != null ? state.posY : null;
@@ -73,6 +75,7 @@
       localStorage.setItem(STORE_KEY, JSON.stringify({
         sessions: state.sessions.slice(-50),  // cap at 50 sessions
         activeSessionId: state.activeSessionId,
+        starredIds: state.starredIds || [],
         mode: state.mode,
         posX: state.posX, posY: state.posY,
       }));
@@ -223,20 +226,42 @@
 .ob-qa-btn:hover{background:#1e1e2e;border-color:rgba(255,102,0,.4);color:#f59e0b;transform:translateY(-1px)}\
 .ob-qa-btn .ob-qa-icon{font-size:14px;flex-shrink:0}\
 .ob-ts{font-size:10px;color:#444;margin-top:2px}\
-.ob-new-chat-btn{margin:10px;padding:8px 12px;background:linear-gradient(135deg,#ff6600,#f59e0b);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px}\
+.ob-history-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0d0d12}\
+.ob-history-toolbar{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid #1a1a2e;background:#111217}\
+.ob-history-search{flex:1;background:#181b23;border:1px solid #2a2a3e;border-radius:6px;padding:7px 10px 7px 32px;color:#e0e0e0;font-size:12.5px;font-family:inherit;outline:0;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:10px center}\
+.ob-history-search:focus{border-color:rgba(255,102,0,.4)}\
+.ob-new-chat-btn{padding:7px 10px;background:linear-gradient(135deg,#ff6600,#f59e0b);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0;white-space:nowrap;height:32px}\
 .ob-new-chat-btn:hover{opacity:.9}\
-.ob-history-list{flex:1;overflow-y:auto;padding:0 10px 10px}\
-.ob-history-item{padding:10px 12px;margin:4px 0;border-radius:8px;cursor:pointer;background:#181b23;border:1px solid #2a2a3e;position:relative;transition:all .15s}\
-.ob-history-item:hover{background:#1e1e2e;border-color:rgba(255,102,0,.3)}\
-.ob-history-item.active{background:#1a1025;border-color:#f59e0b}\
-.ob-hi-title{font-size:13px;color:#e0e0e0;font-weight:500;margin-right:28px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\
-.ob-hi-meta{display:flex;gap:10px;margin-top:4px;font-size:10.5px;color:#888}\
-.ob-hi-msgs{color:#f59e0b}\
-.ob-hi-delete{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:4px;background:transparent;border:none;color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}\
-.ob-history-item:hover .ob-hi-delete{opacity:1}\
-.ob-hi-delete:hover{background:rgba(239,68,68,.2);color:#ef4444}\
-.ob-hi-empty{padding:40px 20px;text-align:center;color:#666;font-size:13px}\
+.ob-new-chat-btn svg{width:14px;height:14px;fill:currentColor}\
+.ob-history-list{flex:1;overflow-y:auto;padding:6px 10px 12px}\
+.ob-history-list::-webkit-scrollbar{width:5px}\
+.ob-history-list::-webkit-scrollbar-thumb{background:#333;border-radius:3px}\
+.ob-hi-group-title{font-size:10px;color:#666;text-transform:uppercase;font-weight:700;letter-spacing:0.8px;padding:12px 4px 6px;display:flex;align-items:center;gap:6px}\
+.ob-hi-group-count{background:#1e1e2e;color:#888;padding:0 6px;border-radius:8px;font-size:9.5px;font-weight:600}\
+.ob-history-item{padding:10px 12px;margin:4px 0;border-radius:8px;cursor:pointer;background:#181b23;border:1px solid #2a2a3e;position:relative;transition:all .15s;display:flex;gap:10px;align-items:flex-start}\
+.ob-history-item:hover{background:#1e1e2e;border-color:rgba(255,102,0,.3);transform:translateX(2px)}\
+.ob-history-item.active{background:linear-gradient(135deg,#1a1025,#181b23);border-color:#f59e0b}\
+.ob-history-item.active::before{content:'';position:absolute;left:-10px;top:10px;bottom:10px;width:3px;background:#f59e0b;border-radius:2px}\
+.ob-hi-icon{font-size:17px;flex-shrink:0;padding-top:1px}\
+.ob-hi-body{flex:1;min-width:0}\
+.ob-hi-title{font-size:13px;color:#e0e0e0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:40px}\
+.ob-history-item.active .ob-hi-title{color:#f59e0b}\
+.ob-hi-preview{font-size:11.5px;color:#777;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3;padding-right:40px}\
+.ob-hi-meta{display:flex;gap:8px;margin-top:5px;font-size:10px;color:#666;align-items:center}\
+.ob-hi-msgs{background:rgba(255,102,0,.12);color:#f59e0b;padding:1px 7px;border-radius:8px;font-weight:600}\
+.ob-hi-actions{position:absolute;top:8px;right:8px;display:flex;gap:2px;opacity:0;transition:opacity .15s}\
+.ob-history-item:hover .ob-hi-actions,.ob-history-item.active .ob-hi-actions{opacity:1}\
+.ob-hi-action{width:22px;height:22px;border-radius:4px;background:rgba(13,13,18,.8);border:none;color:#666;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}\
+.ob-hi-action svg{width:12px;height:12px;fill:currentColor}\
+.ob-hi-action:hover{color:#ccc;background:rgba(30,30,46,.9)}\
+.ob-hi-action.ob-hi-del:hover{background:rgba(239,68,68,.3);color:#ef4444}\
+.ob-hi-action.ob-hi-star.starred{color:#f59e0b}\
+.ob-hi-action.ob-hi-star:hover{color:#f59e0b;background:rgba(245,158,11,.2)}\
+.ob-hi-empty{padding:50px 20px;text-align:center;color:#666;font-size:13px}\
+.ob-hi-empty .ob-hi-empty-icon{font-size:48px;margin-bottom:12px;opacity:0.3}\
 .ob-hi-empty p{margin:8px 0}\
+.ob-hi-empty-cta{margin-top:16px;padding:8px 16px;background:linear-gradient(135deg,#ff6600,#f59e0b);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}\
+.ob-hi-no-results{padding:30px 20px;text-align:center;color:#666;font-size:13px}\
 ";
   document.head.appendChild(css);
 
@@ -464,30 +489,162 @@
   }
 
   // ═══════════════════════════════════════════════════════════
-  // Render: History tab (list of past sessions)
+  // Session icon from content (infer from first user message)
+  // ═══════════════════════════════════════════════════════════
+  function sessionIcon(session) {
+    if (!session || !session.msgs || !session.msgs.length) return "💬";
+    var firstUser = session.msgs.find(function(m) { return m.role === "user"; });
+    if (!firstUser) return "💬";
+    var q = firstUser.content.toLowerCase();
+    if (/\bhelp|capabilit|what can|how can you/.test(q)) return "💡";
+    if (/\balert|firing/.test(q)) return "🔔";
+    if (/\bdatasource|data source/.test(q)) return "📡";
+    if (/\bfolder/.test(q)) return "📁";
+    if (/\bhealth|version|status/.test(q)) return "💓";
+    if (/\buser\b/.test(q)) return "👥";
+    if (/\bsearch\b/.test(q)) return "🔍";
+    if (/\bpromql|rate\(|query/.test(q)) return "📈";
+    if (/\blogql|loki|log/.test(q)) return "📝";
+    if (/\btrace|tempo/.test(q)) return "🔗";
+    if (/\baks|kubernetes|k8s/.test(q)) return "☸️";
+    if (/\bazure|gcp|aws|oci/.test(q)) return "☁️";
+    if (/\bsecurity|pci|hipaa|gdpr/.test(q)) return "🛡️";
+    if (/\bdashboard|dash|board/.test(q)) return "📊";
+    if (/\bslo|error budget|red\b/.test(q)) return "🎯";
+    if (/\bincident|outage|down|slow/.test(q)) return "🚨";
+    return "💬";
+  }
+
+  function sessionPreview(session) {
+    if (!session || !session.msgs || !session.msgs.length) return "";
+    // Show the last assistant message as preview
+    for (var i = session.msgs.length - 1; i >= 0; i--) {
+      if (session.msgs[i].role !== "user") {
+        var preview = (session.msgs[i].content || "").replace(/\s+/g, " ").replace(/[*_`#>]/g, "");
+        return preview.slice(0, 80);
+      }
+    }
+    // Fallback to first user message
+    return (session.msgs[0].content || "").slice(0, 80);
+  }
+
+  function groupByDate(sessions) {
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    var weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 7);
+
+    var groups = { "Starred": [], "Today": [], "Yesterday": [], "This week": [], "Earlier": [] };
+    for (var i = 0; i < sessions.length; i++) {
+      var s = sessions[i];
+      if ((state.starredIds || []).indexOf(s.id) >= 0) {
+        groups["Starred"].push(s);
+        continue;
+      }
+      var t = new Date(s.updatedAt);
+      if (t >= today) groups["Today"].push(s);
+      else if (t >= yesterday) groups["Yesterday"].push(s);
+      else if (t >= weekAgo) groups["This week"].push(s);
+      else groups["Earlier"].push(s);
+    }
+    return groups;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // Render: History tab (advanced, user-friendly)
   // ═══════════════════════════════════════════════════════════
   function renderHistoryTab() {
-    var html = '<button class="ob-new-chat-btn" id="ob-new-chat">' + ICO_NEW + ' New chat</button>';
+    var searchIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+    var plusSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    var starSvg = '<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+
+    var html = '<div class="ob-history-wrap">';
+
+    // Toolbar: search + new chat
+    html += '<div class="ob-history-toolbar">';
+    html += '<input type="text" class="ob-history-search" id="ob-history-search" placeholder="Search chats..." value="' + esc(state.historySearch || "") + '"/>';
+    html += '<button class="ob-new-chat-btn" id="ob-new-chat" title="New chat (⌘N)">' + plusSvg + ' New</button>';
+    html += '</div>';
+
     html += '<div class="ob-history-list">';
+
     if (state.sessions.length === 0) {
-      html += '<div class="ob-hi-empty"><p>💬 No past chats yet</p><p>Start a conversation — it will appear here.</p></div>';
-    } else {
-      var sorted = state.sessions.slice().sort(function(a, b) { return b.updatedAt - a.updatedAt; });
-      for (var i = 0; i < sorted.length; i++) {
-        var s = sorted[i];
+      html += '<div class="ob-hi-empty">';
+      html += '<div class="ob-hi-empty-icon">💭</div>';
+      html += '<p style="color:#aaa;font-weight:600">No chats yet</p>';
+      html += '<p>Your conversations will appear here.</p>';
+      html += '<button class="ob-hi-empty-cta" id="ob-new-chat-empty">Start a new chat</button>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    // Filter by search
+    var search = (state.historySearch || "").toLowerCase().trim();
+    var filtered = state.sessions;
+    if (search) {
+      filtered = state.sessions.filter(function(s) {
+        if ((s.title || "").toLowerCase().indexOf(search) >= 0) return true;
+        // Search within messages
+        for (var i = 0; i < s.msgs.length; i++) {
+          if ((s.msgs[i].content || "").toLowerCase().indexOf(search) >= 0) return true;
+        }
+        return false;
+      });
+    }
+
+    if (filtered.length === 0) {
+      html += '<div class="ob-hi-no-results">';
+      html += '<p>🔍 No chats match "' + esc(search) + '"</p>';
+      html += '</div></div></div>';
+      return html;
+    }
+
+    // Sort by updatedAt desc
+    var sorted = filtered.slice().sort(function(a, b) { return b.updatedAt - a.updatedAt; });
+
+    // Group by date (or search = flat list)
+    var groups = search ? { "Results": sorted } : groupByDate(sorted);
+
+    var groupOrder = ["Starred", "Today", "Yesterday", "This week", "Earlier", "Results"];
+    for (var gi = 0; gi < groupOrder.length; gi++) {
+      var groupName = groupOrder[gi];
+      var groupItems = groups[groupName] || [];
+      if (groupItems.length === 0) continue;
+
+      html += '<div class="ob-hi-group-title">';
+      if (groupName === "Starred") html += '⭐ ';
+      html += groupName + ' <span class="ob-hi-group-count">' + groupItems.length + '</span></div>';
+
+      for (var i = 0; i < groupItems.length; i++) {
+        var s = groupItems[i];
         var title = s.title || autoTitle(s);
         var active = s.id === state.activeSessionId ? "active" : "";
+        var starred = (state.starredIds || []).indexOf(s.id) >= 0;
+        var icon = sessionIcon(s);
+        var preview = sessionPreview(s);
+
         html += '<div class="ob-history-item ' + active + '" data-sid="' + s.id + '">';
+        html += '<div class="ob-hi-icon">' + icon + '</div>';
+        html += '<div class="ob-hi-body">';
         html += '<div class="ob-hi-title">' + esc(title) + '</div>';
+        if (preview) {
+          html += '<div class="ob-hi-preview">' + esc(preview) + '</div>';
+        }
         html += '<div class="ob-hi-meta">';
         html += '<span class="ob-hi-msgs">' + s.msgs.length + ' msg' + (s.msgs.length !== 1 ? 's' : '') + '</span>';
-        html += '<span>· ' + fmtRelative(s.updatedAt) + '</span>';
+        html += '<span>' + fmtRelative(s.updatedAt) + '</span>';
         html += '</div>';
-        html += '<button class="ob-hi-delete" data-del="' + s.id + '" title="Delete">' + ICO_TRASH + '</button>';
+        html += '</div>';
+
+        html += '<div class="ob-hi-actions">';
+        html += '<button class="ob-hi-action ob-hi-star ' + (starred ? 'starred' : '') + '" data-star="' + s.id + '" title="' + (starred ? 'Unstar' : 'Star') + '">' + starSvg + '</button>';
+        html += '<button class="ob-hi-action ob-hi-del" data-del="' + s.id + '" title="Delete">' + ICO_TRASH + '</button>';
+        html += '</div>';
+
         html += '</div>';
       }
     }
-    html += '</div>';
+
+    html += '</div></div>';
     return html;
   }
 
@@ -719,26 +876,62 @@
     }
 
     if (state.view === "history") {
-      // New chat
+      // New chat (both the toolbar button and empty-state button)
       var newBtn = document.getElementById("ob-new-chat");
-      if (newBtn) newBtn.onclick = function() {
+      var emptyBtn = document.getElementById("ob-new-chat-empty");
+      var startNew = function() {
         newSession();
         state.view = "chat";
+        state.historySearch = "";
         saveState();
         renderPanel();
       };
+      if (newBtn) newBtn.onclick = startNew;
+      if (emptyBtn) emptyBtn.onclick = startNew;
+
+      // Search input — live filtering
+      var searchInp = document.getElementById("ob-history-search");
+      if (searchInp) {
+        searchInp.oninput = function() {
+          // Save cursor position before re-render
+          var pos = this.selectionStart;
+          state.historySearch = this.value;
+          // Only re-render the list, keep the input focused
+          var listEl = root.querySelector(".ob-history-list");
+          if (listEl && listEl.parentElement) {
+            // Build just the new list HTML and replace
+            var tempHtml = renderHistoryTab();
+            var tmp = document.createElement("div");
+            tmp.innerHTML = tempHtml;
+            var newWrap = tmp.querySelector(".ob-history-wrap");
+            if (newWrap) {
+              var oldWrap = root.querySelector(".ob-history-wrap");
+              if (oldWrap) oldWrap.parentElement.replaceChild(newWrap, oldWrap);
+            }
+            // Re-wire events (for the new DOM) AND re-focus the search input
+            wireEvents();
+            var newInp = document.getElementById("ob-history-search");
+            if (newInp) {
+              newInp.focus();
+              newInp.setSelectionRange(pos, pos);
+            }
+          }
+        };
+      }
+
       // Select session
       var items = root.querySelectorAll(".ob-history-item");
       for (var hi = 0; hi < items.length; hi++) {
         items[hi].onclick = function(ev) {
-          // Ignore clicks on delete button
-          if (ev.target.closest(".ob-hi-delete")) return;
+          // Ignore clicks on action buttons
+          if (ev.target.closest(".ob-hi-actions")) return;
           selectSession(this.dataset.sid);
           renderPanel();
         };
       }
+
       // Delete session
-      var dels = root.querySelectorAll(".ob-hi-delete");
+      var dels = root.querySelectorAll(".ob-hi-del");
       for (var di = 0; di < dels.length; di++) {
         dels[di].onclick = function(ev) {
           ev.stopPropagation();
@@ -746,6 +939,21 @@
             deleteSession(this.dataset.del);
             renderPanel();
           }
+        };
+      }
+
+      // Star / unstar session
+      var stars = root.querySelectorAll(".ob-hi-star");
+      for (var sti = 0; sti < stars.length; sti++) {
+        stars[sti].onclick = function(ev) {
+          ev.stopPropagation();
+          var id = this.dataset.star;
+          state.starredIds = state.starredIds || [];
+          var idx = state.starredIds.indexOf(id);
+          if (idx >= 0) state.starredIds.splice(idx, 1);
+          else state.starredIds.push(id);
+          saveState();
+          renderPanel();
         };
       }
     }
