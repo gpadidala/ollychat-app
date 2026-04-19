@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "2.0.0";
+  var WIDGET_VERSION = "2.1.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -66,6 +66,35 @@
   state.showShortcuts = false;
   state.historySearch = "";     // current search filter
   state.starredIds = state.starredIds || [];  // pinned/favorite sessions
+  state.teaserDismissed = state.teaserDismissed || false;  // user closed the greeting teaser
+
+  // ── Greeting helpers (time-aware + personalized) ──
+  function timeOfDay() {
+    var h = new Date().getHours();
+    if (h < 12) return "morning";
+    if (h < 17) return "afternoon";
+    if (h < 21) return "evening";
+    return "night";
+  }
+  function greetingWave() {
+    var parts = {
+      morning: "☀️ Good morning",
+      afternoon: "👋 Good afternoon",
+      evening: "🌆 Good evening",
+      night: "🌙 Hey",
+    };
+    return parts[timeOfDay()] || "👋 Hello";
+  }
+  function firstName() {
+    return (grafanaUser.name || "there").split(" ")[0];
+  }
+  // Sessionstorage key so teaser shows once per browser tab session, not forever
+  function teaserShownThisSession() {
+    try { return sessionStorage.getItem("o11ybot-teaser-shown") === "1"; } catch(e) { return false; }
+  }
+  function markTeaserShown() {
+    try { sessionStorage.setItem("o11ybot-teaser-shown", "1"); } catch(e) {}
+  }
   state.mode = state.mode || "normal";
   state.posX = state.posX != null ? state.posX : null;
   state.posY = state.posY != null ? state.posY : null;
@@ -131,6 +160,38 @@
 .ob-fab:active{transform:scale(0.96)}\
 .ob-fab svg{width:28px;height:28px;stroke:#fff;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}\
 .ob-dot{position:absolute;top:0;right:0;width:14px;height:14px;border-radius:50%;background:#22c55e;border:2.5px solid #0d0d12;box-shadow:0 0 8px rgba(34,197,94,.5)}\
+/* Greeting teaser bubble — pops out of FAB on first load */\
+.ob-teaser{position:absolute;bottom:68px;right:0;background:#111217;border:1px solid #2a2a3e;border-radius:14px;padding:12px 14px;width:240px;box-shadow:0 8px 24px rgba(0,0,0,.5),0 0 0 1px rgba(255,102,0,.15);color:#e0e0e0;font-size:13px;line-height:1.45;animation:ob-teaser-in .5s cubic-bezier(0.16,1,0.3,1);transform-origin:bottom right;cursor:pointer;transition:transform .2s, border-color .2s}\
+.ob-teaser:hover{transform:scale(1.02);border-color:rgba(255,102,0,.4)}\
+.ob-teaser::after{content:'';position:absolute;bottom:-6px;right:22px;width:12px;height:12px;background:#111217;border-right:1px solid #2a2a3e;border-bottom:1px solid #2a2a3e;transform:rotate(45deg)}\
+.ob-teaser-close{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:4px;background:transparent;border:none;color:#555;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}\
+.ob-teaser-close:hover{color:#ccc;background:rgba(255,255,255,.06)}\
+.ob-teaser-hi{font-size:14px;font-weight:600;color:#fff;margin-bottom:3px;padding-right:16px}\
+.ob-teaser-msg{color:#bbb;font-size:12px;margin-top:2px}\
+.ob-teaser-cta{margin-top:8px;font-size:11px;color:#f59e0b;font-weight:600}\
+@keyframes ob-teaser-in{0%{opacity:0;transform:translateY(20px) scale(0.8)}100%{opacity:1;transform:translateY(0) scale(1)}}\
+.ob-teaser-out{animation:ob-teaser-out .25s cubic-bezier(0.16,1,0.3,1) forwards}\
+@keyframes ob-teaser-out{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(10px) scale(0.9)}}\
+/* Typing animation for welcome */\
+.ob-welcome-typing{display:flex;gap:5px;padding:8px 0;align-items:center}\
+.ob-welcome-typing span{width:7px;height:7px;background:#f59e0b;border-radius:50%;animation:ob-welcome-bounce 1.2s infinite ease-in-out}\
+.ob-welcome-typing span:nth-child(2){animation-delay:.15s}\
+.ob-welcome-typing span:nth-child(3){animation-delay:.3s}\
+@keyframes ob-welcome-bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}\
+/* Welcome reveal animation (char-by-char) */\
+.ob-welcome-greeting{font-size:19px;font-weight:700;color:#fff;margin-bottom:4px;overflow:hidden;white-space:nowrap;animation:ob-typewriter 1.5s steps(30,end);min-height:26px}\
+.ob-welcome-sub{font-size:13px;color:#aaa;margin:6px 0 20px;min-height:18px;animation:ob-fadein-up .5s ease .8s both}\
+@keyframes ob-typewriter{from{width:0}to{width:100%}}\
+@keyframes ob-fadein-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}\
+/* Quick-action staggered fade-in */\
+.ob-qa-group{opacity:0;animation:ob-fadein-up .4s ease forwards}\
+.ob-qa-group:nth-child(2){animation-delay:1.0s}\
+.ob-qa-group:nth-child(3){animation-delay:1.15s}\
+.ob-qa-group:nth-child(4){animation-delay:1.3s}\
+.ob-qa-group:nth-child(5){animation-delay:1.45s}\
+.ob-welcome-header{text-align:center}\
+.ob-welcome-wave{display:inline-block;animation:ob-wave 1.5s ease-in-out .3s 2}\
+@keyframes ob-wave{0%,100%{transform:rotate(0)}20%{transform:rotate(-20deg)}40%{transform:rotate(20deg)}60%{transform:rotate(-15deg)}80%{transform:rotate(15deg)}}\
 .ob-panel{width:460px;height:620px;background:#111217;border:1px solid #2a2a3e;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.5);overflow:hidden;resize:both;min-width:320px;min-height:380px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px)}\
 .ob-panel.ob-maximized{width:75vw!important;height:85vh!important;resize:none}\
 .ob-panel.ob-fullscreen{width:100vw!important;height:100vh!important;border-radius:0;resize:none;border:none}\
@@ -459,8 +520,60 @@
   // ═══════════════════════════════════════════════════════════
   function renderFab() {
     applyPos();
-    root.innerHTML = '<button class="ob-fab" title="O11yBot (drag to move, click to chat)">' + ICO_BOT + '<div class="ob-dot"></div></button>';
+
+    // Show greeting teaser once per session (industry standard — Intercom/Drift)
+    var showTeaser = !teaserShownThisSession() && !state.teaserDismissed;
+    var teaserHtml = "";
+    if (showTeaser) {
+      teaserHtml = '<div class="ob-teaser" id="ob-teaser">' +
+        '<button class="ob-teaser-close" id="ob-teaser-close" title="Dismiss">×</button>' +
+        '<div class="ob-teaser-hi">' + greetingWave() + ', ' + esc(firstName()) + '!</div>' +
+        '<div class="ob-teaser-msg">Need help with dashboards, alerts, or metrics?</div>' +
+        '<div class="ob-teaser-cta">Click to chat →</div>' +
+      '</div>';
+    }
+
+    root.innerHTML = teaserHtml +
+      '<button class="ob-fab" title="O11yBot (drag to move, click to chat)">' + ICO_BOT + '<div class="ob-dot"></div></button>';
     var fab = root.querySelector(".ob-fab");
+
+    // Wire up teaser close + click-to-open-chat behaviors
+    var teaserEl = document.getElementById("ob-teaser");
+    var teaserClose = document.getElementById("ob-teaser-close");
+    if (teaserEl) {
+      // Click anywhere on teaser (except close btn) opens the chat
+      teaserEl.addEventListener("click", function(ev) {
+        if (ev.target.closest(".ob-teaser-close")) return;
+        markTeaserShown();
+        state.open = true;
+        renderPanel();
+      });
+      // Auto-dismiss after 8 seconds of no interaction
+      setTimeout(function() {
+        var t = document.getElementById("ob-teaser");
+        if (t) {
+          t.classList.add("ob-teaser-out");
+          setTimeout(function() {
+            if (t && t.parentElement) t.remove();
+            markTeaserShown();
+          }, 300);
+        }
+      }, 8000);
+    }
+    if (teaserClose) {
+      teaserClose.addEventListener("click", function(ev) {
+        ev.stopPropagation();
+        state.teaserDismissed = true;
+        saveState();
+        markTeaserShown();
+        var t = document.getElementById("ob-teaser");
+        if (t) {
+          t.classList.add("ob-teaser-out");
+          setTimeout(function() { if (t && t.parentElement) t.remove(); }, 250);
+        }
+      });
+    }
+    if (showTeaser) markTeaserShown();
 
     // Click/tap to open — but only if not dragged
     var dragStarted = false;
@@ -521,7 +634,11 @@
     var msgs = session ? session.msgs : [];
 
     if (msgs.length === 0) {
-      // Grafana Quick Actions — one-click common queries
+      // Role-aware quick actions
+      var roleLower = (grafanaUser.role || "Viewer").toLowerCase();
+      var isAdmin = roleLower.indexOf("admin") >= 0;
+      var isEditor = roleLower === "editor";
+
       var quickActions = [
         {
           title: "📊 Dashboards",
@@ -560,10 +677,23 @@
           ],
         },
       ];
+      // Admin-only group
+      if (isAdmin) {
+        quickActions.push({
+          title: "👑 Admin",
+          actions: [
+            { icon: "👥", label: "Users", q: "list users" },
+            { icon: "⚙️", label: "MCP info", q: "mcp server info" },
+          ],
+        });
+      }
 
       var welcome = '<div class="ob-welcome">';
-      welcome += '<h3>Hey ' + esc(grafanaUser.name.split(" ")[0]) + '! 👋</h3>';
-      welcome += '<p>One-click actions — or type your own question:</p>';
+      welcome += '<div class="ob-welcome-header">';
+      // Personalized, time-aware typed greeting with animated wave emoji
+      welcome += '<div class="ob-welcome-greeting">' + greetingWave() + ', ' + esc(firstName()) + '!</div>';
+      welcome += '<div class="ob-welcome-sub">How can I help you today?</div>';
+      welcome += '</div>';
       welcome += '<div class="ob-quick-actions">';
       for (var gi = 0; gi < quickActions.length; gi++) {
         var g = quickActions[gi];
