@@ -1119,17 +1119,21 @@ def _match_mutation_intent(user_message: str, has_dashboard_keyword: bool) -> di
         }
 
     # Create dashboard — broad: any "create/new/make/build/add … dashboard …"
+    # Routes to create_smart_dashboard so Bifrost builds RED + resource panels
+    # pre-filtered for the topic, inside the MCP layer (no panel JSON in the
+    # orchestrator).
     cm = re.match(r"^\s*(create|make|build|new|add)\s+(.*?)\s*$", msg, re.IGNORECASE)
     if cm and has_dashboard_keyword:
         title = _extract_dashboard_title(cm.group(2))
         if title:
-            tag = title.lower().replace(" ", "-")[:40]
+            topic = title.lower()
+            tag = topic.replace(" ", "-")[:40]
             return {
                 "server": "bifrost-grafana",
-                "tool": "create_dashboard",
-                "arguments": {"title": title, "tags": [tag]},
+                "tool": "create_smart_dashboard",
+                "arguments": {"title": title, "topic": topic, "tags": [tag]},
                 "formatter": fmt_mutation,
-                "desc": f"Create dashboard: {title}",
+                "desc": f"Smart-create dashboard: {title}",
             }
     return None
 
