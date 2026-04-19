@@ -68,6 +68,8 @@ TOOL_MINIMUM_ROLE: dict[str, str] = {
     "correlate_signals": "viewer",
     "create_slo_dashboard": "editor",
     "find_dashboards_using_metric": "viewer",
+    "alert_wizard": "viewer",
+    "dashboard_wizard": "viewer",
     # ── Utility ─────────────────────────────────────────────
     "health_check": "viewer",
     "get_server_info": "viewer",

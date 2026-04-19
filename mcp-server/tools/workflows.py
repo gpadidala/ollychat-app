@@ -274,6 +274,158 @@ async def create_slo_dashboard(
 
 
 @tool()
+async def dashboard_wizard(
+    topic: str = "",
+    role: str = "viewer",
+) -> dict:
+    """Gather everything needed to author a dashboard — datasources, folders,
+    and (if ``topic`` is given) matching metric names.
+
+    Used when the user says "create dashboard" without picking a datasource
+    or folder, so O11yBot can ask rather than guess.
+    """
+    c = client_for(role)
+
+    datasources: list[dict] = []
+    try:
+        for d in (await c.get("/api/datasources") or []):
+            datasources.append({
+                "uid": d.get("uid", ""),
+                "name": d.get("name", ""),
+                "type": d.get("type", ""),
+                "is_default": d.get("isDefault", False),
+            })
+    except Exception:
+        pass
+
+    folders: list[dict] = []
+    try:
+        for f in (await c.get("/api/folders") or []):
+            folders.append({"uid": f.get("uid", ""), "title": f.get("title", "")})
+    except Exception:
+        pass
+
+    metric_suggestions: list[str] = []
+    if topic:
+        prom_uid = ""
+        for d in datasources:
+            if (d.get("type") or "").lower() == "prometheus":
+                prom_uid = d.get("uid") or ""
+                break
+        if prom_uid:
+            try:
+                raw = await c.get(
+                    f"/api/datasources/proxy/uid/{prom_uid}/api/v1/label/__name__/values"
+                )
+                names = list((raw or {}).get("data") or [])
+                toks = [
+                    t for t in topic.lower().replace("-", " ").replace("_", " ").split()
+                    if t and t not in {"dashboard", "dashboards", "a", "an", "the"}
+                ]
+                matched = [n for n in names if any(t in n.lower() for t in toks)]
+                metric_suggestions = matched[:15]
+            except Exception:
+                pass
+
+    return {
+        "topic": topic,
+        "datasources": datasources,
+        "folders": folders,
+        "metric_suggestions": metric_suggestions,
+        "next_step_template": (
+            "create dashboard \"<title>\" for \"<topic>\" on datasource <uid> in folder <uid>"
+        ),
+        "auto_hint": "Or say: `create <topic> dashboard now` to auto-pick defaults.",
+    }
+
+
+@tool()
+async def alert_wizard(
+    topic: str = "",
+    role: str = "viewer",
+) -> dict:
+    """Gather everything needed to author an alert rule — datasources,
+    folders, and (if ``topic`` is given) metric names + example PromQL.
+
+    Used by the orchestrator when a user says "create alert" without
+    enough info to call ``create_alert_rule`` directly. The response
+    renders as an interactive form the user can fill in.
+    """
+    c = client_for(role)
+
+    # Datasources (prefer Prometheus-shaped for alert targets)
+    datasources: list[dict] = []
+    try:
+        for d in (await c.get("/api/datasources") or []):
+            datasources.append({
+                "uid": d.get("uid", ""),
+                "name": d.get("name", ""),
+                "type": d.get("type", ""),
+                "is_default": d.get("isDefault", False),
+            })
+    except Exception:
+        pass
+
+    # Folders
+    folders: list[dict] = []
+    try:
+        for f in (await c.get("/api/folders") or []):
+            folders.append({"uid": f.get("uid", ""), "title": f.get("title", "")})
+    except Exception:
+        pass
+
+    # If a topic is given, suggest matching metric names
+    metric_suggestions: list[str] = []
+    if topic:
+        prom_uid = ""
+        for d in datasources:
+            if (d.get("type") or "").lower() == "prometheus":
+                prom_uid = d.get("uid") or ""
+                break
+        if prom_uid:
+            try:
+                raw = await c.get(
+                    f"/api/datasources/proxy/uid/{prom_uid}/api/v1/label/__name__/values"
+                )
+                names = list((raw or {}).get("data") or [])
+                tl = topic.lower()
+                toks = [t for t in tl.replace("-", " ").replace("_", " ").split() if t]
+                matched = [
+                    n for n in names
+                    if any(t in n.lower() for t in toks)
+                    and (n.endswith("_total") or n.endswith("_count") or n.endswith("_bucket") or n.endswith("_seconds"))
+                ]
+                metric_suggestions = matched[:8]
+            except Exception:
+                pass
+
+    # Example expressions built from suggestions
+    examples: list[str] = []
+    for n in metric_suggestions[:4]:
+        if n.endswith("_bucket"):
+            base = n[: -len("_bucket")]
+            examples.append(
+                f"1000 * histogram_quantile(0.95, sum by (le) (rate({n}[5m]))) > 500"
+            )
+            examples.append(f"# p95 of {base} exceeding 500 ms")
+        elif n.endswith("_total"):
+            examples.append(f"sum(rate({n}[5m])) > 1")
+            examples.append(f"# rate of {n} exceeds 1/s")
+
+    return {
+        "topic": topic,
+        "datasources": datasources,
+        "folders": folders,
+        "metric_suggestions": metric_suggestions,
+        "example_expressions": examples,
+        "next_step_template": (
+            "create alert \"<title>\" on datasource <uid> for \"<promql>\" "
+            "threshold <number> for 5m in folder <uid>"
+        ),
+    }
+
+
+@tool()
 async def find_dashboards_using_metric(
     metric_name: str,
     limit: int = 20,

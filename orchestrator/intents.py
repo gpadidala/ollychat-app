@@ -557,6 +557,113 @@ def fmt_tempo(data: Any) -> str:
     return "\n".join(out)
 
 
+def fmt_dashboard_wizard(data: Any) -> str:
+    """Render the dashboard_wizard payload as a fillable form."""
+    if not isinstance(data, dict):
+        return "Could not gather wizard options."
+    topic = data.get("topic") or ""
+    datasources = data.get("datasources") or []
+    folders = data.get("folders") or []
+    metrics = data.get("metric_suggestions") or []
+
+    title = f"**📋 Dashboard wizard" + (f" — topic: _{topic}_**" if topic else "**")
+    lines = [title, "", "Pick a datasource and a folder, then reply with a full command (template at the bottom).", ""]
+
+    if datasources:
+        lines.append("**📡 Datasources available** (copy the UID):")
+        for d in datasources[:12]:
+            default = " ⭐" if d.get("is_default") else ""
+            lines.append(f"- `{d.get('uid', '')}` · **{d.get('name', '?')}** _({d.get('type', '?')})_{default}")
+        lines.append("")
+    else:
+        lines.append("_No datasources visible to your role._\n")
+
+    if folders:
+        lines.append("**🗂️ Folders available** (copy the UID):")
+        for f in folders[:12]:
+            lines.append(f"- `{f.get('uid', '')}` · {f.get('title', '?')}")
+        if len(folders) > 12:
+            lines.append(f"- _…and {len(folders) - 12} more_")
+        lines.append("")
+
+    if metrics:
+        lines.append(f"**🔎 Metrics matching '{topic}'** (will be used to seed panels):")
+        for m in metrics[:10]:
+            lines.append(f"- `{m}`")
+        lines.append("")
+
+    lines.append("**▶️ Finish the command like this:**")
+    lines.append(
+        "```\n"
+        + (data.get("next_step_template") or "")
+        + "\n```"
+    )
+    if data.get("auto_hint"):
+        lines.append("")
+        lines.append(str(data["auto_hint"]))
+    return "\n".join(lines)
+
+
+def fmt_alert_wizard(data: Any) -> str:
+    """Render the alert_wizard payload as a fillable form."""
+    if not isinstance(data, dict):
+        return "Could not gather wizard options."
+    topic = data.get("topic") or ""
+    datasources = data.get("datasources") or []
+    folders = data.get("folders") or []
+    metrics = data.get("metric_suggestions") or []
+    examples = data.get("example_expressions") or []
+
+    lines = [
+        f"**🧙 Alert rule wizard" + (f" — topic: _{topic}_**" if topic else "**") + "\n",
+        "I need a few details to create the alert. Pick from the options below and reply with the final command.\n",
+    ]
+
+    if datasources:
+        lines.append("**📡 Datasources available** (copy the UID):")
+        for d in datasources[:12]:
+            default = " ⭐" if d.get("is_default") else ""
+            lines.append(f"- `{d.get('uid', '')}` · **{d.get('name', '?')}** _({d.get('type', '?')})_{default}")
+        lines.append("")
+    else:
+        lines.append("_No datasources visible to your role._\n")
+
+    if folders:
+        lines.append("**🗂️ Folders available** (copy the UID):")
+        for f in folders[:12]:
+            lines.append(f"- `{f.get('uid', '')}` · {f.get('title', '?')}")
+        if len(folders) > 12:
+            lines.append(f"- _…and {len(folders) - 12} more_")
+        lines.append("")
+
+    if metrics:
+        lines.append(f"**🔎 Metrics matching '{topic}'** (for the `expr` field):")
+        for m in metrics:
+            lines.append(f"- `{m}`")
+        lines.append("")
+
+    if examples:
+        lines.append("**💡 Example PromQL expressions:**")
+        for ex in examples:
+            prefix = "```promql\n" if not ex.startswith("#") else ""
+            suffix = "\n```" if not ex.startswith("#") else ""
+            if ex.startswith("#"):
+                lines.append(f"_{ex.lstrip('# ').strip()}_")
+            else:
+                lines.append(f"```promql\n{ex}\n```")
+        lines.append("")
+
+    lines.append("**▶️ Finish the command like this:**")
+    lines.append(
+        "```\n"
+        "create alert \"High error rate\" on datasource <DS_UID> for \"sum(rate(http_requests_total{status=~\\\"5..\\\"}[5m])) > 1\" threshold 1 for 5m in folder <FOLDER_UID>\n"
+        "```"
+    )
+    lines.append("")
+    lines.append("I'll use these defaults if you omit them: group=`o11ybot`, severity=`warning`, `for`=`5m`.")
+    return "\n".join(lines)
+
+
 def fmt_metric_usage(data: Any) -> str:
     if not isinstance(data, list) or not data:
         return "No dashboards reference that metric."
@@ -829,8 +936,10 @@ INTENTS = [
     ),
 
     # ─── Datasources ───
+    # Anchored at start-of-message so a quoted "Test …" inside another
+    # command (e.g. `create alert "Test Latency" …`) doesn't trigger it.
     _m(
-        r"(check|test|health).*(datasource|data source).*",
+        r"^\s*(check|test|health)\s+.*?\b(datasource|data\s+source)\b",
         "bifrost-grafana", "list_datasources",
         fmt_fn=fmt_datasources,
         desc="Check datasource health",
@@ -1065,6 +1174,47 @@ INTENTS = [
         args_fn=lambda m: {"uid": m.group(3)},
         fmt_fn=fmt_mutation,
         desc="Delete an alert rule",
+    ),
+
+    # ─── Alert creation — FULL-spec pattern (must precede the wizard trigger) ───
+    # Example: create alert "High errors" on datasource abc123 for "sum(rate(...)) > 1" threshold 1 for 5m in folder xyz
+    _m(
+        (
+            r"(?:create|add|new)\s+alert\s+"
+            r"[\"']([^\"']+)[\"']\s+"                                      # 1 title
+            r"on\s+datasource\s+([A-Za-z0-9_-]{3,})\s+"                    # 2 ds uid
+            r"for\s+[\"']([^\"']+)[\"']"                                  # 3 expr
+            r"(?:\s+threshold\s+([\-+]?[0-9]*\.?[0-9]+))?"                 # 4 threshold
+            r"(?:\s+for\s+([0-9]+[smhd]))?"                                # 5 for_duration
+            r"(?:\s+in\s+folder\s+([A-Za-z0-9_-]{3,}))?"                   # 6 folder uid
+        ),
+        "bifrost-grafana", "create_alert_rule",
+        args_fn=lambda m: {
+            "title": m.group(1),
+            "datasource_uid": m.group(2),
+            "expr": m.group(3),
+            "condition_threshold": float(m.group(4)) if m.group(4) else 0.0,
+            "for_duration": m.group(5) or "5m",
+            "folder_uid": m.group(6) or "",
+        },
+        fmt_fn=fmt_mutation,
+        desc="Create alert rule (full spec)",
+    ),
+
+    # ─── Alert creation — WIZARD (under-specified "create alert for X") ───
+    _m(
+        r"(?:create|add|new)\s+alert\s+(?:rule\s+)?(?:for\s+(.+))?$",
+        "bifrost-grafana", "alert_wizard",
+        args_fn=lambda m: {"topic": (m.group(1) or "").strip()},
+        fmt_fn=fmt_alert_wizard,
+        desc="Start the alert-creation wizard",
+    ),
+    _m(
+        r"(?:set\s*up|configure)\s+(?:an\s+|a\s+)?alert(?:\s+on|\s+for\s+)?(.*)$",
+        "bifrost-grafana", "alert_wizard",
+        args_fn=lambda m: {"topic": (m.group(1) or "").strip().strip("?")},
+        fmt_fn=fmt_alert_wizard,
+        desc="Alert wizard (alt phrasing)",
     ),
 
     # ─── Library panels ───
@@ -1422,23 +1572,70 @@ def _match_mutation_intent(user_message: str, has_dashboard_keyword: bool) -> di
             "desc": f"Create folder: {fm.group(2).strip()}",
         }
 
-    # Create dashboard — broad: any "create/new/make/build/add … dashboard …"
-    # Routes to create_smart_dashboard so Bifrost builds RED + resource panels
-    # pre-filtered for the topic, inside the MCP layer (no panel JSON in the
-    # orchestrator).
-    cm = re.match(r"^\s*(create|make|build|new|add)\s+(.*?)\s*$", msg, re.IGNORECASE)
-    if cm and has_dashboard_keyword:
-        title = _extract_dashboard_title(cm.group(2))
+    # Create dashboard — full spec (datasource + folder explicit):
+    #   create dashboard "Title" for "topic" on datasource <uid> in folder <uid>
+    full = re.match(
+        r"^\s*(?:create|make|build|new|add)\s+dash\w*\s+"
+        r"[\"']([^\"']+)[\"']"
+        r"(?:\s+for\s+[\"']([^\"']+)[\"'])?"
+        r"\s+on\s+datasource\s+([A-Za-z0-9_-]{3,})"
+        r"(?:\s+in\s+folder\s+([A-Za-z0-9_-]{3,}))?"
+        r"\s*$",
+        msg, re.IGNORECASE,
+    )
+    if full:
+        title = full.group(1)
+        topic = (full.group(2) or title).lower()
+        ds_uid = full.group(3)
+        folder_uid = full.group(4) or None
+        args: dict = {
+            "title": title,
+            "topic": topic,
+            "tags": [topic.replace(" ", "-")[:40]],
+            "datasource_uid": ds_uid,
+        }
+        if folder_uid:
+            args["folder_uid"] = folder_uid
+        return {
+            "server": "bifrost-grafana",
+            "tool": "create_smart_dashboard",
+            "arguments": args,
+            "formatter": fmt_mutation,
+            "desc": f"Smart-create dashboard (explicit DS): {title}",
+        }
+
+    # Create dashboard — shortcut "…now" / "…auto" → skip the wizard
+    shortcut = re.match(
+        r"^\s*(?:create|make|build|new|add)\s+(.*?)\s*(now|auto|auto[-\s]?pick|defaults)\s*$",
+        msg, re.IGNORECASE,
+    )
+    if shortcut and has_dashboard_keyword:
+        title = _extract_dashboard_title(shortcut.group(1))
         if title:
             topic = title.lower()
-            tag = topic.replace(" ", "-")[:40]
             return {
                 "server": "bifrost-grafana",
                 "tool": "create_smart_dashboard",
-                "arguments": {"title": title, "topic": topic, "tags": [tag]},
+                "arguments": {
+                    "title": title, "topic": topic,
+                    "tags": [topic.replace(" ", "-")[:40]],
+                },
                 "formatter": fmt_mutation,
-                "desc": f"Smart-create dashboard: {title}",
+                "desc": f"Smart-create dashboard (auto): {title}",
             }
+
+    # Create dashboard — under-specified → run the wizard (asks which DS + folder)
+    cm = re.match(r"^\s*(?:create|make|build|new|add)\s+(.*?)\s*$", msg, re.IGNORECASE)
+    if cm and has_dashboard_keyword:
+        title = _extract_dashboard_title(cm.group(1))
+        topic = title.lower() if title else ""
+        return {
+            "server": "bifrost-grafana",
+            "tool": "dashboard_wizard",
+            "arguments": {"topic": topic},
+            "formatter": fmt_dashboard_wizard,
+            "desc": f"Dashboard wizard for topic: {topic or '(none)'}",
+        }
     return None
 
 

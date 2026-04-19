@@ -28,13 +28,13 @@ R=$(curl -s http://localhost:8000/api/v1/mcp/servers)
 STATUS=$(echo "$R" | python3 -c "import sys,json;s=json.loads(sys.stdin.read(),strict=False)['servers'];print(s[0]['status'] if s else 'none')")
 check "connected" "$STATUS" "O11yBot MCP connected"
 TOOLS=$(echo "$R" | python3 -c "import sys,json;s=json.loads(sys.stdin.read(),strict=False)['servers'];print(s[0]['toolCount'] if s else 0)")
-check "51" "$TOOLS" "51 tools discovered"
+check "53" "$TOOLS" "53 tools discovered"
 
 # T4: MCP tools
 echo ""
 echo "T4: GET /api/v1/mcp/tools"
 COUNT=$(curl -s http://localhost:8000/api/v1/mcp/tools | python3 -c "import sys,json;d=json.loads(sys.stdin.read(),strict=False);print(len(d['tools']))")
-check "51" "$COUNT" "51 tools registered"
+check "53" "$COUNT" "53 tools registered"
 
 # T5: Skills
 echo ""
@@ -98,7 +98,7 @@ check "True" "$ENABLED" "Plugin enabled"
 echo ""
 echo "T13: O11yBot MCP direct"
 BIFROST=$(curl -s --max-time 3 http://localhost:8765/api/tools | python3 -c "import sys,json;d=json.loads(sys.stdin.read(),strict=False);tools=d.get('data',d);print(len(tools))" 2>/dev/null)
-check "51" "$BIFROST" "O11yBot returns 51 tools"
+check "53" "$BIFROST" "O11yBot returns 53 tools"
 
 # T14: Widget injection (authenticated)
 echo ""
