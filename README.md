@@ -499,15 +499,21 @@ Full testing guide: **[docs/TESTING.md](docs/TESTING.md)**
 
 ## 📚 Documentation
 
-| Doc | Purpose |
-|---|---|
-| **[README.md](README.md)** (this) | Overview, demos, install, API, architecture |
-| **[docs/README.md](docs/README.md)** | Documentation index |
-| **[docs/TESTING.md](docs/TESTING.md)** | All 98 tests with manual curl examples |
-| **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)** | Complete API schema, SSE event types, MCP tools |
-| **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Deploy into any Grafana instance |
-| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | System diagrams and design decisions |
-| **[docs/assets/RECORD_DEMO.md](docs/assets/RECORD_DEMO.md)** | How to record your own demo GIF |
+Ordered by typical journey — start at 0.
+
+| # | Doc | When to read it |
+|---|---|---|
+| 0 | **[docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)** | Folder tree + per-file purpose |
+| 1 | **[docs/INSTALLATION.md](docs/INSTALLATION.md)** | Zero → boot. OSS + Enterprise paths, SA tokens, env vars, first smoke test |
+| 2 | **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Production — Docker Compose, Kubernetes/Helm, bare-metal systemd, each with validation + rollback |
+| 3 | **[docs/VALIDATION.md](docs/VALIDATION.md)** | 9-command post-deploy smoke test + 20 end-to-end scenarios |
+| 4 | **[docs/USE_CASES.md](docs/USE_CASES.md)** | Full 53-tool capability matrix by role + example prompts |
+| 5 | **[docs/ENTERPRISE.md](docs/ENTERPRISE.md)** | RBAC, self-observability, hardening, scaling |
+| 6 | **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | System diagrams + data flow |
+| 7 | **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)** | REST endpoints, SSE event types, MCP tools |
+| 8 | **[docs/RBAC.md](docs/RBAC.md)** | Role design + service-account setup |
+| 9 | **[docs/TESTING.md](docs/TESTING.md)** | All 160 automated tests, expected outputs |
+| — | **[docs/assets/RECORD_DEMO.md](docs/assets/RECORD_DEMO.md)** | How to record your own demo GIF |
 
 ---
 

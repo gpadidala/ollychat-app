@@ -13,6 +13,119 @@ Step-by-step validation scenarios with expected outputs. Use this to:
 
 ---
 
+## Post-deployment smoke test (run this first)
+
+Run this **immediately after every deploy** — 9 one-line commands cover every
+critical code path. If all nine pass + the 160-test suite is green, the deploy
+is validated. Only dive into the 20 scenarios below when diagnosing a specific
+feature regression.
+
+Set these in your shell once:
+
+```bash
+export ORCH=http://localhost:8000          # orchestrator URL
+export MCP=http://localhost:8765           # MCP URL
+export GRAFANA=http://localhost:3200       # target Grafana
+export ROLE=Admin                          # role header for smoke calls
+```
+
+### SMOKE 1 — orchestrator responds
+
+```bash
+curl -fsSL $ORCH/api/v1/models | jq '.models | length'
+```
+**Expect:** an integer ≥ 1.
+
+### SMOKE 2 — MCP healthy + tool catalog loaded
+
+```bash
+curl -fsSL $MCP/health | jq .
+curl -fsSL $MCP/api/tools | jq '.data | length'
+```
+**Expect:** `{"ok":true,"tools":53,"grafana_url":"…"}` and `53`.
+
+### SMOKE 3 — orchestrator sees the MCP
+
+```bash
+curl -fsSL $ORCH/api/v1/mcp/servers | jq '.servers[0] | {status, toolCount}'
+```
+**Expect:** `{"status":"connected","toolCount":53}`. If `disconnected`, re-run
+[INSTALLATION.md §7](INSTALLATION.md#7-register-the-mcp-server-with-the-orchestrator).
+
+### SMOKE 4 — read path (list dashboards)
+
+```bash
+curl -s -X POST $ORCH/api/v1/chat \
+  -H 'Content-Type: application/json' \
+  -H "X-Grafana-Role: $ROLE" \
+  -d '{"messages":[{"role":"user","content":"list all dashboards"}]}' \
+  --max-time 15 | grep -oE '"tool_start"[^}]+' | head -1
+```
+**Expect:** `"tool_start", "id": "…", "name": "list_dashboards", …`.
+
+### SMOKE 5 — fuzzy search + judge reranker
+
+```bash
+curl -s -X POST $ORCH/api/v1/chat \
+  -H 'Content-Type: application/json' \
+  -H "X-Grafana-Role: $ROLE" \
+  -d '{"messages":[{"role":"user","content":"oracle kpi dashbords"}]}' \
+  --max-time 45 | grep -oE '"name": "list_dashboards"|Top \d+' | head -2
+```
+**Expect:** matches + a `Top N dashboards` line — proves local fuzzy match
++ judge output are flowing.
+
+### SMOKE 6 — write path (smart dashboard with discovered metrics)
+
+```bash
+curl -s -X POST $ORCH/api/v1/chat \
+  -H 'Content-Type: application/json' \
+  -H 'X-Grafana-Role: Admin' \
+  -d '{"messages":[{"role":"user","content":"create a smoke-test dashboard now"}]}' \
+  --max-time 30 | grep -oE '"delta": "[^"]{1,90}' | head -3
+```
+**Expect:** `✅ Smart dashboard 'Smoke-Test' created with N panels from M live metrics`.
+Delete it via the Grafana UI afterwards.
+
+### SMOKE 7 — wizard flow (under-specified create)
+
+```bash
+curl -s -X POST $ORCH/api/v1/chat \
+  -H 'Content-Type: application/json' \
+  -H 'X-Grafana-Role: Admin' \
+  -d '{"messages":[{"role":"user","content":"create alert for high cpu"}]}' \
+  --max-time 15 | grep -oE '"name": "alert_wizard"|Datasources available'
+```
+**Expect:** both lines — confirms the wizard fires when required inputs are missing.
+
+### SMOKE 8 — RBAC enforcement (viewer blocked from admin-only tool)
+
+```bash
+curl -s -X POST $MCP/api/tools/call \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"list_users","arguments":{"role":"viewer"}}' | jq .
+```
+**Expect:** `{"ok":false,"error":"PermissionError","message":"Tool 'list_users' requires role 'admin'…"}`.
+
+### SMOKE 9 — self-observability (metrics endpoint)
+
+```bash
+curl -s $MCP/metrics | grep -E "^ollychat_mcp_tool_calls_total" | head -3
+```
+**Expect:** at least one counter line with `{role,status,tool}` labels (any of
+the earlier smoke calls populate these).
+
+### All-in-one pass/fail
+
+```bash
+./tests/preflight.sh        # service reachability
+./tests/run-all-tests.sh    # 160 assertions across 8 suites
+```
+
+**Expect:** `RESULT: ALL SUITES PASSED` at the tail.
+
+---
+
 ## Scenario 1: Basic Chat Flow
 
 **Goal:** Verify the widget loads, opens, and streams a response.

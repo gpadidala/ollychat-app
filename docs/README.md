@@ -1,15 +1,19 @@
 # O11yBot Documentation
 
-| Doc | Purpose |
-|---|---|
-| [USE_CASES.md](USE_CASES.md) | **Every use case O11yBot supports** — read/write/admin matrix + routing + RBAC |
-| [ENTERPRISE.md](ENTERPRISE.md) | Production deployment, RBAC, self-observability, hardening checklist |
-| [TESTING.md](TESTING.md) | **All 160+ tests** across 8 suites — every expected output documented |
-| [VALIDATION.md](VALIDATION.md) | **20 end-to-end validation scenarios** — manual reproduction guide |
-| [RBAC.md](RBAC.md) | Single MCP + multi-role tokens design + SA setup steps |
-| [API_REFERENCE.md](API_REFERENCE.md) | All REST endpoints, SSE event types, MCP tools |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | How to deploy to any Grafana instance |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System diagrams and data flow |
+**Start here** if you're new — the guides are ordered by typical journey:
+
+| Step | Doc | When to read it |
+|---|---|---|
+| 0 | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | Get oriented — folder tree + per-file purpose |
+| 1 | [INSTALLATION.md](INSTALLATION.md) | Zero → boot. OSS + Enterprise paths, SA tokens, env vars, first smoke test |
+| 2 | [DEPLOYMENT.md](DEPLOYMENT.md) | Production paths — Docker Compose, Kubernetes/Helm, bare-metal systemd — each with validation + rollback |
+| 3 | [VALIDATION.md](VALIDATION.md) | 9-command post-deploy smoke test + 20 end-to-end scenarios |
+| 4 | [USE_CASES.md](USE_CASES.md) | Full 53-tool capability matrix by role + example prompts |
+| 5 | [ENTERPRISE.md](ENTERPRISE.md) | RBAC, self-observability, hardening, scaling |
+| 6 | [ARCHITECTURE.md](ARCHITECTURE.md) | System diagrams + data flow |
+| 7 | [API_REFERENCE.md](API_REFERENCE.md) | REST endpoints + SSE event types + MCP tool catalog |
+| 8 | [RBAC.md](RBAC.md) | Role design + service-account setup |
+| 9 | [TESTING.md](TESTING.md) | All 160 automated tests, expected outputs |
 
 ## Quick Links
 
