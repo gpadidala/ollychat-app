@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "2.2.0";
+  var WIDGET_VERSION = "2.3.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -296,6 +296,11 @@
 .ob-shortcuts-close{background:transparent;border:none;color:#888;cursor:pointer;width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center}\
 .ob-shortcuts-close:hover{background:rgba(255,255,255,.06);color:#ccc}\
 .ob-shortcuts-body{padding:10px 18px}\
+.ob-sc-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 18px 6px;border-bottom:1px solid #2a2a3e}\
+.ob-sc-navbtn{background:linear-gradient(135deg,#1a1a2e,#111217);border:1px solid #2a2a3e;color:#e0e0e0;cursor:pointer;padding:10px 6px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:500;transition:all .15s}\
+.ob-sc-navbtn:hover{border-color:#f59e0b;color:#fff;background:linear-gradient(135deg,#2a1a0e,#1a1012);transform:translateY(-1px)}\
+.ob-sc-navbtn .ob-sc-emoji{font-size:18px;line-height:1}\
+.ob-sc-navbtn .ob-sc-kbd{font-size:9.5px;color:#666;font-family:\"JetBrains Mono\",monospace}\
 .ob-shortcuts-group{margin-bottom:14px}\
 .ob-shortcuts-group h4{margin:8px 0 6px;font-size:10.5px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:0.8px}\
 .ob-shortcut{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}\
@@ -953,6 +958,12 @@
     html += '<h3>⌨️ Keyboard Shortcuts</h3>';
     html += '<button class="ob-shortcuts-close" id="ob-shortcuts-close" title="Close (Esc)">✕</button>';
     html += '</div>';
+    html += '<div class="ob-sc-nav">';
+    html += '<button class="ob-sc-navbtn" data-nav="chat"><span class="ob-sc-emoji">💬</span>Chat<span class="ob-sc-kbd">' + MOD + '+J</span></button>';
+    html += '<button class="ob-sc-navbtn" data-nav="new"><span class="ob-sc-emoji">🏠</span>Home<span class="ob-sc-kbd">' + MOD + '+N</span></button>';
+    html += '<button class="ob-sc-navbtn" data-nav="history"><span class="ob-sc-emoji">🕑</span>History<span class="ob-sc-kbd">' + MOD + '+H</span></button>';
+    html += '<button class="ob-sc-navbtn" data-nav="clear"><span class="ob-sc-emoji">🧹</span>Clear<span class="ob-sc-kbd">' + MOD + '+L</span></button>';
+    html += '</div>';
     html += '<div class="ob-shortcuts-body">';
     for (var gi = 0; gi < SHORTCUTS.length; gi++) {
       var g = SHORTCUTS[gi];
@@ -1059,6 +1070,32 @@
       state.showShortcuts = false;
       renderPanel();
     };
+    // Quick-nav buttons inside the shortcuts modal
+    var navBtns = root.querySelectorAll(".ob-sc-navbtn");
+    for (var ni = 0; ni < navBtns.length; ni++) {
+      navBtns[ni].onclick = function(ev) {
+        ev.stopPropagation();
+        var action = this.dataset.nav;
+        state.showShortcuts = false;
+        if (action === "chat") {
+          state.view = "chat";
+        } else if (action === "history") {
+          state.view = "history";
+        } else if (action === "new") {
+          if (state.streaming && abortCtrl) abortCtrl.abort();
+          var cur = getActiveSession();
+          if (cur && cur.msgs.length > 0) newSession();
+          state.view = "chat";
+        } else if (action === "clear") {
+          var s = getActiveSession();
+          if (s) { s.msgs = []; s.title = "New chat"; s.updatedAt = Date.now(); }
+          state.view = "chat";
+        }
+        saveState();
+        renderPanel();
+      };
+    }
+
     var kbdOverlay = document.getElementById("ob-shortcuts-overlay");
     if (kbdOverlay) kbdOverlay.onclick = function() {
       state.showShortcuts = false;
