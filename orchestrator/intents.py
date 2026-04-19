@@ -158,24 +158,41 @@ def fmt_capabilities(data: Any) -> str:
     """
     return """**I'm O11yBot — your Grafana observability assistant.**
 
-I can help you with real Grafana data via MCP tools. Try asking:
+Everything I do is a real MCP call against Grafana — no fabricated answers.
 
-**📊 Dashboards**
-- `list all dashboards` → see all 113 dashboards
-- `list AKS dashboards` · `Azure dashboards` · `Loki dashboards`
-- `search dashboards postgres` → text search
-- `payment-service dashboards` → find service-specific
+**📊 Dashboards — read**
+- `list all dashboards` · `list AKS / Azure / Loki dashboards`
+- `search dashboards postgres` · `payment-service dashboards`
+- `show dashboard <uid>` · `panels in <uid>` · `summarize dashboard <uid>`
+
+**✏️ Dashboards — write (editor+)**
+- `create a dashboard called "Payment SLOs"`
+- `create dashboard for checkout-service`
+- `delete dashboard <uid>` *(admin)*
+
+**🚨 Alerts**
+- `list alert rules` · `show firing alerts`
+- `explain alert <uid>` · `why is <uid> firing?`
+- `silence alert <uid>` *(editor+)*
+
+**📡 Datasources & queries**
+- `list datasources` · `get datasource prometheus`
+- `run promql sum(rate(http_requests_total[5m]))`
 
 **🗂️ Folders & Organization**
-- `list folders` → all 15 folders with direct links
-- `list all alerts` · `show firing alerts`
+- `list folders` · `create folder "My team"` *(editor+)*
+- `list users` · `list service accounts` *(admin)*
 
-**📡 Datasources**
-- `list datasources` → Mimir, Loki, Tempo
+**💓 Grafana Health & Introspection**
+- `check grafana health` · `grafana info` · `mcp server info`
 
-**💓 Grafana Health**
-- `check grafana health` → version + DB status
-- `grafana info` / `mcp server info`
+**📝 Query authoring help**
+- `promql cookbook` · `logql examples` · `traceql templates`
+- `slo cheat sheet`
+
+**🧭 Navigation & errors**
+- `where do I find alert rules?` · `navigate`
+- `decode error: context deadline exceeded`
 
 **🏷️ Categories I know (35+)**
 - **Cloud**: AKS, Azure, OCI, GCP, AWS, GKE
@@ -185,13 +202,9 @@ I can help you with real Grafana data via MCP tools. Try asking:
 - **Compliance**: PCI, HIPAA, SOC2, GDPR, security
 - **Levels**: L0–L3 (executive → deep-dive)
 
-**📝 PromQL / LogQL / TraceQL help**
-- `promql for error rate by service`
-- `logql to find errors`
+**⚠️ Anything I can't match to a tool falls through to my LLM reasoning.** Prefer the commands above for live data.
 
-**⚠️ Remember:** Only I can fetch LIVE Grafana data. For generic knowledge questions without a tool match, I'll give general answers — if they sound vague, try a specific command from the list above.
-
-**Keyboard shortcuts:** press `⌘/` (Mac) or `Ctrl/` (Windows/Linux)"""
+**Keyboard shortcuts:** `⌘/` (Mac) or `Ctrl/` (Windows/Linux)"""
 
 
 def fmt_dashboards_filtered(data: Any, category_label: str | None = None,
@@ -232,6 +245,341 @@ def fmt_dashboards_filtered(data: Any, category_label: str | None = None,
                 lines.append(f"  UID: `{uid}` · [Open dashboard]({url})")
 
     return "\n".join(lines)
+
+
+def fmt_dashboard_detail(data: Any) -> str:
+    """Format a get_dashboard response with panel list + metadata."""
+    if not isinstance(data, dict):
+        return "Dashboard not found."
+    title = data.get("title", "(untitled)")
+    uid = data.get("uid", "")
+    version = data.get("version", 0)
+    tags = data.get("tags", []) or []
+    folder = data.get("folder_title", "General")
+    url = data.get("url", "") or (f"/d/{uid}" if uid else "")
+    panels = data.get("panels", []) or []
+
+    lines = [f"**📊 Dashboard: {title}**\n"]
+    lines.append(f"- UID: `{uid}` · version: `{version}` · folder: _{folder}_")
+    if tags:
+        lines.append(f"- Tags: `{', '.join(tags[:8])}`")
+    if url:
+        lines.append(f"- [Open dashboard]({url})")
+    lines.append(f"\n**Panels ({len(panels)}):**")
+    for p in panels[:30]:
+        ptype = p.get("type") or "?"
+        ptitle = p.get("title") or "(untitled)"
+        ds = p.get("datasource") or ""
+        ds_bit = f" · ds: `{ds}`" if ds else ""
+        lines.append(f"- [{ptype}] **{ptitle}**{ds_bit}")
+    if len(panels) > 30:
+        lines.append(f"\n_... and {len(panels) - 30} more panels_")
+    return "\n".join(lines)
+
+
+def fmt_dashboard_panels(data: Any) -> str:
+    """Format get_dashboard_panels (list of DashboardPanel)."""
+    if not isinstance(data, list) or not data:
+        return "No panels in this dashboard."
+    lines = [f"**Found {len(data)} panel{'s' if len(data) != 1 else ''}:**\n"]
+    for p in data:
+        ptype = p.get("type") or "?"
+        ptitle = p.get("title") or "(untitled)"
+        ds = p.get("datasource") or ""
+        desc = p.get("description") or ""
+        ds_bit = f" · ds: `{ds}`" if ds else ""
+        lines.append(f"- [{ptype}] **{ptitle}**{ds_bit}")
+        if desc:
+            lines.append(f"  _{desc[:120]}_")
+    return "\n".join(lines)
+
+
+def fmt_alert_detail(data: Any) -> str:
+    """Format get_alert_rule response."""
+    if not isinstance(data, dict):
+        return "Alert rule not found."
+    title = data.get("title") or data.get("name") or "(unnamed)"
+    uid = data.get("uid", "")
+    group = data.get("group") or data.get("ruleGroup") or "?"
+    folder = data.get("folder_uid") or data.get("folderUid") or "?"
+    state = (data.get("state") or "").lower()
+    condition = data.get("condition", "")
+    no_data = data.get("no_data_state") or data.get("noDataState") or "?"
+    exec_err = data.get("exec_err_state") or data.get("execErrState") or "?"
+    lines = [f"**🚨 Alert rule: {title}**\n"]
+    lines.append(f"- UID: `{uid}` · group: _{group}_ · folder: `{folder}`")
+    if state:
+        emoji = {"firing": "🔴", "pending": "🟡", "inactive": "✅", "normal": "✅"}.get(state, "⚪")
+        lines.append(f"- State: {emoji} **{state}**")
+    if condition:
+        lines.append(f"- Condition: `{condition}`")
+    lines.append(f"- On no-data: `{no_data}` · on exec error: `{exec_err}`")
+    annot = data.get("annotations") or {}
+    if annot:
+        lines.append("\n**Annotations:**")
+        for k, v in list(annot.items())[:6]:
+            lines.append(f"- `{k}`: {str(v)[:160]}")
+    labels = data.get("labels") or {}
+    if labels:
+        lines.append("\n**Labels:**")
+        for k, v in list(labels.items())[:8]:
+            lines.append(f"- `{k}` = `{v}`")
+    return "\n".join(lines)
+
+
+def fmt_datasource_detail(data: Any) -> str:
+    """Format get_datasource response."""
+    if not isinstance(data, dict):
+        return "Datasource not found."
+    name = data.get("name", "?")
+    dtype = data.get("type", "?")
+    uid = data.get("uid", "")
+    url = data.get("url", "")
+    is_default = data.get("is_default") or data.get("isDefault")
+    access = data.get("access", "")
+    lines = [f"**📡 Datasource: {name}**\n"]
+    lines.append(f"- Type: `{dtype}` · UID: `{uid}`")
+    if url:
+        lines.append(f"- URL: `{url}`")
+    if access:
+        lines.append(f"- Access mode: `{access}`")
+    if is_default:
+        lines.append("- ⭐ Default datasource")
+    return "\n".join(lines)
+
+
+def fmt_query_result(data: Any) -> str:
+    """Format query_datasource response — compact tabular preview."""
+    if not isinstance(data, dict):
+        return "```\n" + str(data)[:1500] + "\n```"
+    results = data.get("results") or {}
+    if not results:
+        return "**Query returned no results.**"
+    lines = ["**🔍 Query results:**\n"]
+    for ref_id, r in list(results.items())[:5]:
+        frames = r.get("frames") or []
+        total_rows = 0
+        for f in frames:
+            d = f.get("data") or {}
+            values = d.get("values") or []
+            if values:
+                total_rows += len(values[0])
+        lines.append(f"- `{ref_id}` — {len(frames)} frame(s), ~{total_rows} row(s)")
+        for f in frames[:2]:
+            schema = f.get("schema") or {}
+            fields = [x.get("name", "?") for x in (schema.get("fields") or [])]
+            if fields:
+                lines.append(f"  fields: `{', '.join(fields[:6])}`")
+    return "\n".join(lines)
+
+
+def fmt_service_accounts(data: Any) -> str:
+    """Format list_service_accounts."""
+    if not isinstance(data, list) or not data:
+        return "No service accounts found."
+    lines = [f"**Found {len(data)} service account{'s' if len(data) != 1 else ''}:**\n"]
+    for sa in data[:30]:
+        name = sa.get("name", "?")
+        role = sa.get("role", "?")
+        disabled = sa.get("is_disabled") or sa.get("isDisabled")
+        status = "🚫 disabled" if disabled else "✅ enabled"
+        lines.append(f"- **{name}** — role: `{role}` · {status}")
+    return "\n".join(lines)
+
+
+def fmt_mutation(data: Any) -> str:
+    """Format a create/update/delete DashboardMutationResult."""
+    if not isinstance(data, dict):
+        return "Operation complete."
+    status = data.get("status", "success")
+    uid = data.get("uid", "")
+    url = data.get("url", "")
+    msg = data.get("message") or f"Status: {status}"
+    version = data.get("version", 0)
+    ok_emoji = "✅" if data.get("ok", True) else "⚠️"
+    lines = [f"{ok_emoji} **{msg}**\n"]
+    if uid:
+        lines.append(f"- UID: `{uid}`")
+    if version:
+        lines.append(f"- Version: `{version}`")
+    if url:
+        lines.append(f"- [Open in Grafana]({url})")
+    return "\n".join(lines)
+
+
+def fmt_navigation(_data: Any) -> str:
+    """Static navigation map — where to find things in Grafana."""
+    return """**🧭 Finding things in Grafana**
+
+| What you want | Where it lives |
+|---|---|
+| Dashboards | `/dashboards` — top nav → Dashboards |
+| Create dashboard | `/dashboard/new` or click `+ → New dashboard` |
+| Explore metrics/logs/traces | `/explore` — compass icon in left rail |
+| Alert rules | `/alerting/list` — bell icon in left rail |
+| Silences | `/alerting/silences` — under Alerting |
+| Contact points | `/alerting/notifications` |
+| Data sources | `/connections/datasources` or `/datasources` |
+| Users & teams | `/admin/users`, `/admin/teams` (admin) |
+| Service accounts | `/org/serviceaccounts` (admin) |
+| API keys | Rotate in service-account page |
+| Plugins | `/plugins` |
+| Preferences / theme | `/profile/preferences` |
+| Keyboard shortcuts | `?` key in Grafana, or `⌘/` here in O11yBot |
+
+Ask me: `where do I find alert rules?` · `how do I create a dashboard?` · `how do I silence an alert?`
+"""
+
+
+def fmt_error_decode(_data: Any) -> str:
+    """Help text when user asks to decode a Grafana error without providing one."""
+    return """**🩺 Error decoder**
+
+Paste the error message after `decode error:` and I'll explain what it means. Common ones:
+
+| Error | Meaning |
+|---|---|
+| `Data source not found` | UID in panel JSON doesn't match any configured datasource. Update the datasource UID. |
+| `bad_data: invalid parameter "query"` | PromQL syntax error — check for unbalanced brackets or missing `by()` labels. |
+| `context deadline exceeded` | Query took longer than the datasource timeout. Narrow the time range or add more specific labels. |
+| `too many samples` | Query returns > `--max-samples`. Add label filters or increase step in range queries. |
+| `429 Too Many Requests` | Rate limited — slow down queries or check your cloud plan limits. |
+| `Panel plugin not found` | Missing panel plugin — install via `/plugins` or switch to a built-in type. |
+
+Try: `decode error: context deadline exceeded`
+"""
+
+
+def fmt_promql_helper(_data: Any) -> str:
+    """Static PromQL examples with scenarios."""
+    return """**📝 PromQL cookbook**
+
+**Rate of errors per service (last 5m)**
+```promql
+sum by (service) (rate(http_requests_total{status=~"5.."}[5m]))
+```
+
+**p95 request latency per endpoint**
+```promql
+histogram_quantile(0.95, sum by (le, endpoint) (rate(http_request_duration_seconds_bucket[5m])))
+```
+
+**Error rate % over time**
+```promql
+100 * sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))
+```
+
+**CPU usage per pod**
+```promql
+sum by (pod) (rate(container_cpu_usage_seconds_total[5m]))
+```
+
+**Memory usage — top 10 pods**
+```promql
+topk(10, sum by (pod) (container_memory_working_set_bytes))
+```
+
+**Alerting: burn-rate SLO (2h fast burn)**
+```promql
+(sum(rate(http_requests_total{status=~"5.."}[2h])) / sum(rate(http_requests_total[2h]))) > (14.4 * (1 - 0.999))
+```
+"""
+
+
+def fmt_logql_helper(_data: Any) -> str:
+    """Static LogQL examples."""
+    return """**📜 LogQL cookbook**
+
+**Find errors in service logs**
+```logql
+{service="payment-service"} |= "ERROR"
+```
+
+**Count errors per level, last 5m**
+```logql
+sum by (level) (count_over_time({service="payment-service"} |= "ERROR" [5m]))
+```
+
+**Parse JSON logs and filter by status**
+```logql
+{app="api"} | json | status >= 500
+```
+
+**Rate of log lines per pod**
+```logql
+sum by (pod) (rate({app="api"} [1m]))
+```
+
+**Logs containing user_id, extracted**
+```logql
+{app="api"} |= "user_id" | regexp `user_id=(?P<uid>\\d+)`
+```
+"""
+
+
+def fmt_traceql_helper(_data: Any) -> str:
+    """Static TraceQL examples."""
+    return """**🔎 TraceQL cookbook**
+
+**Find slow traces > 1s**
+```traceql
+{ duration > 1s }
+```
+
+**Slow payment-service traces**
+```traceql
+{ resource.service.name = "payment-service" && duration > 500ms }
+```
+
+**HTTP 5xx errors**
+```traceql
+{ span.http.status_code >= 500 }
+```
+
+**Database span slower than 100ms**
+```traceql
+{ span.db.system = "postgresql" && span.duration > 100ms }
+```
+
+**Root span that called a specific service**
+```traceql
+{ resource.service.name = "gateway" } >> { resource.service.name = "inventory" }
+```
+"""
+
+
+def fmt_slo_helper(_data: Any) -> str:
+    """Static SLO authoring guide."""
+    return """**🎯 SLO authoring cheat sheet**
+
+**1. Define the SLI** — a raw measure of good behaviour.
+```promql
+# Availability SLI: fraction of good requests
+sum(rate(http_requests_total{status!~"5.."}[5m])) /
+sum(rate(http_requests_total[5m]))
+```
+
+**2. Pick the SLO target** — e.g. 99.9% over 30 days.
+
+**3. Error budget consumed (30d)**
+```promql
+1 - (sum(increase(http_requests_total{status!~"5.."}[30d])) /
+     sum(increase(http_requests_total[30d])))
+```
+Alert when consumed > `1 - 0.999` (= 0.001).
+
+**4. Fast-burn alert (2h window, 14.4× budget spend rate)**
+```promql
+(
+  1 - sum(rate(http_requests_total{status!~"5.."}[2h])) /
+      sum(rate(http_requests_total[2h]))
+) > (14.4 * 0.001)
+```
+
+**5. Slow-burn alert (24h window, 1× rate)** — catches chronic degradation.
+
+Record the SLI + error-budget as recording rules for reuse in dashboards.
+"""
 
 
 # ─────────────────────────────────────────────────────────────
@@ -346,6 +694,142 @@ INTENTS = [
         "bifrost-grafana", "list_users",
         fmt_fn=fmt_users,
         desc="List all users",
+    ),
+
+    # ─── Service accounts (admin) ───
+    _m(
+        r"(list|show|get|all).*(service\s*accounts?|sa)s?\b",
+        "bifrost-grafana", "list_service_accounts",
+        fmt_fn=fmt_service_accounts,
+        desc="List service accounts",
+    ),
+
+    # ─── Dashboard detail by UID ───
+    _m(
+        r"(get|show|open|describe|summari[sz]e).*(dashboard|dash).*\b(uid[:\s]+)?([a-zA-Z0-9_-]{6,})\b",
+        "bifrost-grafana", "get_dashboard",
+        args_fn=lambda m: {"uid": m.group(4)},
+        fmt_fn=fmt_dashboard_detail,
+        desc="Get dashboard detail by UID",
+    ),
+    _m(
+        r"(what\s+panels?|list\s+panels?|panels?\s+in).*([a-zA-Z0-9_-]{6,})\b",
+        "bifrost-grafana", "get_dashboard_panels",
+        args_fn=lambda m: {"uid": m.group(2)},
+        fmt_fn=fmt_dashboard_panels,
+        desc="List panels in a dashboard",
+    ),
+
+    # ─── Alert detail / explanation by UID ───
+    _m(
+        r"(get|show|describe|explain|why.*firing).*alert.*\b([a-zA-Z0-9_-]{6,})\b",
+        "bifrost-grafana", "get_alert_rule",
+        args_fn=lambda m: {"uid": m.group(2)},
+        fmt_fn=fmt_alert_detail,
+        desc="Get alert rule detail",
+    ),
+
+    # ─── Datasource detail / query ───
+    _m(
+        r"(get|show|describe).*(datasource|data source)\s+([a-zA-Z0-9_-]{3,})\b",
+        "bifrost-grafana", "get_datasource",
+        args_fn=lambda m: {"uid": m.group(3)},
+        fmt_fn=fmt_datasource_detail,
+        desc="Get datasource detail",
+    ),
+    _m(
+        r"(run|execute|query).*promql\s+(.+)",
+        "bifrost-grafana", "query_datasource",
+        args_fn=lambda m: {"uid": "prometheus", "query": m.group(2).strip()},
+        fmt_fn=fmt_query_result,
+        desc="Run a PromQL query",
+    ),
+
+    # ─── Silence an alert (editor+) ───
+    _m(
+        r"silence.*alert\s+([a-zA-Z0-9_-]{6,})",
+        "bifrost-grafana", "silence_alert",
+        args_fn=lambda m: {"alert_uid": m.group(1)},
+        fmt_fn=fmt_generic,
+        desc="Silence an alert",
+    ),
+
+    # ─── Create / mutate dashboards + folders (editor+) ───
+    _m(
+        r"create.*dashboard.*(?:called|named|titled)\s+[\"']?([^\"']+?)[\"']?\s*(?:$|for|with|in)",
+        "bifrost-grafana", "create_dashboard",
+        args_fn=lambda m: {"title": m.group(1).strip(), "tags": []},
+        fmt_fn=fmt_mutation,
+        desc="Create a new dashboard",
+    ),
+    _m(
+        r"(create|new)\s+dashboard\s+for\s+(.+)$",
+        "bifrost-grafana", "create_dashboard",
+        args_fn=lambda m: {"title": m.group(2).strip().title(), "tags": [m.group(2).strip().lower().replace(" ", "-")]},
+        fmt_fn=fmt_mutation,
+        desc="Create dashboard for topic/service",
+    ),
+    _m(
+        r"delete.*dashboard\s+([a-zA-Z0-9_-]{6,})",
+        "bifrost-grafana", "delete_dashboard",
+        args_fn=lambda m: {"uid": m.group(1)},
+        fmt_fn=fmt_mutation,
+        desc="Delete a dashboard",
+    ),
+    _m(
+        r"(create|new|add)\s+folder\s+[\"']?([^\"']+?)[\"']?$",
+        "bifrost-grafana", "create_folder",
+        args_fn=lambda m: {"title": m.group(2).strip()},
+        fmt_fn=fmt_mutation,
+        desc="Create a folder",
+    ),
+
+    # ─── Authoring helpers (static — no tool call) ───
+    _m(
+        r"\b(promql|prom\s*ql)\b.*(cheat|example|help|cookbook|how|template)",
+        "_internal", "promql_help",
+        fmt_fn=fmt_promql_helper,
+        desc="PromQL cookbook",
+    ),
+    _m(
+        r"\b(logql|log\s*ql)\b.*(cheat|example|help|cookbook|how|template)",
+        "_internal", "logql_help",
+        fmt_fn=fmt_logql_helper,
+        desc="LogQL cookbook",
+    ),
+    _m(
+        r"\b(traceql|trace\s*ql)\b.*(cheat|example|help|cookbook|how|template)",
+        "_internal", "traceql_help",
+        fmt_fn=fmt_traceql_helper,
+        desc="TraceQL cookbook",
+    ),
+    _m(
+        r"\bslo\b.*(help|cheat|how|author|create|example|guide|cookbook)",
+        "_internal", "slo_help",
+        fmt_fn=fmt_slo_helper,
+        desc="SLO authoring guide",
+    ),
+
+    # ─── Navigation / find things in Grafana ───
+    _m(
+        r"(where\s+(?:is|do|can)|how\s+(?:do|to)\s+(?:find|get|open|reach|navigate))",
+        "_internal", "navigation",
+        fmt_fn=fmt_navigation,
+        desc="Grafana navigation help",
+    ),
+    _m(
+        r"\bnav(igat\w*)?\b",
+        "_internal", "navigation",
+        fmt_fn=fmt_navigation,
+        desc="Grafana navigation help",
+    ),
+
+    # ─── Error decoder (static list — specific errors pipe through LLM) ───
+    _m(
+        r"\b(decode|explain|what.*mean|what.*error)\s+error[:\s]*$",
+        "_internal", "error_decode",
+        fmt_fn=fmt_error_decode,
+        desc="Error decoder help",
     ),
 
     # ─── Grafana Health / Status (LAST — very generic) ───

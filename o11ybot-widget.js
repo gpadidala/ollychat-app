@@ -9,7 +9,7 @@
  */
 (function() {
   "use strict";
-  var WIDGET_VERSION = "2.3.1";
+  var WIDGET_VERSION = "2.4.0";
   var ORCHESTRATOR = "http://localhost:8000";
   var WIDGET_ID = "o11ybot-root";
 
@@ -665,13 +665,31 @@
           actions: [
             { icon: "🔴", label: "Firing", q: "show firing alerts" },
             { icon: "📝", label: "Rules", q: "list all alert rules" },
+            { icon: "💡", label: "Explain…", q: "explain alert " },
           ],
         },
         {
-          title: "📡 Datasources",
+          title: "📡 Datasources & Queries",
           actions: [
             { icon: "📋", label: "List all", q: "list datasources" },
             { icon: "💓", label: "Health", q: "check grafana health" },
+            { icon: "⚡", label: "Run PromQL", q: "run promql " },
+          ],
+        },
+        {
+          title: "📝 Authoring Help",
+          actions: [
+            { icon: "📐", label: "PromQL", q: "promql cookbook" },
+            { icon: "📜", label: "LogQL", q: "logql examples" },
+            { icon: "🔎", label: "TraceQL", q: "traceql templates" },
+            { icon: "🎯", label: "SLO guide", q: "slo cheat sheet" },
+          ],
+        },
+        {
+          title: "🧭 Navigate & Decode",
+          actions: [
+            { icon: "🗺️", label: "Find in Grafana", q: "where do I find alert rules?" },
+            { icon: "🩺", label: "Decode error", q: "decode error: " },
           ],
         },
         {
@@ -688,12 +706,25 @@
           ],
         },
       ];
+      // Editor+ group: write operations
+      if (isEditor || isAdmin) {
+        quickActions.push({
+          title: "✏️ Create",
+          actions: [
+            { icon: "📊", label: "New dashboard", q: "create a dashboard called \"" },
+            { icon: "📁", label: "New folder", q: "create folder \"" },
+            { icon: "🔕", label: "Silence alert…", q: "silence alert " },
+          ],
+        });
+      }
       // Admin-only group
       if (isAdmin) {
         quickActions.push({
           title: "👑 Admin",
           actions: [
             { icon: "👥", label: "Users", q: "list users" },
+            { icon: "🔑", label: "Service accounts", q: "list service accounts" },
+            { icon: "🗑️", label: "Delete dashboard…", q: "delete dashboard " },
             { icon: "⚙️", label: "MCP info", q: "mcp server info" },
           ],
         });

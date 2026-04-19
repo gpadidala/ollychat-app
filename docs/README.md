@@ -2,6 +2,7 @@
 
 | Doc | Purpose |
 |---|---|
+| [USE_CASES.md](USE_CASES.md) | **Every use case O11yBot supports** — read/write/admin matrix + routing + RBAC |
 | [TESTING.md](TESTING.md) | **All 160+ tests** across 8 suites — every expected output documented |
 | [VALIDATION.md](VALIDATION.md) | **20 end-to-end validation scenarios** — manual reproduction guide |
 | [RBAC.md](RBAC.md) | Single MCP + multi-role tokens design + SA setup steps |
