@@ -157,7 +157,7 @@ Two paths — pick one. Full step-by-step is in **[docs/INSTALLATION.md](docs/IN
 - **An existing Grafana 10.0+ instance** (OSS or Enterprise) — *or* use the bundled one
 - **Admin access to Grafana** — to create three service-account tokens
 
-### Option A — 60-second local demo (bundled stack)
+### Option A — Local demo (everything bundled, one command)
 
 ```bash
 git clone https://github.com/gpadidala/ollychat-app.git
@@ -165,58 +165,31 @@ cd ollychat-app
 make up
 ```
 
-**One command.** Brings up 10 services on a clean docker network:
-Grafana (port 3002, with 113 provisioned dashboards + the plugin + the widget),
-the orchestrator, the self-owned MCP server, Ollama, Prometheus/Mimir/Loki/Tempo,
-and the OTEL collector. Auto-mints three service-account tokens on first boot and
-writes them back into `.env`. Auto-registers the MCP with the orchestrator — no
-manual curl. When it finishes, open `http://localhost:3002` and click the orange
-bubble bottom-right.
+That's the whole install. One repo. One `docker-compose.yaml`. One command brings up 10 services:
 
-Also supported in this mode:
-- **Corporate laptop** — add `HTTPS_PROXY`, `PIP_INDEX_URL`, or `CA_CERT_PATH=corp-ca.crt` to `.env` and both Dockerfiles pick it up at build time.
-- **Make targets** — `make up` · `make down` · `make restart` · `make rebuild` · `make reset` (drop volumes) · `make logs` · `make status` · `make test`.
+| Service | Port | Role |
+|---|---:|---|
+| Grafana (OSS) + plugin + widget | `3002` | UI, loads the floating bubble on every page |
+| Orchestrator (FastAPI + SSE) | `8000` | Chat API, intent matcher, LLM router |
+| O11yBot MCP server | `8765` | 53 tools, per-role SA-token pool |
+| Ollama (local LLM) | `11434` | Free inference backend |
+| Prometheus / Mimir / Loki / Tempo | — | Metrics / logs / traces |
+| OTEL collector | `4327/4328` | Telemetry ingress |
+| Grafana image renderer | — | Dashboard screenshots |
 
-### Option A+ — Source-of-truth workflow (canonical repos stay canonical)
+**Everything is bundled inside this repo:**
+- `dashboards/` — 113 provisioned Grafana dashboards
+- `provisioning/` — datasources + dashboard providers + Prometheus config
+- `mcp-server/` — the O11yBot MCP server (53 tools, no external MCP dependency)
+- `orchestrator/` — chat + LLM router
+- `dist/` — the plugin + widget
+- `docker-compose.yaml` — wires it all together
 
-If you also maintain the **[Grafana-Dashbords](https://github.com/gpadidala/Grafana-Dashbords)**
-and **[Bifrost](https://github.com/gpadidala/Bifrost)** repos as the master copies
-and just want `ollychat-app` to stay in sync with them:
+On first boot, the Makefile auto-mints three service-account tokens in the bundled Grafana, writes them to `.env`, and the orchestrator auto-registers the MCP — no manual curl anywhere. When it's up, open **http://localhost:3002** and click the orange bubble bottom-right.
 
-```
-parent-folder/
-├── Grafana-Dashbords/     ← canonical dashboard master (you edit here)
-├── Bifrost/               ← canonical MCP master (you maintain here)
-└── ollychat-app/          ← deploys everything, keeps working copies
-    └── make up            ← auto-syncs from ../Grafana-Dashbords/ every boot
-```
+**Corporate-laptop friendly:** add `HTTPS_PROXY`, `PIP_INDEX_URL`, or `CA_CERT_PATH=corp-ca.crt` to `.env` — both Dockerfiles pick up corporate proxy / pypi mirror / CA bundle at build time, no source edits.
 
-Your workflow:
-- Edit dashboards in `../Grafana-Dashbords/` as you always have.
-- `cd ollychat-app && make up` — bundled copies refresh automatically before Grafana boots.
-- On-demand: `make sync` — one-way pull from `../Grafana-Dashbords/` into `./dashboards/`.
-
-**If you prefer live mounts** (edit a dashboard in `../Grafana-Dashbords/` and see it update in the running Grafana without re-syncing), use the override compose file:
-
-```bash
-make up-external
-```
-
-That command:
-- mounts `../Grafana-Dashbords/` directly into the bundled Grafana container
-- skips booting `ollychat-mcp` (expects Bifrost running on host `:8765`)
-- points the orchestrator at `host.docker.internal:8765` for MCP tool calls
-
-**When to pick which:**
-
-| | `make up` (default) | `make up-external` |
-|---|---|---|
-| Canonical repos required? | optional — uses bundled if absent | required: `../Grafana-Dashbords/` + host Bifrost |
-| Every boot re-syncs from source? | yes, automatically | no — live bind mount |
-| Works with no sibling repos? | yes | no |
-| Best for | demos, CI, single-laptop deploys, airgapped | dashboard authors actively editing |
-
-Open Grafana → click the orange bubble bottom-right → ask **`list all dashboards`**.
+**Make targets:** `make up` · `make down` · `make restart` · `make rebuild` · `make reset` (drop volumes) · `make logs` · `make status` · `make test`.
 
 ### Option B — Production install (your own Grafana)
 

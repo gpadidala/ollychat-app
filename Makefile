@@ -11,9 +11,8 @@ help:   ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / { printf "  make %-12s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@echo ""
 
-up:     ## Boot bundled stack (default) + auto-sync from ../Grafana-Dashbords/ if present
+up:     ## Boot everything — Grafana + 113 dashboards + MCP + orchestrator + LGTM + Ollama
 	@test -f .env || (cp .env.example .env && echo "  ✓ Created .env from .env.example")
-	@./scripts/sync-sources.sh
 	docker compose up -d --build
 	@echo "  · bootstrapping Grafana service-account tokens (idempotent)…"
 	@./scripts/bootstrap-tokens.sh
@@ -29,18 +28,6 @@ up:     ## Boot bundled stack (default) + auto-sync from ../Grafana-Dashbords/ i
 	@echo "║  113 dashboards provisioned · 53 MCP tools online · $0 LLM   ║"
 	@echo "╚══════════════════════════════════════════════════════════════╝"
 	@$(MAKE) --no-print-directory status
-
-up-external: ## Boot using ../Grafana-Dashbords/ (live mount) + external Bifrost on host :8765
-	@test -f .env || (cp .env.example .env && echo "  ✓ Created .env from .env.example")
-	@test -d ../Grafana-Dashbords || (echo "  ✗ ../Grafana-Dashbords not found — run 'make up' for bundled mode"; exit 1)
-	@echo "  · using EXTERNAL ../Grafana-Dashbords (live mount, no sync)"
-	@echo "  · expecting Bifrost on host :8765 (skipping bundled ollychat-mcp)"
-	docker compose -f docker-compose.yaml -f docker-compose.external.yaml up -d --build
-	@./scripts/bootstrap-tokens.sh
-	@$(MAKE) --no-print-directory status
-
-sync:   ## Copy latest from ../Grafana-Dashbords/ into bundled ./dashboards/
-	@./scripts/sync-sources.sh
 
 down:   ## Stop all services (keeps data volumes)
 	docker compose down
