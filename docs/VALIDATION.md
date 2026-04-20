@@ -143,8 +143,8 @@ the earlier smoke calls populate these).
   ```
   **Found 113 dashboards:**
   
-  • Advanced PostgreSQL Monitoring — ESOBF Dev
-    folder: Grafana · UID: esobf-pg-advanced-v1 · Open dashboard
+  • Advanced PostgreSQL Monitoring — SAMPLEF Dev
+    folder: Grafana · UID: samplef-pg-advanced-v1 · Open dashboard
   • AKS — Cluster Overview & Health
     folder: Azure — Cloud Infrastructure · UID: aks-cluster-overview
   ...
