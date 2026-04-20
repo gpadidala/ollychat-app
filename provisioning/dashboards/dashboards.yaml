@@ -1,12 +1,156 @@
 apiVersion: 1
 
 providers:
-  - name: OllyChat
+  - name: "Grafana"
     orgId: 1
-    folder: OllyChat
     type: file
     disableDeletion: false
-    editable: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
     options:
-      path: /etc/grafana/provisioning/dashboards
+      path: /var/lib/grafana/dashboards/grafana
       foldersFromFilesStructure: false
+    folder: "Grafana"
+
+  - name: "Loki"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/loki
+      foldersFromFilesStructure: false
+    folder: "Loki"
+
+  - name: "Mimir"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/mimir
+      foldersFromFilesStructure: false
+    folder: "Mimir"
+
+  - name: "Tempo"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/tempo
+      foldersFromFilesStructure: false
+    folder: "Tempo"
+
+  - name: "Pyroscope"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/pyroscope
+      foldersFromFilesStructure: false
+    folder: "Pyroscope"
+
+  - name: "Platform"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/platform
+      foldersFromFilesStructure: false
+    folder: "Platform & Executive"
+
+  - name: "Observability KPI"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/observability-kpi
+      foldersFromFilesStructure: false
+    folder: "Observability KPI"
+
+  - name: "Volume Analytics"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/volume
+      foldersFromFilesStructure: false
+    folder: "Volume Analytics"
+
+  - name: "L0 Executive"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/L0-executive
+      foldersFromFilesStructure: false
+    folder: "L0 — Executive Command Center"
+
+  - name: "L1 Domain"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/L1-domain
+      foldersFromFilesStructure: false
+    folder: "L1 — Domain Overview"
+
+  - name: "L2 Service"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/L2-service
+      foldersFromFilesStructure: false
+    folder: "L2 — Service Golden Signals"
+
+  - name: "L3 Deep Dive"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/L3-deepdive
+      foldersFromFilesStructure: false
+    folder: "L3 — Deep Dive & Debug"
+
+  - name: "OCI"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/oci
+      foldersFromFilesStructure: false
+    folder: "OCI — Oracle Cloud Infrastructure"
+
+  - name: "Azure"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/azure
+      foldersFromFilesStructure: false
+    folder: "Azure — Cloud Infrastructure"

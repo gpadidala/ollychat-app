@@ -1,0 +1,844 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_OCI_METRICS",
+      "label": "OCI Metrics",
+      "description": "OCI Metrics datasource",
+      "type": "datasource",
+      "pluginId": "oci-metrics-datasource",
+      "pluginName": "Oracle Cloud Infrastructure Metrics"
+    },
+    {
+      "name": "DS_OCI_LOGS",
+      "label": "OCI Logs",
+      "description": "OCI Logs datasource",
+      "type": "datasource",
+      "pluginId": "oci-logs-datasource",
+      "pluginName": "Oracle Cloud Infrastructure Logs"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "oci-metrics-datasource",
+      "name": "Oracle Cloud Infrastructure Metrics",
+      "version": "5.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "oci-logs-datasource",
+      "name": "Oracle Cloud Infrastructure Logs",
+      "version": "5.0.0"
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar gauge",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "A beginner-friendly overview of ALL log data flowing through OCI. Use this dashboard to understand your overall log volume, spot error trends, and identify the noisiest log sources.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "Log Summary",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Total number of log events across all sources in the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | summarize count() as Total"
+        }
+      ],
+      "title": "Total Log Events",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Log events with HTTP 4xx/5xx status codes or error keywords. High values indicate service issues that need investigation.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 100 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.statusCode >= '400' or data.message =~ 'error|Error|ERROR' | summarize count() as Errors"
+        }
+      ],
+      "title": "Error Events",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Log events containing warning keywords. Warnings often precede errors and are worth monitoring.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "orange", "value": 100 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.message =~ 'warn|Warning|WARN' | summarize count() as Warnings"
+        }
+      ],
+      "title": "Warning Events",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Number of distinct log sources (services, applications) sending logs. A sudden drop may indicate a broken log pipeline.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "purple", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | summarize dcount(data.source) as Sources"
+        }
+      ],
+      "title": "Unique Sources",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "panels": [],
+      "title": "Log Volume",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Total log events per 5-minute interval. Sudden drops may indicate log pipeline issues. Spikes may indicate incidents.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | summarize count() as Events by rounddown(datetime, '5m')"
+        }
+      ],
+      "title": "Log Events Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Which OCI services are generating the most logs. Use this to identify noisy sources that may need log level tuning.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | summarize count() as Events by data.source, rounddown(datetime, '5m')"
+        }
+      ],
+      "title": "Log Events by Source",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "panels": [],
+      "title": "Error Analysis",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Error log count over time. Correlate spikes with deployment events or infrastructure changes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.statusCode >= '400' | summarize count() as Errors by rounddown(datetime, '5m')"
+        }
+      ],
+      "title": "Error Events Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Errors broken down by HTTP status code over time. 4xx = client errors, 5xx = server errors.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.statusCode >= '400' | summarize count() by data.statusCode, rounddown(datetime, '1h')"
+        }
+      ],
+      "title": "Errors by Status Code",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "panels": [],
+      "title": "Top Analysis",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Most frequent error messages. Focus debugging on the top entries.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 9,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.statusCode >= '400' | summarize count() as Count by data.message | sort by Count desc | head 10"
+        }
+      ],
+      "title": "Top 10 Error Messages",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "The OCI services generating the highest log volume. Consider adjusting log levels for noisy sources.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 10,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | summarize count() as Count by data.source | sort by Count desc | head 10"
+        }
+      ],
+      "title": "Top 10 Log Sources",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "panels": [],
+      "title": "Raw Logs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Most recent log entries across all sources. Click any row to expand details.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": true,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "datetime" },
+            "properties": [
+              { "id": "custom.width", "value": 200 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 33 },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": true, "enablePagination": true, "fields": "", "reducer": ["count"], "show": true },
+        "showHeader": true,
+        "sortBy": [
+          { "desc": true, "displayName": "datetime" }
+        ]
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | sort by datetime desc"
+        }
+      ],
+      "title": "Recent Log Events",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": false,
+            "source": "data"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "datetime": "Timestamp",
+              "data.source": "Source",
+              "data.message": "Message",
+              "data.statusCode": "Status Code"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 43 },
+      "id": 105,
+      "panels": [],
+      "title": "Error Logs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Recent error logs filtered by HTTP 4xx/5xx status codes and error keywords. Use this to quickly triage active issues.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": true,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "datetime" },
+            "properties": [
+              { "id": "custom.width", "value": 200 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 44 },
+      "id": 12,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": true, "enablePagination": true, "fields": "", "reducer": ["count"], "show": true },
+        "showHeader": true,
+        "sortBy": [
+          { "desc": true, "displayName": "datetime" }
+        ]
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.statusCode >= '400' or data.message =~ 'error|Error' | sort by datetime desc"
+        }
+      ],
+      "title": "Recent Error Logs",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": false,
+            "source": "data"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "datetime": "Timestamp",
+              "data.source": "Source",
+              "data.message": "Message",
+              "data.statusCode": "Status Code"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["oci", "logs", "analytics", "overview"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+        "definition": "regions()",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Region",
+        "multi": false,
+        "name": "region",
+        "options": [],
+        "query": "regions()",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+        "definition": "compartments($region)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Compartment",
+        "multi": false,
+        "name": "compartment",
+        "options": [],
+        "query": "compartments($region)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": { "selected": true, "text": "auto", "value": "auto" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Window",
+        "multi": false,
+        "name": "window",
+        "options": [
+          { "selected": true, "text": "auto", "value": "auto" },
+          { "selected": false, "text": "1m", "value": "1m" },
+          { "selected": false, "text": "5m", "value": "5m" },
+          { "selected": false, "text": "15m", "value": "15m" },
+          { "selected": false, "text": "1h", "value": "1h" },
+          { "selected": false, "text": "1d", "value": "1d" }
+        ],
+        "query": "auto,1m,5m,15m,1h,1d",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "OCI Logs \u2014 Analytics Overview",
+  "uid": "oci-log-analytics-overview",
+  "version": 1,
+  "weekStart": ""
+}

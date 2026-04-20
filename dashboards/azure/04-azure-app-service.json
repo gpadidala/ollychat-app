@@ -1,0 +1,915 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_AZURE_MONITOR",
+      "label": "Azure Monitor",
+      "type": "datasource",
+      "pluginId": "grafana-azure-monitor-datasource"
+    },
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "type": "datasource",
+      "pluginId": "prometheus"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-azure-monitor-datasource",
+      "name": "Azure Monitor",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "id": null,
+  "uid": "azure-app-service",
+  "title": "Azure — App Service & Web Apps",
+  "description": "Comprehensive monitoring of Azure App Service and Web Apps including request rates, response times, HTTP status codes, CPU, memory, connections, and throughput metrics.",
+  "tags": ["azure", "appservice", "webapp"],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 2,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "schemaVersion": 38,
+  "version": 1,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "subscription",
+        "type": "query",
+        "datasource": "${DS_AZURE_MONITOR}",
+        "query": "Subscriptions()",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Subscription",
+        "hide": 0
+      },
+      {
+        "name": "resourceGroup",
+        "type": "query",
+        "datasource": "${DS_AZURE_MONITOR}",
+        "query": "ResourceGroups($subscription)",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Resource Group",
+        "hide": 0
+      },
+      {
+        "name": "cluster",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "label": "Cluster",
+        "hide": 0
+      },
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": "${DS_PROMETHEUS}",
+        "query": "label_values(kube_pod_info{cluster=~\"$cluster\"}, namespace)",
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": true,
+        "multi": true,
+        "label": "Namespace",
+        "hide": 0
+      },
+      {
+        "name": "timeGrain",
+        "type": "custom",
+        "query": "auto,PT1M,PT5M,PT15M,PT1H",
+        "current": {
+          "text": "auto",
+          "value": "auto"
+        },
+        "refresh": 0,
+        "includeAll": false,
+        "multi": false,
+        "label": "Time Grain",
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "row",
+      "title": "App Service Overview",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": []
+    },
+    {
+      "id": 1,
+      "title": "Requests/sec",
+      "description": "Total number of requests hitting the App Service per time grain. A sudden drop may indicate an outage; a spike may indicate a traffic surge.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Requests",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Avg Response Time",
+      "description": "Average response time of the App Service in milliseconds. Values above 500ms indicate degraded user experience.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "AverageResponseTime",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 500 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Http 2xx",
+      "description": "Total HTTP 2xx (success) responses. Healthy services show the majority of responses in this range.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Http2xx",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Http 4xx",
+      "description": "Total HTTP 4xx (client error) responses. High values indicate client-side issues such as bad requests or unauthorized access.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Http4xx",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Http 5xx",
+      "description": "Total HTTP 5xx (server error) responses. Any server errors require immediate investigation as they indicate application failures.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Http5xx",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 6,
+      "title": "CPU %",
+      "description": "App Service plan CPU utilization percentage. Sustained values above 90% require scaling up or out.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "CpuPercentage",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto",
+        "orientation": "auto"
+      }
+    },
+    {
+      "type": "row",
+      "title": "Traffic",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "panels": []
+    },
+    {
+      "id": 7,
+      "title": "Request Rate",
+      "description": "Total requests over time. Use this to identify traffic patterns, peak hours, and anomalies.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Requests",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Response Time",
+      "description": "Average response time over time. Spikes indicate performance degradation — correlate with CPU/memory usage.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "AverageResponseTime",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 500 }
+            ]
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      }
+    },
+    {
+      "type": "row",
+      "title": "Errors",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "panels": []
+    },
+    {
+      "id": 9,
+      "title": "HTTP Status Codes",
+      "description": "Stacked view of HTTP status code families over time. Green (2xx) is healthy; yellow (4xx) is client errors; red (5xx) is server errors.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Http2xx",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        },
+        {
+          "refId": "B",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Http4xx",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        },
+        {
+          "refId": "C",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Http5xx",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Http2xx" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Http4xx" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Http5xx" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Error Rate %",
+      "description": "Percentage of 5xx errors relative to total requests. Any sustained error rate above 1% warrants investigation.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Http5xx",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        },
+        {
+          "refId": "B",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Requests",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      }
+    },
+    {
+      "type": "row",
+      "title": "Resources",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "panels": []
+    },
+    {
+      "id": 11,
+      "title": "CPU & Memory Usage",
+      "description": "App Service plan CPU and memory utilization over time. High sustained values indicate the need to scale up or out.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "CpuPercentage",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        },
+        {
+          "refId": "B",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "MemoryPercentage",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Connections",
+      "description": "Number of active connections to the App Service. A spike in connections may indicate connection leaks or increased load.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "AppConnections",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      }
+    },
+    {
+      "type": "row",
+      "title": "Throughput",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "panels": []
+    },
+    {
+      "id": 13,
+      "title": "Bytes Received & Sent",
+      "description": "Network throughput in bytes received and sent by the App Service. Useful for identifying bandwidth bottlenecks.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "BytesReceived",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        },
+        {
+          "refId": "B",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "BytesSent",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "decbytes",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Thread Count",
+      "description": "Number of threads in the App Service process. A steadily increasing thread count may indicate thread leaks.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.web/sites",
+            "metricNamespace": "microsoft.web/sites",
+            "metricName": "Threads",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+      }
+    }
+  ]
+}

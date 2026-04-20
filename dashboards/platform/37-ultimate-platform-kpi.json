@@ -1,0 +1,2041 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.6.4"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "text",
+      "name": "Text",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar gauge",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "The single most important dashboard. Shows platform health, SLO compliance, error rates, capacity status, and user experience across every LGTM component in one view. Designed for a 5-second read.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 2,
+  "id": null,
+  "links": [
+    {
+      "title": "⬆ L0 Command Center",
+      "url": "/d/l0-executive-command-center",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "tooltip": "Executive Command Center",
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "CEO Summary",
+      "url": "/d/ceo-platform-exec-summary",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "SLA Report",
+      "url": "/d/sla-business-impact-report",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "Risk Intelligence",
+      "url": "/d/risk-incident-intelligence",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "Health Matrix",
+      "url": "/d/service-health-matrix",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "SLO Burn Rate",
+      "url": "/d/slo-error-budget-burn",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "Anomaly Detection",
+      "url": "/d/anomaly-detection-outliers",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Grafana",
+      "url": "/d/grafana-admin-command-center",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Loki",
+      "url": "/d/loki-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Mimir",
+      "url": "/d/mimir-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Tempo",
+      "url": "/d/tempo-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Pyroscope",
+      "url": "/d/pyroscope-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "transparent": true,
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex; align-items:center; justify-content:space-between; padding:8px 16px;\">\n  <div>\n    <h1 style=\"margin:0; font-size:26px; font-weight:700; color:#E0E0E0; letter-spacing:0.5px;\">Platform KPI — Single Pane of Glass</h1>\n    <p style=\"margin:4px 0 0; font-size:12px; color:#888;\">Enterprise Observability Platform • All Signals • Real-Time</p>\n  </div>\n  <div style=\"display:flex; gap:16px; align-items:center;\">\n    <div style=\"padding:4px 14px; border-radius:14px; background:rgba(0,230,118,0.1); border:1px solid rgba(0,230,118,0.3);\">\n      <span style=\"font-size:12px; color:#00E676; font-weight:500;\">● LIVE</span>\n    </div>\n  </div>\n</div>",
+        "code": {
+          "language": "html",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        }
+      },
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 2,
+      "title": "Grafana",
+      "description": "Grafana UI availability based on non-5xx responses.",
+      "type": "stat",
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 0,
+        "y": 2
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(1 - (sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(grafana_http_request_duration_seconds_count[$__rate_interval])) + 0.001))) * 100",
+          "legendFormat": "Grafana",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 95
+              },
+              {
+                "color": "#00E676",
+                "value": 99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Grafana Admin Command Center",
+          "url": "/d/grafana-admin-command-center"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 3,
+      "title": "Mimir",
+      "description": "Mimir metrics backend availability based on non-5xx responses.",
+      "type": "stat",
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 5,
+        "y": 2
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(1 - (sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001))) * 100",
+          "legendFormat": "Mimir",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 95
+              },
+              {
+                "color": "#00E676",
+                "value": 99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Mimir Admin Errors Ops",
+          "url": "/d/mimir-admin-errors-ops"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 4,
+      "title": "Loki",
+      "description": "Loki log backend availability based on non-5xx responses.",
+      "type": "stat",
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 10,
+        "y": 2
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(1 - (sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001))) * 100",
+          "legendFormat": "Loki",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 95
+              },
+              {
+                "color": "#00E676",
+                "value": 99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Loki Admin Errors Ops",
+          "url": "/d/loki-admin-errors-ops"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 5,
+      "title": "Tempo",
+      "description": "Tempo tracing backend availability based on non-5xx responses.",
+      "type": "stat",
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 15,
+        "y": 2
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(1 - (sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001))) * 100",
+          "legendFormat": "Tempo",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 95
+              },
+              {
+                "color": "#00E676",
+                "value": 99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Tempo Admin Errors Ops",
+          "url": "/d/tempo-admin-errors-ops"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 6,
+      "title": "Pyroscope",
+      "description": "Pyroscope profiling backend availability based on non-5xx responses.",
+      "type": "stat",
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 2
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(1 - (sum(rate(pyroscope_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(pyroscope_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001))) * 100",
+          "legendFormat": "Pyroscope",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 95
+              },
+              {
+                "color": "#00E676",
+                "value": 99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Pyroscope Admin Errors Ops",
+          "url": "/d/pyroscope-admin-errors-ops"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 7,
+      "title": "UI SLO (≤1s)",
+      "description": "Percentage of Grafana UI requests completing within 1 second. Target: 99%.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 7
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(grafana_http_request_duration_seconds_bucket{le=\"1.0\"}[$__rate_interval])) / (sum(rate(grafana_http_request_duration_seconds_bucket{le=\"+Inf\"}[$__rate_interval])) + 0.001) * 100",
+          "legendFormat": "UI SLO",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 95
+              },
+              {
+                "color": "#00E676",
+                "value": 99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Platform UI QoS Executive",
+          "url": "/d/platform-ui-qos-exec"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 8,
+      "title": "Metrics Write SLO (≤0.5s)",
+      "description": "Percentage of Mimir metric write requests completing within 500ms. Target: 99%.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 7
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(cortex_request_duration_seconds_bucket{cluster=~\"$cluster\", le=\"0.5\", route=~\"/api/v1/push|api/prom/push\"}[$__rate_interval])) / (sum(rate(cortex_request_duration_seconds_bucket{cluster=~\"$cluster\", le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\"}[$__rate_interval])) + 0.001) * 100",
+          "legendFormat": "Metrics Write SLO",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 95
+              },
+              {
+                "color": "#00E676",
+                "value": 99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Mimir Write QoS Executive",
+          "url": "/d/mimir-write-qos-exec"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 9,
+      "title": "Log Write SLO (≤0.5s)",
+      "description": "Percentage of Loki log write requests completing within 500ms. Target: 99%.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 7
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(loki_request_duration_seconds_bucket{cluster=~\"$cluster\", le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\"}[$__rate_interval])) / (sum(rate(loki_request_duration_seconds_bucket{cluster=~\"$cluster\", le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\"}[$__rate_interval])) + 0.001) * 100",
+          "legendFormat": "Log Write SLO",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 95
+              },
+              {
+                "color": "#00E676",
+                "value": 99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Loki Write QoS Executive",
+          "url": "/d/loki-write-qos-exec"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 10,
+      "title": "Query SLO (≤0.5s)",
+      "description": "Percentage of Mimir query requests enqueued within 500ms. Target: 99%.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 7
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(cortex_query_frontend_queue_duration_seconds_bucket{cluster=~\"$cluster\", le=\"0.5\"}[$__rate_interval])) / (sum(rate(cortex_query_frontend_queue_duration_seconds_bucket{cluster=~\"$cluster\", le=\"+Inf\"}[$__rate_interval])) + 0.001) * 100",
+          "legendFormat": "Query SLO",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 95
+              },
+              {
+                "color": "#00E676",
+                "value": 99
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Mimir Read QoS Executive",
+          "url": "/d/mimir-read-qos-exec"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 11,
+      "title": "Error Budget (30d)",
+      "description": "Composite error budget remaining over 30 days across all LGTM components. Below 20% indicates accelerated burn.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 11
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "(1 - ((sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[30d])) + sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[30d])) + sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\"}[30d]))) / ((sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\"}[30d])) + sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\"}[30d])) + sum(rate(grafana_http_request_duration_seconds_count[30d]))) + 0.001)) / 0.001) * 100",
+          "legendFormat": "Error Budget",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 20
+              },
+              {
+                "color": "#00E676",
+                "value": 50
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "SLO Error Budget Burn",
+          "url": "/d/slo-error-budget-burn"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 12,
+      "title": "Active Users",
+      "description": "Number of active Grafana users currently logged in.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 11
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "grafana_stat_active_users",
+          "legendFormat": "Active Users",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#651FFF"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#651FFF",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Grafana Admin Command Center",
+          "url": "/d/grafana-admin-command-center"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 13,
+      "title": "Total Dashboards",
+      "description": "Total number of dashboards provisioned across the platform.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 11
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "grafana_stat_total_dashboards",
+          "legendFormat": "Dashboards",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#40C4FF"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#40C4FF",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Grafana Admin Command Center",
+          "url": "/d/grafana-admin-command-center"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 14,
+      "title": "Active Series (Mimir)",
+      "description": "Total active time series across all Mimir ingesters. Key capacity indicator.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 11
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(cortex_ingester_active_series{cluster=~\"$cluster\"})",
+          "legendFormat": "Active Series",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00E676"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#00E676",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Mimir Ingestion Analytics",
+          "url": "/d/mimir-ingestion-analytics"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 15,
+      "title": "Log Streams (Loki)",
+      "description": "Total active log streams held in memory across Loki ingesters.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 11
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(loki_ingester_memory_streams{cluster=~\"$cluster\"})",
+          "legendFormat": "Log Streams",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#40C4FF"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#40C4FF",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Loki Ingestion Analytics",
+          "url": "/d/loki-ingestion-analytics"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 16,
+      "title": "Active Alerts",
+      "description": "Number of currently firing alerts across the platform. High counts indicate systemic issues.",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 11
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "grafana_alerting_active_alerts",
+          "legendFormat": "Active Alerts",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#00E676",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 5
+              },
+              {
+                "color": "#FF1744",
+                "value": 20
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background_solid",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Grafana Alerting Overview",
+          "url": "/d/grafana-admin-command-center"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 17,
+      "title": "Platform Error Rate",
+      "description": "Error rate across all 5 platform components. Any line crossing 1% needs attention.",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(grafana_http_request_duration_seconds_count[$__rate_interval])) + 0.001) * 100",
+          "legendFormat": "Grafana"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001) * 100",
+          "legendFormat": "Mimir"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001) * 100",
+          "legendFormat": "Loki"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001) * 100",
+          "legendFormat": "Tempo"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(pyroscope_request_duration_seconds_count{cluster=~\"$cluster\", status_code=~\"5..\"}[$__rate_interval])) / (sum(rate(pyroscope_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001) * 100",
+          "legendFormat": "Pyroscope"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "custom": {
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 5,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "#FF1744",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Grafana"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#651FFF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mimir"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00E676"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Loki"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#40C4FF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tempo"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FFC400"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pyroscope"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF6B6B"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "links": [
+        {
+          "title": "Platform Error Analysis",
+          "url": "/d/slo-error-budget-burn"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 18,
+      "title": "Platform Request Volume",
+      "description": "Total request throughput across main platform components. Shows load distribution.",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(grafana_http_request_duration_seconds_count[$__rate_interval]))",
+          "legendFormat": "Grafana"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "Mimir"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "Loki"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 1,
+          "custom": {
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 30,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "axisSoftMin": 0
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Grafana"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#651FFF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mimir"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00E676"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Loki"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#40C4FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "links": [
+        {
+          "title": "Platform Request Analytics",
+          "url": "/d/ceo-platform-exec-summary"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 19,
+      "title": "Component P95 Latency",
+      "description": "P95 latency per component. All should be under 1s for good user experience.",
+      "type": "bargauge",
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(grafana_http_request_duration_seconds_bucket[$__rate_interval])) by (le))",
+          "legendFormat": "Grafana UI",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(cortex_request_duration_seconds_bucket{cluster=~\"$cluster\", route=~\"/api/v1/push|api/prom/push\"}[$__rate_interval])) by (le))",
+          "legendFormat": "Mimir Write",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(loki_request_duration_seconds_bucket{cluster=~\"$cluster\", route=~\"/loki/api/v1/push|/api/prom/push\"}[$__rate_interval])) by (le))",
+          "legendFormat": "Loki Write",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(cortex_request_duration_seconds_bucket{cluster=~\"$cluster\", route=~\"api_prom_api_v1_query|api_prom_api_v1_query_range\"}[$__rate_interval])) by (le))",
+          "legendFormat": "Mimir Query",
+          "instant": true
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "histogram_quantile(0.95, sum(rate(tempo_request_duration_seconds_bucket{cluster=~\"$cluster\", route=~\"/tempopb.Querier/.*|/tempo.Querier/.*\"}[$__rate_interval])) by (le))",
+          "legendFormat": "Tempo Query",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 3,
+          "min": 0,
+          "max": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#00E676",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 0.3
+              },
+              {
+                "color": "#FF1744",
+                "value": 1.0
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "valueMode": "color",
+        "namePlacement": "auto",
+        "minVizWidth": 8,
+        "minVizHeight": 16
+      },
+      "links": [
+        {
+          "title": "Platform Latency Analysis",
+          "url": "/d/ceo-platform-exec-summary"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 20,
+      "title": "Ingestion Volume",
+      "description": "Data ingestion rate across all signal types.",
+      "type": "bargauge",
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "transparent": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(loki_distributor_bytes_received_total{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "Logs (bytes/s)",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "Metrics (samples/s)",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(tempo_distributor_spans_received_total{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "Traces (spans/s)",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(rate(pyroscope_distributor_received_samples_total{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "Profiles (samples/s)",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#00E676",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Logs (bytes/s)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#40C4FF"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "Bps"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Metrics (samples/s)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00E676"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Traces (spans/s)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FFC400"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Profiles (samples/s)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#651FFF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "valueMode": "color",
+        "namePlacement": "auto",
+        "minVizWidth": 8,
+        "minVizHeight": 16
+      },
+      "links": [
+        {
+          "title": "Ingestion Analytics",
+          "url": "/d/mimir-ingestion-analytics"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 21,
+      "title": "",
+      "type": "text",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "transparent": true,
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex; justify-content:space-between; align-items:center; padding:8px 16px; border-top:1px solid rgba(255,255,255,0.05);\">\n  <span style=\"font-size:11px; color:#555;\">Platform Engineering • Observability Infrastructure</span>\n  <div style=\"display:flex; gap:16px;\">\n    <a href=\"/d/ceo-platform-exec-summary\" style=\"font-size:11px; color:#651FFF; text-decoration:none;\">Executive Summary →</a>\n    <a href=\"/d/sla-business-impact-report\" style=\"font-size:11px; color:#651FFF; text-decoration:none;\">SLA Report →</a>\n    <a href=\"/d/risk-incident-intelligence\" style=\"font-size:11px; color:#651FFF; text-decoration:none;\">Risk Intelligence →</a>\n    <a href=\"/d/service-health-matrix\" style=\"font-size:11px; color:#651FFF; text-decoration:none;\">Health Matrix →</a>\n    <a href=\"/d/anomaly-detection-outliers\" style=\"font-size:11px; color:#651FFF; text-decoration:none;\">Anomaly Detection →</a>\n  </div>\n</div>",
+        "code": {
+          "language": "html",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        }
+      },
+      "pluginVersion": "11.6.4"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "kpi",
+    "executive",
+    "single-pane",
+    "c-suite",
+    "premium",
+    "ultimate"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(up, cluster)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Cluster",
+        "multi": true,
+        "name": "cluster",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(up, cluster)"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Platform KPI — Single Pane of Glass",
+  "uid": "ultimate-platform-kpi",
+  "version": 1,
+  "weekStart": ""
+}

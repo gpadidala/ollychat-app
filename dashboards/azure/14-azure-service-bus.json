@@ -1,0 +1,910 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_AZURE_MONITOR",
+      "label": "Azure Monitor",
+      "type": "datasource",
+      "pluginId": "grafana-azure-monitor-datasource"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-azure-monitor-datasource",
+      "name": "Azure Monitor",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Comprehensive monitoring for Azure Service Bus namespaces. Track message flow, dead-lettered messages, errors, throttling, connections, and namespace size.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "Service Bus Overview",
+      "type": "row"
+    },
+    {
+      "id": 1,
+      "title": "Incoming Messages",
+      "description": "Total incoming messages to the Service Bus namespace.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "IncomingMessages",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Outgoing Messages",
+      "description": "Total outgoing (consumed) messages from the Service Bus namespace.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "OutgoingMessages",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Active Messages",
+      "description": "Maximum count of active messages in queues and topics.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "ActiveMessages",
+            "aggregation": "Maximum",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1000 },
+              { "color": "orange", "value": 10000 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Dead-lettered Messages",
+      "description": "Maximum count of dead-lettered messages. High values indicate processing failures. Green <10, Yellow <100, Red >=100.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "DeadletteredMessages",
+            "aggregation": "Maximum",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 100 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Server Errors",
+      "description": "Total server-side errors. Green <1, Red >=1.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "ServerErrors",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Throttled Requests",
+      "description": "Total throttled requests. Green <1, Yellow <10, Red >=10.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "ThrottledRequests",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "panels": [],
+      "title": "Message Flow Trends",
+      "type": "row"
+    },
+    {
+      "id": 7,
+      "title": "Incoming Messages Over Time",
+      "description": "Trend of incoming messages to the namespace over time.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "IncomingMessages",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Outgoing Messages Over Time",
+      "description": "Trend of outgoing (consumed) messages from the namespace over time.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "OutgoingMessages",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "panels": [],
+      "title": "Queue Depth & Dead Letters",
+      "type": "row"
+    },
+    {
+      "id": 9,
+      "title": "Active Messages Over Time",
+      "description": "Trend of active (pending) messages in queues and topics.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "ActiveMessages",
+            "aggregation": "Maximum",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Dead-lettered Messages Over Time",
+      "description": "Trend of dead-lettered messages. Rising values indicate consumers failing to process messages.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "DeadletteredMessages",
+            "aggregation": "Maximum",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "panels": [],
+      "title": "Errors & Throttling",
+      "type": "row"
+    },
+    {
+      "id": 11,
+      "title": "Server Errors Over Time",
+      "description": "Trend of server-side errors returned by Service Bus.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "ServerErrors",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Throttled Requests Over Time",
+      "description": "Trend of throttled requests. Spikes indicate the namespace is hitting its throughput limits.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "ThrottledRequests",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "yellow", "mode": "fixed" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "panels": [],
+      "title": "Connections & Size",
+      "type": "row"
+    },
+    {
+      "id": 13,
+      "title": "Active Connections",
+      "description": "Number of active connections to the Service Bus namespace.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "ActiveConnections",
+            "aggregation": "Maximum",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Namespace Size",
+      "description": "Total size of the Service Bus namespace in bytes.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.servicebus/namespaces",
+            "metricNamespace": "microsoft.servicebus/namespaces",
+            "metricName": "Size",
+            "aggregation": "Maximum",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["azure", "servicebus", "messaging"],
+  "templating": {
+    "list": [
+      {
+        "name": "subscription",
+        "type": "query",
+        "datasource": "${DS_AZURE_MONITOR}",
+        "query": { "queryType": "Azure Subscriptions" },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Subscription",
+        "hide": 0
+      },
+      {
+        "name": "resourceGroup",
+        "type": "query",
+        "datasource": "${DS_AZURE_MONITOR}",
+        "query": { "queryType": "Azure Resource Groups", "subscription": "$subscription" },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "multi": false,
+        "label": "Resource Group",
+        "hide": 0
+      },
+      {
+        "name": "timeGrain",
+        "type": "custom",
+        "query": "auto,PT1M,PT5M,PT15M,PT30M,PT1H,PT6H,PT12H,P1D",
+        "current": {
+          "text": "auto",
+          "value": "auto"
+        },
+        "includeAll": false,
+        "multi": false,
+        "label": "Time Grain",
+        "hide": 0
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+  },
+  "timezone": "browser",
+  "title": "Azure \u2014 Service Bus Monitoring",
+  "uid": "azure-service-bus",
+  "version": 1
+}

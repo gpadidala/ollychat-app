@@ -1,0 +1,1683 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "enable": true,
+        "expr": "(1 - (sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\"}[5m])) / (sum(rate(grafana_http_request_duration_seconds_count[5m])) + 0.001))) * 100 < 99.9",
+        "hide": false,
+        "iconColor": "#FF1744",
+        "name": "SLA Breach",
+        "step": "60s",
+        "tagKeys": "",
+        "titleFormat": "SLA Below 99.9% Target"
+      }
+    ]
+  },
+  "description": "Board-level SLA compliance report with business impact analysis. Designed for QBR presentations, leadership reviews, and compliance reporting.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 2,
+  "id": null,
+  "links": [
+    {
+      "title": "⬆ Platform KPI",
+      "url": "/d/ultimate-platform-kpi",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "tooltip": "Single Pane of Glass",
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "⬆ L0 Command Center",
+      "url": "/d/l0-executive-command-center",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "tooltip": "Executive Command Center",
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "CEO Summary",
+      "url": "/d/ceo-platform-exec-summary",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "Risk Intelligence",
+      "url": "/d/risk-incident-intelligence",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "Health Matrix",
+      "url": "/d/service-health-matrix",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "SLO Burn Rate",
+      "url": "/d/slo-error-budget-burn",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "Anomaly Detection",
+      "url": "/d/anomaly-detection-outliers",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Grafana",
+      "url": "/d/grafana-admin-command-center",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Loki",
+      "url": "/d/loki-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Mimir",
+      "url": "/d/mimir-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Tempo",
+      "url": "/d/tempo-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Pyroscope",
+      "url": "/d/pyroscope-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "code": {
+          "language": "html",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<div style=\"display:flex; align-items:center; justify-content:space-between; padding:8px 16px;\">\n  <div>\n    <h1 style=\"margin:0; font-size:22px; font-weight:600; color:#E0E0E0; letter-spacing:0.3px;\">SLA & Business Impact Report</h1>\n    <p style=\"margin:4px 0 0; font-size:12px; color:#999;\">Observability Platform • Rolling $slo_period Window • Auto-Generated</p>\n  </div>\n  <div style=\"text-align:right; padding:4px 12px; border-left:2px solid #7C4DFF;\">\n    <span style=\"font-size:11px; color:#B0BEC5; text-transform:uppercase; letter-spacing:1px;\">Report Period</span><br/>\n    <span style=\"font-size:15px; color:#40C4FF; font-weight:500;\">$slo_period Rolling</span>\n  </div>\n</div>",
+        "mode": "html"
+      },
+      "title": "Report Header",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 2,
+      "panels": [],
+      "title": "SLA Compliance Scorecard",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Overall platform SLA based on successful HTTP responses. Enterprise target: 99.9%",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 99
+              },
+              {
+                "color": "#00E676",
+                "value": 99.9
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 3
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "expr": "(1 - (sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[$slo_period])) + 0.001))) * 100",
+          "legendFormat": "Platform SLA",
+          "refId": "A"
+        }
+      ],
+      "title": "Platform SLA",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Contractual SLA target for the observability platform.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#B0BEC5",
+            "mode": "fixed"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#B0BEC5",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 6,
+        "y": 3
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "expr": "vector(99.9)",
+          "legendFormat": "Target",
+          "refId": "A"
+        }
+      ],
+      "title": "SLA Target",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Percentage of $slo_period error budget consumed. At 100%, the SLA is breached.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#00E676",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 50
+              },
+              {
+                "color": "#FF1744",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 9,
+        "y": 3
+      },
+      "id": 5,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "expr": "(1 - ((1 - (sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[$slo_period])) + 0.001))) - 0.999) / (1 - 0.999)) * 100",
+          "legendFormat": "Error Budget Used",
+          "refId": "A"
+        }
+      ],
+      "title": "Error Budget Used",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Estimated mean time between error-rate incidents. Higher is better. Target: >168h (1 week).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF1744",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 24
+              },
+              {
+                "color": "#00E676",
+                "value": 168
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 14,
+        "y": 3
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "expr": "1 / (sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$__rate_interval])) / (sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001) + 0.0001) / 3600",
+          "legendFormat": "MTBI",
+          "refId": "A"
+        }
+      ],
+      "title": "Mean Time Between Incidents",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Percentage of requests that experienced server errors during the SLO window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#00E676",
+                "value": null
+              },
+              {
+                "color": "#FFC400",
+                "value": 0.01
+              },
+              {
+                "color": "#FF1744",
+                "value": 0.1
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 19,
+        "y": 3
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "expr": "sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[$slo_period])) + 0.001) * 100",
+          "legendFormat": "Impacted %",
+          "refId": "A"
+        }
+      ],
+      "title": "Impacted Request %",
+      "type": "stat"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 8,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Rolling 1-hour SLA compliance over the selected period. The green dashed line is the 99.9% SLA target. Dips below this line consume error budget.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "fixedColor": "#7C4DFF",
+                "mode": "fixed"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "SLA Compliance %",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed+area",
+                  "fill": "below"
+                }
+              },
+              "decimals": 3,
+              "mappings": [],
+              "max": 100.1,
+              "min": 98,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#FF1744",
+                    "value": null
+                  },
+                  {
+                    "color": "transparent",
+                    "value": 99
+                  },
+                  {
+                    "color": "transparent",
+                    "value": 99.9
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 24,
+            "x": 0,
+            "y": 9
+          },
+          "id": 9,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "min",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "(1 - (sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[1h])) / (sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[1h])) + 0.001))) * 100",
+              "legendFormat": "Platform SLA %",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "vector(99.9)",
+              "legendFormat": "SLA Target (99.9%)",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "vector(99.0)",
+              "legendFormat": "Critical Threshold (99.0%)",
+              "refId": "C"
+            }
+          ],
+          "title": "SLA Compliance Over Time",
+          "type": "timeseries",
+          "timeFrom": "$slo_period"
+        }
+      ],
+      "title": "SLA Trend — The Story",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 10,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "SLO compliance by individual service with their respective latency targets.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 2,
+              "mappings": [],
+              "max": 100,
+              "min": 90,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#FF1744",
+                    "value": null
+                  },
+                  {
+                    "color": "#FFC400",
+                    "value": 95
+                  },
+                  {
+                    "color": "#00E676",
+                    "value": 99
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 10,
+            "x": 0,
+            "y": 10
+          },
+          "id": 11,
+          "options": {
+            "displayMode": "gradient",
+            "maxVizHeight": 300,
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "sum(rate(grafana_http_request_duration_seconds_bucket{le=\"1.0\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(grafana_http_request_duration_seconds_bucket{le=\"+Inf\", cluster=~\"$cluster\"}[$slo_period])) + 0.001) * 100",
+              "legendFormat": "Platform UI (≤1.0s)",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\"}[$slo_period])) + 0.001) * 100",
+              "legendFormat": "Metrics Write (≤0.5s)",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\"}[$slo_period])) + 0.001) * 100",
+              "legendFormat": "Log Ingestion (≤0.5s)",
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\"}[$slo_period])) + 0.001) * 100",
+              "legendFormat": "Metric Queries (≤0.5s)",
+              "refId": "D"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "sum(rate(grafana_http_request_duration_seconds_bucket{le=\"2.0\", handler=~\"/api/datasources/proxy/.*\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(grafana_http_request_duration_seconds_bucket{le=\"+Inf\", handler=~\"/api/datasources/proxy/.*\", cluster=~\"$cluster\"}[$slo_period])) + 0.001) * 100",
+              "legendFormat": "Log Queries (≤2.0s)",
+              "refId": "E"
+            }
+          ],
+          "title": "SLO Compliance by Service",
+          "type": "bargauge"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Error budget remaining by service. When budget hits 0%, the service has breached its SLO for the period.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 1,
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#FF1744",
+                    "value": null
+                  },
+                  {
+                    "color": "#FFC400",
+                    "value": 20
+                  },
+                  {
+                    "color": "#00E676",
+                    "value": 50
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 7,
+            "x": 10,
+            "y": 10
+          },
+          "id": 12,
+          "options": {
+            "displayMode": "gradient",
+            "maxVizHeight": 300,
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "clamp_min(((sum(rate(grafana_http_request_duration_seconds_bucket{le=\"1.0\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(grafana_http_request_duration_seconds_bucket{le=\"+Inf\", cluster=~\"$cluster\"}[$slo_period])) + 0.001)) - 0.999) / (1 - 0.999) * 100, 0)",
+              "legendFormat": "Platform UI",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "clamp_min(((sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\"}[$slo_period])) + 0.001)) - 0.999) / (1 - 0.999) * 100, 0)",
+              "legendFormat": "Metrics Write",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "clamp_min(((sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\"}[$slo_period])) + 0.001)) - 0.999) / (1 - 0.999) * 100, 0)",
+              "legendFormat": "Log Ingestion",
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "clamp_min(((sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\"}[$slo_period])) + 0.001)) - 0.999) / (1 - 0.999) * 100, 0)",
+              "legendFormat": "Metric Queries",
+              "refId": "D"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "clamp_min(((sum(rate(grafana_http_request_duration_seconds_bucket{le=\"2.0\", handler=~\"/api/datasources/proxy/.*\", cluster=~\"$cluster\"}[$slo_period])) / (sum(rate(grafana_http_request_duration_seconds_bucket{le=\"+Inf\", handler=~\"/api/datasources/proxy/.*\", cluster=~\"$cluster\"}[$slo_period])) + 0.001)) - 0.999) / (1 - 0.999) * 100, 0)",
+              "legendFormat": "Log Queries",
+              "refId": "E"
+            }
+          ],
+          "title": "Error Budget by Service",
+          "type": "bargauge"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Error budget burn rate. Values above 1.0 mean the budget is being consumed faster than it can sustain for the full period.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Burn Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 8,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "decimals": 2,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#00E676",
+                    "value": null
+                  },
+                  {
+                    "color": "#FFC400",
+                    "value": 1
+                  },
+                  {
+                    "color": "#FF1744",
+                    "value": 2
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Platform UI"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#7C4DFF",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Metrics Write"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#40C4FF",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Log Ingestion"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#00E676",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Metric Queries"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#FFC400",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Log Queries"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#FF1744",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 7,
+            "x": 17,
+            "y": 10
+          },
+          "id": 13,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "(1 - (sum(rate(grafana_http_request_duration_seconds_bucket{le=\"1.0\", cluster=~\"$cluster\"}[1h])) / (sum(rate(grafana_http_request_duration_seconds_bucket{le=\"+Inf\", cluster=~\"$cluster\"}[1h])) + 0.001))) / (1 - 0.999)",
+              "legendFormat": "Platform UI",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\"}[1h])) / (sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\"}[1h])) + 0.001))) / (1 - 0.999)",
+              "legendFormat": "Metrics Write",
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "(1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\"}[1h])) / (sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\"}[1h])) + 0.001))) / (1 - 0.999)",
+              "legendFormat": "Log Ingestion",
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\"}[1h])) / (sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\"}[1h])) + 0.001))) / (1 - 0.999)",
+              "legendFormat": "Metric Queries",
+              "refId": "D"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "(1 - (sum(rate(grafana_http_request_duration_seconds_bucket{le=\"2.0\", handler=~\"/api/datasources/proxy/.*\", cluster=~\"$cluster\"}[1h])) / (sum(rate(grafana_http_request_duration_seconds_bucket{le=\"+Inf\", handler=~\"/api/datasources/proxy/.*\", cluster=~\"$cluster\"}[1h])) + 0.001))) / (1 - 0.999)",
+              "legendFormat": "Log Queries",
+              "refId": "E"
+            }
+          ],
+          "title": "Error Budget Burn Rate",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Service-Level Breakdown",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 14,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Estimated number of requests that experienced server errors during the SLO window.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 0,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#00E676",
+                    "value": null
+                  },
+                  {
+                    "color": "#FFC400",
+                    "value": 100
+                  },
+                  {
+                    "color": "#FF1744",
+                    "value": 1000
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 0,
+            "y": 11
+          },
+          "id": 15,
+          "options": {
+            "colorMode": "background_solid",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "value_and_name",
+            "wideLayout": true
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$slo_period])) * ${__range_s}",
+              "legendFormat": "Impacted Requests",
+              "refId": "A"
+            }
+          ],
+          "title": "Estimated Impacted Requests",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Endpoints generating the most errors. Focus reliability improvements here.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 3,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#00E676",
+                    "value": null
+                  },
+                  {
+                    "color": "#FFC400",
+                    "value": 0.1
+                  },
+                  {
+                    "color": "#FF1744",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 9,
+            "x": 6,
+            "y": 11
+          },
+          "id": 16,
+          "options": {
+            "displayMode": "gradient",
+            "maxVizHeight": 300,
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "topk(8, sum by (handler) (rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$__rate_interval])))",
+              "legendFormat": "{{handler}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Top Error-Producing Endpoints",
+          "type": "bargauge"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Slowest API endpoints by P95 latency. These create the worst user experience.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 3,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#00E676",
+                    "value": null
+                  },
+                  {
+                    "color": "#FFC400",
+                    "value": 0.5
+                  },
+                  {
+                    "color": "#FF1744",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 9,
+            "x": 15,
+            "y": 11
+          },
+          "id": 17,
+          "options": {
+            "displayMode": "gradient",
+            "maxVizHeight": 300,
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "topk(8, histogram_quantile(0.95, sum by (le, handler) (rate(grafana_http_request_duration_seconds_bucket{handler=~\"/api/.*\", cluster=~\"$cluster\"}[$__rate_interval]))))",
+              "legendFormat": "{{handler}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Slowest User-Facing Operations",
+          "type": "bargauge"
+        }
+      ],
+      "title": "Impact Analysis",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "id": 18,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "SLO compliance per cluster for Mimir write path. Shows which clusters are meeting the 0.5s latency target.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 2,
+              "mappings": [],
+              "max": 100,
+              "min": 90,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#FF1744",
+                    "value": null
+                  },
+                  {
+                    "color": "#FFC400",
+                    "value": 95
+                  },
+                  {
+                    "color": "#00E676",
+                    "value": 99
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "id": 19,
+          "options": {
+            "displayMode": "gradient",
+            "maxVizHeight": 300,
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "sum by (cluster) (rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\"}[30m])) / (sum by (cluster) (rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\"}[30m])) + 0.001) * 100",
+              "legendFormat": "{{cluster}}",
+              "refId": "A"
+            }
+          ],
+          "title": "SLO Compliance by Cluster",
+          "type": "bargauge"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "P95 write latency per cluster. Lower is better. Target: under 0.5 seconds.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 3,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#00E676",
+                    "value": null
+                  },
+                  {
+                    "color": "#FFC400",
+                    "value": 0.3
+                  },
+                  {
+                    "color": "#FF1744",
+                    "value": 0.5
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "id": 20,
+          "options": {
+            "displayMode": "gradient",
+            "maxVizHeight": 300,
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "expr": "histogram_quantile(0.95, sum by (le, cluster) (rate(cortex_request_duration_seconds_bucket{route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\"}[$__rate_interval])))",
+              "legendFormat": "{{cluster}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Cluster P95 Latency Comparison",
+          "type": "bargauge"
+        }
+      ],
+      "title": "Cluster Performance Comparison",
+      "type": "row"
+    },
+    {
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 21,
+      "options": {
+        "code": {
+          "language": "html",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<div style=\"display:flex; justify-content:space-between; padding:8px 16px; border-top:1px solid rgba(255,255,255,0.05);\">\n  <span style=\"font-size:11px; color:#666;\">Confidential — Platform Engineering SLA Report</span>\n  <div style=\"display:flex; gap:20px;\">\n    <a href=\"/d/ceo-platform-exec-summary\" style=\"font-size:11px; color:#7C4DFF; text-decoration:none;\">Executive Summary →</a>\n    <a href=\"/d/slo-error-budget-burn\" style=\"font-size:11px; color:#7C4DFF; text-decoration:none;\">Error Budget Detail →</a>\n  </div>\n</div>",
+        "mode": "html"
+      },
+      "title": "Footer",
+      "transparent": true,
+      "type": "text"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "tags": [
+    "c-suite",
+    "executive",
+    "sla",
+    "business-impact",
+    "next-gen",
+    "premium"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "30d",
+          "value": "30d"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "SLO Window",
+        "multi": false,
+        "name": "slo_period",
+        "options": [
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": true,
+            "text": "30d",
+            "value": "30d"
+          },
+          {
+            "selected": false,
+            "text": "90d",
+            "value": "90d"
+          }
+        ],
+        "query": "7d,14d,30d,90d",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "definition": "label_values(up, cluster)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Cluster",
+        "multi": true,
+        "name": "cluster",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(up, cluster)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "SLA & Business Impact Report",
+  "uid": "sla-business-impact-report",
+  "version": 1,
+  "weekStart": ""
+}

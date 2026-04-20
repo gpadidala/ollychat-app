@@ -1,0 +1,3370 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "enable": true,
+        "expr": "(\n  (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]))) < $slo_target\n) or (\n  (sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]))) < $slo_target\n) or (\n  (sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]))) < $slo_target\n)",
+        "hide": false,
+        "iconColor": "#FF4444",
+        "name": "SLO Breach",
+        "step": "60s",
+        "tagKeys": "service",
+        "titleFormat": "SLO Breach Detected"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "enable": true,
+        "expr": "changes(process_start_time_seconds{cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]) > 0",
+        "hide": false,
+        "iconColor": "#FFA500",
+        "name": "Deployment",
+        "step": "60s",
+        "tagKeys": "job,instance",
+        "titleFormat": "Deployment / Restart"
+      }
+    ]
+  },
+  "description": "Multi-window multi-burn-rate SLO tracking implementing Google's SRE approach across the full LGTM+Pyroscope stack.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 2,
+  "id": null,
+  "links": [
+    {
+      "title": "⬆ Platform KPI",
+      "url": "/d/ultimate-platform-kpi",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "tooltip": "Single Pane of Glass",
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "⬆ L0 Command Center",
+      "url": "/d/l0-executive-command-center",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "tooltip": "Executive Command Center",
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "CEO Summary",
+      "url": "/d/ceo-platform-exec-summary",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "SLA Report",
+      "url": "/d/sla-business-impact-report",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "Risk Intelligence",
+      "url": "/d/risk-incident-intelligence",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "Health Matrix",
+      "url": "/d/service-health-matrix",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "Anomaly Detection",
+      "url": "/d/anomaly-detection-outliers",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Grafana",
+      "url": "/d/grafana-admin-command-center",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Loki",
+      "url": "/d/loki-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Mimir",
+      "url": "/d/mimir-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Tempo",
+      "url": "/d/tempo-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    },
+    {
+      "title": "→ Pyroscope",
+      "url": "/d/pyroscope-deep-dive-multi-stack",
+      "type": "link",
+      "icon": "dashboard",
+      "targetBlank": false,
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "panels": [],
+      "title": "Error Budget Overview",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Current SLO compliance for Mimir write (push) path. Measures the ratio of requests completing within 0.5s latency SLO over a 30-day rolling window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 4,
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 0.99
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.999
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+          "instant": true,
+          "legendFormat": "Mimir Write SLO",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Mimir Write SLO",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Current SLO compliance for Mimir read (query) path. Measures the ratio of requests completing within 1.0s latency SLO over a 30-day rolling window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 4,
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 0.99
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.999
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+          "instant": true,
+          "legendFormat": "Mimir Read SLO",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Mimir Read SLO",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Current SLO compliance for Loki write (push) path. Measures the ratio of requests completing within 0.5s latency SLO over a 30-day rolling window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 4,
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 0.99
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.999
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+          "instant": true,
+          "legendFormat": "Loki Write SLO",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Loki Write SLO",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Current SLO compliance for Loki query path. Measures the ratio of requests completing within 2.0s latency SLO over a 30-day rolling window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 4,
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 0.99
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.999
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+          "instant": true,
+          "legendFormat": "Loki Query SLO",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Loki Query SLO",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Current SLO compliance for Tempo ingest (push) path. Measures the ratio of requests completing within 0.5s latency SLO over a 30-day rolling window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 4,
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 0.99
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.999
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+          "instant": true,
+          "legendFormat": "Tempo Ingest SLO",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Tempo Ingest SLO",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Current SLO compliance for Tempo query path. Measures the ratio of requests completing within 2.0s latency SLO over a 30-day rolling window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 4,
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 0.99
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.999
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+          "instant": true,
+          "legendFormat": "Tempo Query SLO",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Tempo Query SLO",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 101,
+      "panels": [],
+      "title": "Error Budget Remaining",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Percentage of the monthly error budget remaining for Mimir write path. When this reaches 0%, the entire 30-day error budget has been consumed. Calculated as: (1 - (error_ratio / allowed_error_ratio)) * 100.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": -100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 25
+              },
+              {
+                "color": "#73BF69",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 6
+      },
+      "id": 7,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "(1 - ((1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+          "instant": true,
+          "legendFormat": "Mimir Write Budget",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Mimir Write Budget",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Percentage of the monthly error budget remaining for Mimir read/query path. When this reaches 0%, the entire 30-day error budget has been consumed.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": -100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 25
+              },
+              {
+                "color": "#73BF69",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 6
+      },
+      "id": 8,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "(1 - ((1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+          "instant": true,
+          "legendFormat": "Mimir Read Budget",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Mimir Read Budget",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Percentage of the monthly error budget remaining for Loki write (push) path. When this reaches 0%, the entire 30-day error budget has been consumed.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": -100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 25
+              },
+              {
+                "color": "#73BF69",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 6
+      },
+      "id": 9,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "(1 - ((1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+          "instant": true,
+          "legendFormat": "Loki Write Budget",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Loki Write Budget",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Percentage of the monthly error budget remaining for Loki query path. When this reaches 0%, the entire 30-day error budget has been consumed.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": -100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 25
+              },
+              {
+                "color": "#73BF69",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 6
+      },
+      "id": 10,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "(1 - ((1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+          "instant": true,
+          "legendFormat": "Loki Query Budget",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Loki Query Budget",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Percentage of the monthly error budget remaining for Tempo ingest (push) path. When this reaches 0%, the entire 30-day error budget has been consumed.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": -100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 25
+              },
+              {
+                "color": "#73BF69",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 6
+      },
+      "id": 11,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "(1 - ((1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+          "instant": true,
+          "legendFormat": "Tempo Ingest Budget",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Tempo Ingest Budget",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "description": "Percentage of the monthly error budget remaining for Tempo query path. When this reaches 0%, the entire 30-day error budget has been consumed.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": -100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9830",
+                "value": 25
+              },
+              {
+                "color": "#73BF69",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 6
+      },
+      "id": 12,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "(1 - ((1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+          "instant": true,
+          "legendFormat": "Tempo Query Budget",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Tempo Query Budget",
+      "type": "gauge"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "id": 102,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Multi-window burn rate for Mimir write path. A burn rate of 1.0 means the error budget is being consumed at exactly the rate that would exhaust it by end of the SLO window. Burn rate >1 means faster consumption. Google SRE recommends alerting at 14.4x (5m), 6x (30m), 3x (1h), and 1x (6h) windows.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Burn Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "line",
+                  "line": {
+                    "color": "#FF4444",
+                    "width": 1
+                  }
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#FF4444",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "id": 13,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])))) / (1 - $slo_target)",
+              "legendFormat": "5m burn rate",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])))) / (1 - $slo_target)",
+              "legendFormat": "30m burn rate",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])))) / (1 - $slo_target)",
+              "legendFormat": "1h burn rate",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])))) / (1 - $slo_target)",
+              "legendFormat": "6h burn rate",
+              "range": true,
+              "refId": "D"
+            }
+          ],
+          "title": "Mimir Write — Multi-Window Burn Rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Multi-window burn rate for Mimir read/query path. A burn rate of 1.0 means the error budget is being consumed at exactly the rate that would exhaust it by end of the SLO window.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Burn Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "line",
+                  "line": {
+                    "color": "#FF4444",
+                    "width": 1
+                  }
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#FF4444",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "id": 14,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])))) / (1 - $slo_target)",
+              "legendFormat": "5m burn rate",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])))) / (1 - $slo_target)",
+              "legendFormat": "30m burn rate",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])))) / (1 - $slo_target)",
+              "legendFormat": "1h burn rate",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])))) / (1 - $slo_target)",
+              "legendFormat": "6h burn rate",
+              "range": true,
+              "refId": "D"
+            }
+          ],
+          "title": "Mimir Read — Multi-Window Burn Rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Mimir write error rate broken down by HTTP status code. Shows the proportion of 5xx responses over total requests, indicating server-side failures on the write path.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Error Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.01
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 20
+          },
+          "id": 15,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum by (status_code) (rate(cortex_request_duration_seconds_count{status_code=~\"5..\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(cortex_request_duration_seconds_count{route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]))",
+              "legendFormat": "{{status_code}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Mimir Write Error Rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Percentage of Mimir write requests exceeding the 0.5s latency SLO over time. This shows how the latency budget is being consumed by slow requests.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "% Exceeding SLO",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "line",
+                  "line": {
+                    "color": "#FF4444",
+                    "width": 1
+                  }
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#FF4444",
+                    "value": 0.001
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 20
+          },
+          "id": 16,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])))",
+              "legendFormat": "% exceeding 0.5s SLO",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Mimir Write Latency Budget Burn",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Mimir Burn Rate",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 103,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Multi-window burn rate for Loki write (push) path. A burn rate of 1.0 means the error budget is being consumed at the exact rate to exhaust it by the end of the SLO window. Values >1 indicate accelerated consumption.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Burn Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "line",
+                  "line": {
+                    "color": "#FF4444",
+                    "width": 1
+                  }
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#FF4444",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 13
+          },
+          "id": 17,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])))) / (1 - $slo_target)",
+              "legendFormat": "5m burn rate",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])))) / (1 - $slo_target)",
+              "legendFormat": "30m burn rate",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])))) / (1 - $slo_target)",
+              "legendFormat": "1h burn rate",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])))) / (1 - $slo_target)",
+              "legendFormat": "6h burn rate",
+              "range": true,
+              "refId": "D"
+            }
+          ],
+          "title": "Loki Write — Multi-Window Burn Rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Multi-window burn rate for Loki query path with 2.0s latency SLO. A burn rate of 1.0 means budget is consumed at the exact rate to exhaust it by end of window.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Burn Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "line",
+                  "line": {
+                    "color": "#FF4444",
+                    "width": 1
+                  }
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#FF4444",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 13
+          },
+          "id": 18,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])))) / (1 - $slo_target)",
+              "legendFormat": "5m burn rate",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])))) / (1 - $slo_target)",
+              "legendFormat": "30m burn rate",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])))) / (1 - $slo_target)",
+              "legendFormat": "1h burn rate",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])))) / (1 - $slo_target)",
+              "legendFormat": "6h burn rate",
+              "range": true,
+              "refId": "D"
+            }
+          ],
+          "title": "Loki Query — Multi-Window Burn Rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Loki error rate broken down by HTTP status code. Shows the proportion of 5xx responses over total requests across all Loki routes.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Error Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.01
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 21
+          },
+          "id": 19,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum by (status_code) (rate(loki_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]))",
+              "legendFormat": "{{status_code}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Loki Error Rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Percentage of Loki query requests exceeding the 2.0s latency SLO over time. Shows how the latency budget is being consumed by slow queries.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "% Exceeding SLO",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "line",
+                  "line": {
+                    "color": "#FF4444",
+                    "width": 1
+                  }
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#FF4444",
+                    "value": 0.001
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 21
+          },
+          "id": 20,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])))",
+              "legendFormat": "% exceeding 2.0s SLO",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Loki Query Latency Budget",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Loki Burn Rate",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 104,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Multi-window burn rate for Tempo ingest (push) path with 0.5s latency SLO. Tracks error budget consumption velocity across 5m, 30m, 1h, and 6h windows.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Burn Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "line",
+                  "line": {
+                    "color": "#FF4444",
+                    "width": 1
+                  }
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#FF4444",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 14
+          },
+          "id": 21,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])))) / (1 - $slo_target)",
+              "legendFormat": "5m burn rate",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])))) / (1 - $slo_target)",
+              "legendFormat": "30m burn rate",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])))) / (1 - $slo_target)",
+              "legendFormat": "1h burn rate",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])))) / (1 - $slo_target)",
+              "legendFormat": "6h burn rate",
+              "range": true,
+              "refId": "D"
+            }
+          ],
+          "title": "Tempo Ingest — Multi-Window Burn Rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Multi-window burn rate for Tempo query path with 2.0s latency SLO. Tracks error budget consumption velocity across 5m, 30m, 1h, and 6h windows.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Burn Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "line",
+                  "line": {
+                    "color": "#FF4444",
+                    "width": 1
+                  }
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "#FF4444",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 14
+          },
+          "id": 22,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])))) / (1 - $slo_target)",
+              "legendFormat": "5m burn rate",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30m])))) / (1 - $slo_target)",
+              "legendFormat": "30m burn rate",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])))) / (1 - $slo_target)",
+              "legendFormat": "1h burn rate",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[6h])))) / (1 - $slo_target)",
+              "legendFormat": "6h burn rate",
+              "range": true,
+              "refId": "D"
+            }
+          ],
+          "title": "Tempo Query — Multi-Window Burn Rate",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Tempo Burn Rate",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 105,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Rolling 30-day SLO compliance for all services overlaid on a single chart. The horizontal threshold line represents the configured SLO target. Services below the line are breaching their SLO.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "SLO Compliance",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "line",
+                  "line": {
+                    "color": "#FF4444",
+                    "width": 2
+                  }
+                }
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0.98,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 0.999
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 15
+          },
+          "id": 23,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Last *",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "legendFormat": "Mimir Write",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "legendFormat": "Mimir Read",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "legendFormat": "Loki Write",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "legendFormat": "Loki Query",
+              "range": true,
+              "refId": "D"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "legendFormat": "Tempo Ingest",
+              "range": true,
+              "refId": "E"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "legendFormat": "Tempo Query",
+              "range": true,
+              "refId": "F"
+            }
+          ],
+          "title": "30-Day SLO Compliance — All Services",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "SLO report card showing current, 7-day, and 30-day SLO compliance alongside remaining error budget for each service.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#FF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#FF9830",
+                    "value": 0.99
+                  },
+                  {
+                    "color": "#73BF69",
+                    "value": 0.999
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Service"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 160
+                  },
+                  {
+                    "id": "unit",
+                    "value": "string"
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "text",
+                          "value": null
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Budget Remaining"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 2
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "#FF4444",
+                          "value": null
+                        },
+                        {
+                          "color": "#FF9830",
+                          "value": 25
+                        },
+                        {
+                          "color": "#73BF69",
+                          "value": 50
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*SLO.*"
+                },
+                "properties": [
+                  {
+                    "id": "decimals",
+                    "value": 4
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 25
+          },
+          "id": 24,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": false,
+                "displayName": "Budget Remaining"
+              }
+            ]
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "mimir_write_current"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "mimir_write_7d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "mimir_write_30d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - ((1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"0.5\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "mimir_write_budget"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "mimir_read_current"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "mimir_read_7d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "mimir_read_30d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - ((1 - (sum(rate(cortex_request_duration_seconds_bucket{le=\"1.0\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(cortex_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "mimir_read_budget"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "loki_write_current"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "loki_write_7d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "loki_write_30d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - ((1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"0.5\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/push|/api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "loki_write_budget"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "loki_query_current"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "loki_query_7d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "loki_query_30d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - ((1 - (sum(rate(loki_request_duration_seconds_bucket{le=\"2.0\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(loki_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/loki/api/v1/query.*|/api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "loki_query_budget"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "tempo_ingest_current"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "tempo_ingest_7d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "tempo_ingest_30d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - ((1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"0.5\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Pusher/Push|/tempopb.Pusher/Push|tempo_distributor_push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "tempo_ingest_budget"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[1h]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "tempo_query_current"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[7d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "tempo_query_7d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d]))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "tempo_query_30d"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "(1 - ((1 - (sum(rate(tempo_request_duration_seconds_bucket{le=\"2.0\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])) / sum(rate(tempo_request_duration_seconds_bucket{le=\"+Inf\", route=~\"/tempo.Query/Query|/tempopb.Querier/FindTraceByID|tempo_query\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[30d])))) / (1 - $slo_target))) * 100",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "tempo_query_budget"
+            }
+          ],
+          "title": "SLO Report Card",
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true
+                },
+                "indexByName": {},
+                "renameByName": {
+                  "Value #mimir_write_current": "Current SLO",
+                  "Value #mimir_write_7d": "7d SLO",
+                  "Value #mimir_write_30d": "30d SLO",
+                  "Value #mimir_write_budget": "Budget Remaining",
+                  "Value #mimir_read_current": "Current SLO",
+                  "Value #mimir_read_7d": "7d SLO",
+                  "Value #mimir_read_30d": "30d SLO",
+                  "Value #mimir_read_budget": "Budget Remaining",
+                  "Value #loki_write_current": "Current SLO",
+                  "Value #loki_write_7d": "7d SLO",
+                  "Value #loki_write_30d": "30d SLO",
+                  "Value #loki_write_budget": "Budget Remaining",
+                  "Value #loki_query_current": "Current SLO",
+                  "Value #loki_query_7d": "7d SLO",
+                  "Value #loki_query_30d": "30d SLO",
+                  "Value #loki_query_budget": "Budget Remaining",
+                  "Value #tempo_ingest_current": "Current SLO",
+                  "Value #tempo_ingest_7d": "7d SLO",
+                  "Value #tempo_ingest_30d": "30d SLO",
+                  "Value #tempo_ingest_budget": "Budget Remaining",
+                  "Value #tempo_query_current": "Current SLO",
+                  "Value #tempo_query_7d": "7d SLO",
+                  "Value #tempo_query_30d": "30d SLO",
+                  "Value #tempo_query_budget": "Budget Remaining"
+                }
+              }
+            }
+          ],
+          "type": "table"
+        }
+      ],
+      "title": "Historical SLO Compliance",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 106,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "description": "Overlay of combined service error rates with deployment annotations. Use this to correlate error spikes with recent deployments or restarts. Orange annotations indicate process restarts detected via process_start_time_seconds changes.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Error Rate",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.01
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 16
+          },
+          "id": 25,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "sortBy": "Max",
+              "sortDesc": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "10.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_count{status_code=~\"5..\", route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(cortex_request_duration_seconds_count{route=~\"/api/v1/push|api/prom/push\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]))",
+              "legendFormat": "Mimir Write Errors",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(cortex_request_duration_seconds_count{status_code=~\"5..\", route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(cortex_request_duration_seconds_count{route=~\"/api/v1/query.*|api/prom/query.*\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]))",
+              "legendFormat": "Mimir Read Errors",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(loki_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]))",
+              "legendFormat": "Loki Errors",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(tempo_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m])) / sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\", stack=~\"$stack\", namespace=~\"$namespace\"}[5m]))",
+              "legendFormat": "Tempo Errors",
+              "range": true,
+              "refId": "D"
+            }
+          ],
+          "title": "Error Spikes vs Deployments",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Incident Correlation",
+      "type": "row"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "slo",
+    "error-budget",
+    "burn-rate",
+    "multi-cluster",
+    "multi-stack",
+    "reliability"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "definition": "label_values(up, cluster)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Cluster",
+        "multi": true,
+        "name": "cluster",
+        "options": [],
+        "query": {
+          "query": "label_values(up, cluster)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "definition": "label_values(up{cluster=~\"$cluster\"}, stack)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Stack",
+        "multi": true,
+        "name": "stack",
+        "options": [],
+        "query": {
+          "query": "label_values(up{cluster=~\"$cluster\"}, stack)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "definition": "label_values(up{cluster=~\"$cluster\", stack=~\"$stack\"}, namespace)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Namespace",
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": {
+          "query": "label_values(up{cluster=~\"$cluster\", stack=~\"$stack\"}, namespace)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "0.999",
+          "value": "0.999"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "SLO Target",
+        "multi": false,
+        "name": "slo_target",
+        "options": [
+          {
+            "selected": false,
+            "text": "0.99",
+            "value": "0.99"
+          },
+          {
+            "selected": false,
+            "text": "0.995",
+            "value": "0.995"
+          },
+          {
+            "selected": true,
+            "text": "0.999",
+            "value": "0.999"
+          }
+        ],
+        "query": "0.99,0.995,0.999",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "SLO Error Budget Burn Rate — Multi-Stack",
+  "uid": "slo-error-budget-burn",
+  "version": 1,
+  "weekStart": ""
+}

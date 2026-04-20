@@ -1,165 +1,207 @@
-version: "3.9"
+# ─────────────────────────────────────────────────────────────
+# O11yBot — All-in-one Grafana chatbot stack
+#
+# Everything this project needs in one compose file:
+#   • Grafana (OSS) with 113 provisioned dashboards, the widget,
+#     the plugin, and the image renderer
+#   • O11yBot orchestrator + MCP server (self-owned, no external
+#     Bifröst dependency)
+#   • Local Ollama LLM (optional — swap to OpenAI / Anthropic / Gemini
+#     / Bedrock via env vars without touching this file)
+#   • LGTM back-end (Tempo / Mimir / Loki) + OTEL collector
+#
+# One command:
+#   docker compose up -d
+# or:
+#   make up
+#
+# Corporate laptop behind a proxy / TLS-intercepting CA?
+# Drop your CA into ./corp-ca.crt and:
+#   export CA_CERT_PATH=corp-ca.crt
+#   export HTTPS_PROXY=http://proxy.corp:3128
+#   make up
+# Dockerfiles pick both up via build args — zero source edits.
+# ─────────────────────────────────────────────────────────────
 
-# ─────────────────────────────────────────────────────────────
-# O11yBot — Self-contained Grafana chatbot stack
-#
-# Every service here is owned by this repo — no external Bifrost
-# or other MCP dependency. Point GRAFANA_URL + GRAFANA_*_TOKEN
-# at any Grafana and the plugin runs.
-#
-# Ports (chosen to avoid conflicts with other local stacks):
-#   Grafana:          3002
-#   Orchestrator:     8000
-#   O11yBot MCP:      8765
-#   Ollama:           11434
-#   OTEL:             4327 / 4328
-#   Tempo / Mimir / Loki: 3210 / 9010 / 3110
-# ─────────────────────────────────────────────────────────────
+x-build-args: &build-args
+  HTTP_PROXY:      "${HTTP_PROXY:-}"
+  HTTPS_PROXY:     "${HTTPS_PROXY:-}"
+  NO_PROXY:        "${NO_PROXY:-}"
+  PIP_INDEX_URL:   "${PIP_INDEX_URL:-}"
+  PIP_TRUSTED_HOST: "${PIP_TRUSTED_HOST:-}"
+  CA_CERT_PATH:    "${CA_CERT_PATH:-}"
 
 services:
-  # ─── Grafana with OllyChat plugin ──────────────────────────
+  # ─── Grafana — the plugin host + dashboard serving ────────
   grafana:
-    image: grafana/grafana:11.4.0
+    image: grafana/grafana:11.6.4
     container_name: ollychat-grafana
     ports:
-      - "3002:3000"
+      - "${GRAFANA_EXTERNAL_PORT:-3002}:3000"
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: gopal-ollychat-app
-      GF_LOG_LEVEL: info
-      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor,flameGraph
+      GF_SECURITY_ADMIN_USER:                          "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD:                      "${GRAFANA_ADMIN_PASSWORD:-admin}"
+      GF_USERS_ALLOW_SIGN_UP:                          "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:       "/var/lib/grafana/dashboards/platform/38-enterprise-home-page.json"
+      GF_LOG_LEVEL:                                    "info"
+      GF_PANELS_DISABLE_SANITIZE_HTML:                 "true"
+      GF_INSTALL_PLUGINS:                              "marcusolsson-dynamictext-panel"
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS:       "marcusolsson-dynamictext-panel,gopal-ollychat-app"
+      GF_RENDERING_SERVER_URL:                         "http://renderer:8081/render"
+      GF_RENDERING_CALLBACK_URL:                       "http://grafana:3000/"
+      GF_FEATURE_TOGGLES_ENABLE:                       "traceqlEditor,flameGraph"
     volumes:
-      - ./dist:/var/lib/grafana/plugins/gopal-ollychat-app
-      - ./provisioning:/etc/grafana/provisioning
+      # Plugin + widget — all local
+      - ./dist:/var/lib/grafana/plugins/gopal-ollychat-app:ro
       - ./grafana-index.html:/usr/share/grafana/public/views/index.html:ro
+      # Provisioning + dashboards — all local
+      - ./provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+      # Persistent Grafana state
       - ollychat-grafana-data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     depends_on:
-      - ollychat-orchestrator
-      - tempo
-      - mimir
-      - loki
-    networks:
-      - ollychat
+      prometheus: { condition: service_started }
+      tempo:      { condition: service_started }
+      mimir:      { condition: service_started }
+      loki:       { condition: service_started }
+    networks: [ ollychat ]
+    restart: unless-stopped
 
-  # ─── O11yBot Python Orchestrator ──────────────────────────
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    container_name: ollychat-grafana-renderer
+    environment:
+      ENABLE_METRICS: "true"
+    networks: [ ollychat ]
+    restart: unless-stopped
+
+  # ─── O11yBot Orchestrator (chat + LLM router) ─────────────
   ollychat-orchestrator:
     build:
       context: ./orchestrator
       dockerfile: Dockerfile
+      args: *build-args
     container_name: ollychat-orchestrator
     ports:
-      - "8000:8000"
+      - "${ORCHESTRATOR_PORT:-8000}:8000"
     env_file: .env
     environment:
-      OLLYCHAT_OTEL_EXPORTER_ENDPOINT: otel-collector:4317
-      OLLYCHAT_GRAFANA_URL: ${GRAFANA_URL:-http://grafana:3000}
-      OLLYCHAT_BIFROST_URL: http://ollychat-mcp:8765  # self-owned MCP, not external Bifrost
-      OLLYCHAT_OLLAMA_BASE_URL: http://ollama:11434
-      OLLYCHAT_DEFAULT_MODEL: ${OLLYCHAT_DEFAULT_MODEL:-qwen2.5:0.5b}
-      OLLYCHAT_MIMIR_URL: http://mimir:9009
-      OLLYCHAT_LOKI_URL: http://loki:3100
-      OLLYCHAT_TEMPO_URL: http://tempo:3200
+      OLLYCHAT_OTEL_EXPORTER_ENDPOINT: "otel-collector:4317"
+      OLLYCHAT_GRAFANA_URL:            "${GRAFANA_URL:-http://grafana:3000}"
+      OLLYCHAT_BIFROST_URL:            "http://ollychat-mcp:8765"
+      OLLYCHAT_OLLAMA_BASE_URL:        "http://ollama:11434"
+      OLLYCHAT_DEFAULT_MODEL:          "${OLLYCHAT_DEFAULT_MODEL:-qwen2.5:0.5b}"
+      OLLYCHAT_MIMIR_URL:              "http://mimir:9009"
+      OLLYCHAT_LOKI_URL:               "http://loki:3100"
+      OLLYCHAT_TEMPO_URL:              "http://tempo:3200"
     depends_on:
-      - otel-collector
-      - ollama
-      - ollychat-mcp
-    networks:
-      - ollychat
+      otel-collector: { condition: service_started }
+      ollama:         { condition: service_started }
+      ollychat-mcp:   { condition: service_healthy }
+    networks: [ ollychat ]
+    restart: unless-stopped
 
-  # ─── O11yBot MCP Server (owns all Grafana tool calls) ─────
+  # ─── O11yBot MCP Server (owns Grafana tool calls) ─────────
   ollychat-mcp:
     build:
       context: ./mcp-server
       dockerfile: Dockerfile
+      args: *build-args
     container_name: ollychat-mcp
     ports:
-      - "8765:8765"
+      - "${MCP_PORT:-8765}:8765"
     environment:
-      # Point at any Grafana instance via env vars — the only coupling.
-      GRAFANA_URL: ${GRAFANA_URL:-http://host.docker.internal:3200}
-      GRAFANA_VIEWER_TOKEN: ${GRAFANA_VIEWER_TOKEN:-}
-      GRAFANA_EDITOR_TOKEN: ${GRAFANA_EDITOR_TOKEN:-}
-      GRAFANA_ADMIN_TOKEN: ${GRAFANA_ADMIN_TOKEN:-}
-      # Single-token fallback for demos: if the role-specific tokens are empty,
-      # this one is used for every role.
-      GRAFANA_TOKEN: ${GRAFANA_TOKEN:-}
-      GRAFANA_TLS_VERIFY: ${GRAFANA_TLS_VERIFY:-true}
-      MCP_SERVER_PORT: "8765"
+      GRAFANA_URL:          "${GRAFANA_URL:-http://grafana:3000}"
+      GRAFANA_VIEWER_TOKEN: "${GRAFANA_VIEWER_TOKEN:-}"
+      GRAFANA_EDITOR_TOKEN: "${GRAFANA_EDITOR_TOKEN:-}"
+      GRAFANA_ADMIN_TOKEN:  "${GRAFANA_ADMIN_TOKEN:-}"
+      GRAFANA_TOKEN:        "${GRAFANA_TOKEN:-}"
+      GRAFANA_TLS_VERIFY:   "${GRAFANA_TLS_VERIFY:-true}"
+      MCP_SERVER_PORT:      "8765"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    networks:
-      - ollychat
+    networks: [ ollychat ]
+    restart: unless-stopped
 
-  # ─── Ollama (Self-hosted LLM for dev/testing) ───────────────
+  # ─── Ollama (local LLM, optional) ─────────────────────────
   ollama:
     image: ollama/ollama:latest
     container_name: ollychat-ollama
     ports:
-      - "11434:11434"
+      - "${OLLAMA_PORT:-11434}:11434"
     volumes:
       - ollychat-ollama-data:/root/.ollama
-    networks:
-      - ollychat
     environment:
-      OLLAMA_NUM_PARALLEL: 1
-      OLLAMA_MAX_LOADED_MODELS: 1
+      OLLAMA_NUM_PARALLEL:      "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    networks: [ ollychat ]
+    restart: unless-stopped
 
-  # ─── OpenTelemetry Collector ───────────────────────────────
+  # ─── Prometheus stub (so datasources don't 404) ──────────
+  prometheus:
+    image: prom/prometheus:v2.53.4
+    container_name: ollychat-prometheus
+    volumes:
+      - ./provisioning/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks: [ ollychat ]
+    restart: unless-stopped
+
+  # ─── OTEL Collector ───────────────────────────────────────
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.112.0
     container_name: ollychat-otel-collector
     command: ["--config=/etc/otelcol/config.yaml"]
     ports:
-      - "4327:4317"   # OTLP gRPC
-      - "4328:4318"   # OTLP HTTP
+      - "${OTEL_GRPC_PORT:-4327}:4317"
+      - "${OTEL_HTTP_PORT:-4328}:4318"
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
     depends_on:
-      - tempo
-      - mimir
-      - loki
-    networks:
-      - ollychat
+      tempo: { condition: service_started }
+      mimir: { condition: service_started }
+      loki:  { condition: service_started }
+    networks: [ ollychat ]
+    restart: unless-stopped
 
-  # ─── Tempo (Traces) ───────────────────────────────────────
+  # ─── Tempo (traces) ───────────────────────────────────────
   tempo:
     image: grafana/tempo:2.6.1
     container_name: ollychat-tempo
     command: ["-config.file=/etc/tempo/config.yaml"]
-    ports:
-      - "3210:3200"
     volumes:
       - ./tempo-config.yaml:/etc/tempo/config.yaml:ro
       - ollychat-tempo-data:/var/tempo
-    networks:
-      - ollychat
+    networks: [ ollychat ]
+    restart: unless-stopped
 
-  # ─── Mimir (Metrics) ──────────────────────────────────────
+  # ─── Mimir (metrics) ──────────────────────────────────────
   mimir:
     image: grafana/mimir:2.14.0
     container_name: ollychat-mimir
     command: ["-config.file=/etc/mimir/config.yaml", "-target=all"]
-    ports:
-      - "9010:9009"
     volumes:
       - ./mimir-config.yaml:/etc/mimir/config.yaml:ro
       - ollychat-mimir-data:/data
-    networks:
-      - ollychat
+    networks: [ ollychat ]
+    restart: unless-stopped
 
-  # ─── Loki (Logs) ──────────────────────────────────────────
+  # ─── Loki (logs) ──────────────────────────────────────────
   loki:
     image: grafana/loki:3.2.1
     container_name: ollychat-loki
     command: ["-config.file=/etc/loki/config.yaml"]
-    ports:
-      - "3110:3100"
     volumes:
       - ./loki-config.yaml:/etc/loki/config.yaml:ro
       - ollychat-loki-data:/loki
-    networks:
-      - ollychat
+    networks: [ ollychat ]
+    restart: unless-stopped
 
 volumes:
   ollychat-grafana-data:

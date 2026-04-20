@@ -1,0 +1,1301 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.6.4"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "loki",
+      "name": "Loki",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar gauge",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "text",
+      "name": "Text",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "logs",
+      "name": "Logs",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "row",
+      "name": "Row",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "enable": true,
+        "expr": "changes(process_start_time_seconds{cluster=~\"$cluster\", stack=~\"$stack\"}[5m]) > 0",
+        "hide": false,
+        "iconColor": "#FFA500",
+        "name": "Component Restarts",
+        "step": "60s",
+        "tagKeys": "cluster,stack",
+        "titleFormat": "Restart: {{pod}}",
+        "type": "tags"
+      }
+    ]
+  },
+  "description": "Single pane of glass for C-suite and VP-level stakeholders. 5-second health assessment, drill-down to domain dashboards.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 2,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "L1: Infrastructure",
+      "tooltip": "Infrastructure domain overview",
+      "type": "link",
+      "url": "/d/l1-infrastructure-overview/l1-infrastructure-overview"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "L1: Applications",
+      "tooltip": "Application performance overview",
+      "type": "link",
+      "url": "/d/l1-application-performance/l1-application-performance"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "L1: Profiling",
+      "tooltip": "Profiling overview",
+      "type": "link",
+      "url": "/d/l1-profiling-overview/l1-profiling-overview"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "",
+      "type": "text",
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 0 },
+      "transparent": true,
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex; align-items:center; gap:0; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.08);\">\n  <div style=\"display:flex; gap:0;\">\n    <a style=\"padding:8px 20px; background:rgba(64,196,255,0.15); color:#4FC3F7; font-weight:700; font-size:13px; text-decoration:none; border-bottom:2px solid #4FC3F7; letter-spacing:0.3px;\">Command Center</a>\n    <a href=\"/d/l1-infrastructure-overview/l1-infrastructure-overview\" style=\"padding:8px 20px; color:#999; font-size:13px; text-decoration:none; border-bottom:2px solid transparent; letter-spacing:0.3px;\">Infrastructure</a>\n    <a href=\"/d/l1-application-performance/l1-application-performance\" style=\"padding:8px 20px; color:#999; font-size:13px; text-decoration:none; border-bottom:2px solid transparent; letter-spacing:0.3px;\">Applications</a>\n    <a href=\"/d/l1-profiling-overview/l1-profiling-overview\" style=\"padding:8px 20px; color:#999; font-size:13px; text-decoration:none; border-bottom:2px solid transparent; letter-spacing:0.3px;\">Profiling</a>\n  </div>\n  <div style=\"margin-left:auto; text-align:right; padding-right:8px;\">\n    <span style=\"font-size:11px; color:#666; text-transform:uppercase; letter-spacing:1px;\">L0: Command Center</span><br/>\n    <span style=\"font-size:12px; color:#4FC3F7; font-weight:500;\">Live &bull; Auto-Refresh 1m</span>\n  </div>\n</div>",
+        "code": { "language": "html", "showLineNumbers": false, "showMiniMap": false }
+      },
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 100,
+      "title": "Platform Health at a Glance",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 2 },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "title": "Overall Platform Health",
+      "description": "Composite platform health score based on component availability. Green >95%, Amber 80-95%, Red <80%.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 3 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "(sum(up{cluster=~\"$cluster\", stack=~\"$stack\"}) / count(up{cluster=~\"$cluster\", stack=~\"$stack\"})) * 100",
+          "legendFormat": "Health",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#FF4757", "value": null },
+              { "color": "#FFB020", "value": 80 },
+              { "color": "#00C48C", "value": 95 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Drill into Infrastructure",
+          "url": "/d/l1-infrastructure-overview/l1-infrastructure-overview?var-cluster=$cluster&var-stack=$stack&from=$__from&to=$__to"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 3,
+      "title": "Active Incidents",
+      "description": "Count of currently firing alerts across all clusters. Any P1 incident triggers red status.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 4, "y": 3 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "count(ALERTS{alertstate=\"firing\", cluster=~\"$cluster\"}) or vector(0)",
+          "legendFormat": "Firing Alerts",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00C48C", "value": null },
+              { "color": "#FFB020", "value": 1 },
+              { "color": "#FF4757", "value": 3 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 4,
+      "title": "SLO Attainment (30d)",
+      "description": "Platform-wide SLO attainment based on non-5xx request ratio.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 8, "y": 3 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "(1 - (sum(rate(http_requests_total{status=~\"5..\", cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval])) / (sum(rate(http_requests_total{cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval])) + 0.001))) * 100",
+          "legendFormat": "SLO %",
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#FF4757", "value": null },
+              { "color": "#FFB020", "value": 99 },
+              { "color": "#00C48C", "value": 99.9 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Drill into Application Performance",
+          "url": "/d/l1-application-performance/l1-application-performance?var-cluster=$cluster&var-stack=$stack&from=$__from&to=$__to"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 5,
+      "title": "Error Budget Remaining",
+      "description": "Remaining error budget against 99.9% SLO target. When this reaches 0%, freeze all deployments.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 12, "y": 3 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "((1 - (sum(rate(http_requests_total{status=~\"5..\", cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval])) / (sum(rate(http_requests_total{cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval])) + 0.001))) - 0.999) / 0.001 * 100",
+          "legendFormat": "Budget %",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#FF4757", "value": null },
+              { "color": "#FFB020", "value": 20 },
+              { "color": "#00C48C", "value": 50 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 6,
+      "title": "Request Volume",
+      "description": "Global request throughput across all services.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 16, "y": 3 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "sum(rate(http_requests_total{cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval]))",
+          "legendFormat": "req/s",
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00C48C", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 7,
+      "title": "P99 Latency (Global)",
+      "description": "99th percentile request latency across all services.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 3 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval])) by (le))",
+          "legendFormat": "P99",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00C48C", "value": null },
+              { "color": "#FFB020", "value": 0.5 },
+              { "color": "#FF4757", "value": 2 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 101,
+      "title": "Traffic & Error Trends",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 8 },
+      "panels": []
+    },
+    {
+      "id": 8,
+      "title": "Request Rate & Error Rate (24h)",
+      "description": "Platform-wide request and error rate trends with deployment annotations.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 15, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "sum(rate(http_requests_total{cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval]))",
+          "legendFormat": "Total Requests/s"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "sum(rate(http_requests_total{status=~\"5..\", cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval]))",
+          "legendFormat": "5xx Errors/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "5xx Errors/s"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF4757",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      },
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 9,
+      "title": "Top 5 Components by Error Rate",
+      "description": "Top 5 services ranked by 5xx error percentage. Click a service to drill into its golden signals.",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 9, "x": 15, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "topk(5, sum by (job) (rate(http_requests_total{status=~\"5..\", cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval])) / (sum by (job) (rate(http_requests_total{cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval])) + 0.001) * 100)",
+          "legendFormat": "{{job}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "min": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#00C48C", "value": null },
+              { "color": "#FFB020", "value": 1 },
+              { "color": "#FF4757", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "valueMode": "color",
+        "showUnfilled": true,
+        "minVizWidth": 0,
+        "minVizHeight": 10,
+        "namePlacement": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        }
+      },
+      "links": [
+        {
+          "title": "View Service Detail",
+          "url": "/d/l2-service-golden-signals/l2-service-golden-signals?var-service=${__field.labels.job}&from=$__from&to=$__to"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 102,
+      "title": "LGTM Stack Health Matrix",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "title": "Grafana Health",
+      "description": "Availability percentage of Grafana instances across selected clusters and stacks.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 5, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "sum(up{job=~\".*grafana.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) / count(up{job=~\".*grafana.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) * 100",
+          "legendFormat": "Grafana",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#FF4757", "value": null },
+              { "color": "#FFB020", "value": 80 },
+              { "color": "#00C48C", "value": 99 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Grafana Deep Dive",
+          "url": "/d/grafana-admin-command-center/grafana-admin-command-center?var-cluster=$cluster&var-stack=$stack&from=$__from&to=$__to"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 11,
+      "title": "Mimir Health",
+      "description": "Availability percentage of Mimir instances across selected clusters and stacks.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 5, "x": 5, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "sum(up{job=~\".*mimir.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) / count(up{job=~\".*mimir.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) * 100",
+          "legendFormat": "Mimir",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#FF4757", "value": null },
+              { "color": "#FFB020", "value": 80 },
+              { "color": "#00C48C", "value": 99 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Mimir Deep Dive",
+          "url": "/d/mimir-deep-dive/mimir-deep-dive?var-cluster=$cluster&var-stack=$stack&from=$__from&to=$__to"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 12,
+      "title": "Loki Health",
+      "description": "Availability percentage of Loki instances across selected clusters and stacks.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 5, "x": 10, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "sum(up{job=~\".*loki.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) / count(up{job=~\".*loki.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) * 100",
+          "legendFormat": "Loki",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#FF4757", "value": null },
+              { "color": "#FFB020", "value": 80 },
+              { "color": "#00C48C", "value": 99 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Loki Deep Dive",
+          "url": "/d/loki-deep-dive/loki-deep-dive?var-cluster=$cluster&var-stack=$stack&from=$__from&to=$__to"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 13,
+      "title": "Tempo Health",
+      "description": "Availability percentage of Tempo instances across selected clusters and stacks.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 5, "x": 15, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "sum(up{job=~\".*tempo.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) / count(up{job=~\".*tempo.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) * 100",
+          "legendFormat": "Tempo",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#FF4757", "value": null },
+              { "color": "#FFB020", "value": 80 },
+              { "color": "#00C48C", "value": 99 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Tempo Deep Dive",
+          "url": "/d/tempo-deep-dive/tempo-deep-dive?var-cluster=$cluster&var-stack=$stack&from=$__from&to=$__to"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 14,
+      "title": "Pyroscope Health",
+      "description": "Availability percentage of Pyroscope instances across selected clusters and stacks.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "sum(up{job=~\".*pyroscope.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) / count(up{job=~\".*pyroscope.*\", cluster=~\"$cluster\", stack=~\"$stack\"}) * 100",
+          "legendFormat": "Pyroscope",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#FF4757", "value": null },
+              { "color": "#FFB020", "value": 80 },
+              { "color": "#00C48C", "value": 99 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Pyroscope Deep Dive",
+          "url": "/d/pyroscope-deep-dive/pyroscope-deep-dive?var-cluster=$cluster&var-stack=$stack&from=$__from&to=$__to"
+        }
+      ],
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 103,
+      "title": "SLO Compliance Board",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "panels": []
+    },
+    {
+      "id": 15,
+      "title": "SLO Compliance by Service",
+      "description": "SLO compliance for all services. Click service name to drill into golden signals.",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "(1 - (sum by (job) (rate(http_requests_total{status=~\"5..\", cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval])) / (sum by (job) (rate(http_requests_total{cluster=~\"$cluster\", stack=~\"$stack\"}[$__rate_interval])) + 0.001))) * 100",
+          "legendFormat": "{{job}}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "job": "Service",
+              "Value": "Availability %"
+            },
+            "indexByName": {
+              "job": 0,
+              "Value": 1
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Availability %",
+                "desc": false
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "filterable": true
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#FF4757", "value": null },
+              { "color": "#FFB020", "value": 99 },
+              { "color": "#00C48C", "value": 99.9 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Availability %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#FF4757", "value": null },
+                    { "color": "#FFB020", "value": 99 },
+                    { "color": "#00C48C", "value": 99.9 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Service"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "View Golden Signals",
+                    "url": "/d/l2-service-golden-signals/l2-service-golden-signals?var-service=${__data.fields.Service}&from=$__from&to=$__to"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": ["sum"],
+          "fields": ""
+        },
+        "sortBy": [
+          {
+            "displayName": "Availability %",
+            "desc": false
+          }
+        ]
+      },
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 104,
+      "title": "Recent Activity",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "panels": []
+    },
+    {
+      "id": 16,
+      "title": "Recent Error Logs",
+      "description": "Recent error-level log entries across all platform components.",
+      "type": "logs",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 33 },
+      "datasource": { "type": "loki", "uid": "$datasource_loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "$datasource_loki" },
+          "expr": "{cluster=~\"$cluster\", namespace=~\"$stack\"} |= \"error\" | logfmt | level = \"error\" | line_format \"{{.ts}} [{{.level}}] {{.component}}: {{.msg}}\"",
+          "queryType": "range",
+          "maxLines": 20
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "pluginVersion": "11.6.4"
+    },
+    {
+      "id": 17,
+      "title": "Component Restarts",
+      "description": "Component restarts detected. Frequent restarts indicate instability.",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 33 },
+      "datasource": { "type": "prometheus", "uid": "$datasource" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "$datasource" },
+          "expr": "changes(process_start_time_seconds{cluster=~\"$cluster\", stack=~\"$stack\"}[5m])",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "normal"
+            },
+            "axisPlacement": "auto",
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        }
+      },
+      "pluginVersion": "11.6.4"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 40,
+  "tags": ["level:L0", "executive", "lgtm", "command-center"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "/[Mm]imir/",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Loki",
+        "multi": false,
+        "name": "datasource_loki",
+        "options": [],
+        "query": "loki",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "prod",
+          "value": "prod"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Environment",
+        "multi": false,
+        "name": "environment",
+        "options": [
+          {
+            "selected": true,
+            "text": "prod",
+            "value": "prod"
+          },
+          {
+            "selected": false,
+            "text": "staging",
+            "value": "staging"
+          },
+          {
+            "selected": false,
+            "text": "dev",
+            "value": "dev"
+          }
+        ],
+        "query": "prod,staging,dev",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "definition": "label_values(up{}, region)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Region",
+        "multi": true,
+        "name": "region",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(up{}, region)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "definition": "label_values(up{region=~\"$region\"}, cluster)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Cluster",
+        "multi": true,
+        "name": "cluster",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(up{region=~\"$region\"}, cluster)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "$datasource"
+        },
+        "definition": "label_values(up{cluster=~\"$cluster\"}, stack)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Stack",
+        "multi": true,
+        "name": "stack",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(up{cluster=~\"$cluster\"}, stack)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "L0 \u2014 Executive Command Center",
+  "uid": "l0-executive-command-center",
+  "version": 1,
+  "weekStart": ""
+}

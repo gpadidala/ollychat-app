@@ -1,0 +1,929 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_AZURE_MONITOR",
+      "label": "Azure Monitor",
+      "type": "datasource",
+      "pluginId": "grafana-azure-monitor-datasource"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-azure-monitor-datasource",
+      "name": "Azure Monitor",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "id": null,
+  "uid": "azure-networking",
+  "title": "Azure — Networking & Load Balancer",
+  "description": "Comprehensive monitoring of Azure networking components including Load Balancer, Application Gateway, NSG, and VNet metrics.",
+  "tags": ["azure", "networking", "loadbalancer", "vnet", "nsg"],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "schemaVersion": 38,
+  "version": 1,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "subscription",
+        "type": "query",
+        "datasource": "${DS_AZURE_MONITOR}",
+        "query": "Subscriptions()",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Subscription",
+        "hide": 0
+      },
+      {
+        "name": "resourceGroup",
+        "type": "query",
+        "datasource": "${DS_AZURE_MONITOR}",
+        "query": "ResourceGroups($subscription)",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Resource Group",
+        "hide": 0
+      },
+      {
+        "name": "timeGrain",
+        "type": "custom",
+        "query": "auto,PT1M,PT5M,PT15M,PT1H,P1D",
+        "current": {
+          "text": "auto",
+          "value": "auto"
+        },
+        "refresh": 0,
+        "includeAll": false,
+        "multi": false,
+        "label": "Time Grain",
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Networking Overview",
+      "type": "row"
+    },
+    {
+      "id": 1,
+      "title": "LB Data Path Availability",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 95 },
+              { "color": "green", "value": 99 }
+            ]
+          },
+          "color": { "mode": "background" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "VipAvailability",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "LB Health Probe Status",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 95 },
+              { "color": "green", "value": 99 }
+            ]
+          },
+          "color": { "mode": "background" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "DipAvailability",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "LB Byte Count",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 1048576 }
+            ]
+          },
+          "color": { "mode": "background" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "ByteCount",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "LB Packet Count",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 1000 }
+            ]
+          },
+          "color": { "mode": "background" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "PacketCount",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "LB SNAT Connection Count",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          },
+          "color": { "mode": "background" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "SnatConnectionCount",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "AppGW Total Requests",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 100 }
+            ]
+          },
+          "color": { "mode": "background" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/applicationgateways",
+            "metricNamespace": "microsoft.network/applicationgateways",
+            "metricName": "TotalRequests",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Load Balancer",
+      "type": "row"
+    },
+    {
+      "id": 7,
+      "title": "Data Path Availability",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 99 }
+            ]
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "min"] }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "VipAvailability",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Health Probe Status",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 99 }
+            ]
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "min"] }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "DipAvailability",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "title": "LB Traffic",
+      "type": "row"
+    },
+    {
+      "id": 9,
+      "title": "Byte Count In/Out",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "max"] }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "ByteCount",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "SNAT Connection Count",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "SnatConnectionCount" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "SnatConnectionCountFailed" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "max"] }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "SnatConnectionCount",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "alias": "SNAT Success"
+        },
+        {
+          "refId": "B",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/loadbalancers",
+            "metricNamespace": "microsoft.network/loadbalancers",
+            "metricName": "SnatConnectionCountFailed",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "alias": "SNAT Failed"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "title": "Application Gateway",
+      "type": "row"
+    },
+    {
+      "id": 11,
+      "title": "AppGW Requests",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "max"] }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/applicationgateways",
+            "metricNamespace": "microsoft.network/applicationgateways",
+            "metricName": "TotalRequests",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          }
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "AppGW Response Status",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "HealthyHostCount" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "UnhealthyHostCount" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "max"] }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/applicationgateways",
+            "metricNamespace": "microsoft.network/applicationgateways",
+            "metricName": "HealthyHostCount",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "alias": "Healthy Hosts"
+        },
+        {
+          "refId": "B",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/applicationgateways",
+            "metricNamespace": "microsoft.network/applicationgateways",
+            "metricName": "UnhealthyHostCount",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "alias": "Unhealthy Hosts"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "title": "NSG & VNet",
+      "type": "row"
+    },
+    {
+      "id": 13,
+      "title": "NSG Flow Logs",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "description": "NSG flow log metrics. Requires NSG Flow Logs to be enabled and flowing to Azure Monitor. If no data appears, verify NSG Flow Logs configuration.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": { "mode": "palette-classic" },
+          "noValue": "NSG Flow Logs not configured or no data available"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "max"] }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/networksecuritygroups",
+            "metricNamespace": "microsoft.network/networksecuritygroups",
+            "metricName": "AllowedFlowsCount",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "alias": "Allowed Flows"
+        },
+        {
+          "refId": "B",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/networksecuritygroups",
+            "metricNamespace": "microsoft.network/networksecuritygroups",
+            "metricName": "BlockedFlowsCount",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "alias": "Blocked Flows"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "VNet Bytes In/Out",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "description": "Virtual Network peering traffic metrics. Requires VNet peering to be configured for metrics to appear.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "stacking": { "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": { "mode": "palette-classic" },
+          "noValue": "VNet metrics not available or no peering configured"
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "max"] }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/virtualnetworks",
+            "metricNamespace": "microsoft.network/virtualnetworks",
+            "metricName": "BytesInDDoS",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "alias": "Bytes In (DDoS)"
+        },
+        {
+          "refId": "B",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.network/virtualnetworks",
+            "metricNamespace": "microsoft.network/virtualnetworks",
+            "metricName": "BytesDroppedDDoS",
+            "aggregation": "Total",
+            "timeGrain": "$timeGrain"
+          },
+          "alias": "Bytes Dropped (DDoS)"
+        }
+      ]
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "links": []
+}

@@ -1,0 +1,1039 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_OCI_METRICS",
+      "label": "OCI Metrics",
+      "type": "datasource",
+      "pluginId": "oci-metrics-datasource"
+    },
+    {
+      "name": "DS_OCI_LOGS",
+      "label": "OCI Logs",
+      "type": "datasource",
+      "pluginId": "oci-logs-datasource"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "oci-metrics-datasource",
+      "name": "OCI Metrics",
+      "version": "1.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "oci-logs-datasource",
+      "name": "OCI Logs",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "id": null,
+  "uid": "oci-cost-capacity",
+  "title": "OCI Cost & Capacity Planning",
+  "description": "Long-range capacity planning dashboard for OCI services including storage growth, compute utilization patterns, database capacity, and network trends over 30-day windows.",
+  "tags": ["oci", "cost", "capacity", "planning"],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "schemaVersion": 38,
+  "version": 1,
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "refresh": "5m",
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "region",
+        "type": "query",
+        "datasource": "${DS_OCI_METRICS}",
+        "query": "regions()",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Region",
+        "hide": 0
+      },
+      {
+        "name": "compartment",
+        "type": "query",
+        "datasource": "${DS_OCI_METRICS}",
+        "query": "compartments($region)",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Compartment",
+        "hide": 0
+      },
+      {
+        "name": "window",
+        "type": "custom",
+        "query": "auto,1m,5m,15m,1h,1d",
+        "current": {
+          "text": "auto",
+          "value": "auto"
+        },
+        "includeAll": false,
+        "multi": false,
+        "label": "Window",
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Current Storage & Compute Totals",
+      "type": "row"
+    },
+    {
+      "id": 1,
+      "title": "Object Storage",
+      "description": "Current total bytes stored in OCI Object Storage across all buckets in the selected compartment.",
+      "type": "stat",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_objectstorage",
+          "query": "StoredBytes[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Block Storage Throughput",
+      "description": "Combined read and write throughput for OCI Block Storage volumes in bytes per second.",
+      "type": "stat",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_blockstore",
+          "query": "VolumeReadThroughput[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}} Read",
+          "refId": "A"
+        },
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_blockstore",
+          "query": "VolumeWriteThroughput[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}} Write",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "DB Storage Used",
+      "description": "Current storage utilization percentage for OCI Autonomous Database instances. Thresholds: green < 70%, yellow < 85%, red >= 85%.",
+      "type": "stat",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_autonomous_database",
+          "query": "StorageUtilization[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Active Compute Instances",
+      "description": "Approximate count of active compute instances derived from the count of CpuUtilization metric data points.",
+      "type": "stat",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_computeagent",
+          "query": "CpuUtilization[$window].count()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Storage Growth Trends",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 5,
+      "title": "Object Storage Growth (30d)",
+      "description": "Trend of total stored bytes in Object Storage over the last 30 days to identify growth patterns and forecast capacity needs.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_objectstorage",
+          "query": "StoredBytes[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Object Count Growth (30d)",
+      "description": "Trend of total object count in Object Storage over the last 30 days to track data proliferation.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_objectstorage",
+          "query": "ObjectCount[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "title": "Block & File Storage",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 7,
+      "title": "Block Volume Throughput Trend",
+      "description": "Combined read and write throughput trends for OCI Block Volumes over time to identify I/O bottlenecks.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_blockstore",
+          "query": "VolumeReadThroughput[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}} Read",
+          "refId": "A"
+        },
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_blockstore",
+          "query": "VolumeWriteThroughput[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}} Write",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "File Storage Throughput",
+      "description": "Combined read and write throughput trends for OCI File Storage service to monitor shared filesystem capacity.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_filestorage",
+          "query": "ReadThroughput[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}} Read",
+          "refId": "A"
+        },
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_filestorage",
+          "query": "WriteThroughput[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}} Write",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "title": "Database Capacity",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 9,
+      "title": "ATP/ADW Storage Utilization Trend",
+      "description": "Storage utilization trend for Autonomous Transaction Processing and Autonomous Data Warehouse instances. Alert threshold at 85%.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_autonomous_database",
+          "query": "StorageUtilization[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "DBCS Storage Allocated vs Used",
+      "description": "Comparison of allocated versus used storage for OCI Database Cloud Service instances to identify over-provisioning or capacity risks.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_database",
+          "query": "StorageAllocated[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}} Allocated",
+          "refId": "A"
+        },
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_database",
+          "query": "StorageUsed[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}} Used",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "title": "Compute Utilization Patterns",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 11,
+      "title": "Compute CPU Utilization (30d)",
+      "description": "CPU utilization trend for compute instances over 30 days to identify peak usage patterns and right-sizing opportunities.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_computeagent",
+          "query": "CpuUtilization[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Compute Memory Utilization (30d)",
+      "description": "Memory utilization trend for compute instances over 30 days to identify memory pressure and right-sizing opportunities.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_computeagent",
+          "query": "MemoryUtilization[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 41 },
+      "id": 105,
+      "title": "Network Capacity",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 13,
+      "title": "Network Bytes In (30d)",
+      "description": "Inbound network traffic rate across VCN VNICs over 30 days to identify bandwidth growth and plan network capacity.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 42 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_vcn",
+          "query": "VnicFromNetworkBytes[$window].rate()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "LB Active Connections Trend",
+      "description": "Active connection count trend for OCI Load Balancers over 30 days to plan for scaling and capacity.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 42 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_lbaas",
+          "query": "ActiveConnections[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "legendFormat": "{{resourceDisplayName}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"]
+        }
+      }
+    }
+  ]
+}

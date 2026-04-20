@@ -1,0 +1,803 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_OCI_METRICS",
+      "label": "OCI Metrics",
+      "type": "datasource",
+      "pluginId": "oci-metrics-datasource"
+    },
+    {
+      "name": "DS_OCI_LOGS",
+      "label": "OCI Logs",
+      "type": "datasource",
+      "pluginId": "oci-logs-datasource"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "oci-metrics-datasource",
+      "name": "OCI Metrics",
+      "version": "1.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "oci-logs-datasource",
+      "name": "OCI Logs",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    }
+  ],
+  "id": null,
+  "uid": "oci-oke-cluster-health",
+  "title": "OCI Kubernetes (OKE) — Cluster Health",
+  "description": "Comprehensive monitoring of OCI Kubernetes Engine (OKE) clusters including node resources, pod scheduling, API server metrics, and correlated container logs.",
+  "tags": ["oci", "oke", "kubernetes", "containers"],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "schemaVersion": 38,
+  "version": 1,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "region",
+        "type": "query",
+        "datasource": "${DS_OCI_METRICS}",
+        "query": "regions()",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Region",
+        "hide": 0
+      },
+      {
+        "name": "compartment",
+        "type": "query",
+        "datasource": "${DS_OCI_METRICS}",
+        "query": "compartments($region)",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Compartment",
+        "hide": 0
+      },
+      {
+        "name": "window",
+        "type": "custom",
+        "query": "auto,1m,5m,15m,1h,1d",
+        "current": {
+          "text": "auto",
+          "value": "auto"
+        },
+        "includeAll": false,
+        "multi": false,
+        "label": "Window",
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "id": 1,
+      "title": "Node CPU Usage",
+      "description": "Current average CPU usage across OKE cluster nodes.",
+      "type": "stat",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_oke",
+          "query": "node_cpu_usage[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Node Memory Usage",
+      "description": "Current average memory usage across OKE cluster nodes.",
+      "type": "stat",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_oke",
+          "query": "node_memory_usage[$window].mean()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Pod Count",
+      "description": "Maximum number of pods running in the OKE cluster.",
+      "type": "stat",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_oke",
+          "query": "pod_count[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Unschedulable Pods",
+      "description": "Number of pods that could not be scheduled. Non-zero values indicate resource constraints or scheduling issues.",
+      "type": "stat",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_oke",
+          "query": "unschedulable_pods[$window].max()",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Node Resources",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 5,
+      "title": "Node CPU Over Time",
+      "description": "CPU usage trend across OKE cluster nodes over time.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_oke",
+          "query": "node_cpu_usage[$window].mean()",
+          "legendFormat": "{{resourceDisplayName}}",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Node Memory Over Time",
+      "description": "Memory usage trend across OKE cluster nodes over time.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_oke",
+          "query": "node_memory_usage[$window].mean()",
+          "legendFormat": "{{resourceDisplayName}}",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "title": "Pods & API",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 7,
+      "title": "Pod Count Trend",
+      "description": "Trend of maximum pod count over time in the OKE cluster.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_oke",
+          "query": "pod_count[$window].max()",
+          "legendFormat": "{{resourceDisplayName}}",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "API Server Request Rate",
+      "description": "Rate of requests to the Kubernetes API server.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_METRICS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_METRICS}",
+          "namespace": "oci_oke",
+          "query": "api_server_requests_total[$window].rate()",
+          "legendFormat": "{{resourceDisplayName}}",
+          "region": "$region",
+          "compartmentOCID": "$compartment",
+          "tenancymode": "single",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "title": "Correlated Logs",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 9,
+      "title": "Container Error Logs",
+      "description": "Recent container error logs including OOMKilled, CrashLoopBackOff, and general errors from OCI Logging.",
+      "type": "table",
+      "datasource": "${DS_OCI_LOGS}",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_LOGS}",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.message =~ 'error|Error|ERROR|OOMKilled|CrashLoopBackOff' | sort by datetime desc",
+          "maxDataPoints": 10,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [],
+        "footer": {
+          "show": false
+        }
+      }
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "title": "Error Trends from Logs",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 10,
+      "title": "Container Errors Over Time",
+      "description": "Trend of container error occurrences aggregated in 5-minute buckets from OCI Logging.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_LOGS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_LOGS}",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.message =~ 'error|Error' | summarize count() by rounddown(datetime, '5m')",
+          "maxDataPoints": 10,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Restarts/OOMKills",
+      "description": "Trend of container restarts, OOMKilled, and CrashLoopBackOff events aggregated in 5-minute buckets.",
+      "type": "timeseries",
+      "datasource": "${DS_OCI_LOGS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+      "targets": [
+        {
+          "datasource": "${DS_OCI_LOGS}",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.message =~ 'OOMKilled|CrashLoopBackOff|Restart' | summarize count() by rounddown(datetime, '5m')",
+          "maxDataPoints": 10,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    }
+  ]
+}

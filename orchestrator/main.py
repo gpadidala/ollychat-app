@@ -51,6 +51,29 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("OpenTelemetry initialization failed, continuing without telemetry", error=str(e))
 
+    # Auto-register the bundled O11yBot MCP server so a fresh `docker
+    # compose up` has a connected MCP without any manual curl step. The
+    # server URL is read from OLLYCHAT_BIFROST_URL (compose sets it to the
+    # internal service name `http://ollychat-mcp:8765`).
+    try:
+        from mcp.client import MCPServerConfig, get_mcp_manager
+        mgr = get_mcp_manager()
+        mgr.load_config()
+        if "bifrost-grafana" not in mgr.servers:
+            mgr.servers["bifrost-grafana"] = MCPServerConfig(
+                name="bifrost-grafana",
+                url=settings.bifrost_url.rstrip("/"),
+                transport="sse",
+                enabled=True,
+            )
+        await mgr.connect_all()
+        status = mgr.status.get("bifrost-grafana", "unknown")
+        tools = len([t for t in mgr.tools.values() if t.server_name == "bifrost-grafana"])
+        logger.info("mcp.auto-registered", status=status, tools=tools, url=settings.bifrost_url)
+    except Exception as e:
+        logger.warning("mcp.auto-register.failed — continuing without MCP",
+                       error=str(e))
+
     yield
 
     logger.info("OllyChat Orchestrator shutting down")

@@ -1,0 +1,1022 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_OCI_METRICS",
+      "label": "OCI Metrics",
+      "description": "OCI Metrics datasource",
+      "type": "datasource",
+      "pluginId": "oci-metrics-datasource",
+      "pluginName": "Oracle Cloud Infrastructure Metrics"
+    },
+    {
+      "name": "DS_OCI_LOGS",
+      "label": "OCI Logs",
+      "description": "OCI Logs datasource",
+      "type": "datasource",
+      "pluginId": "oci-logs-datasource",
+      "pluginName": "Oracle Cloud Infrastructure Logs"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "oci-metrics-datasource",
+      "name": "Oracle Cloud Infrastructure Metrics",
+      "version": "5.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "oci-logs-datasource",
+      "name": "Oracle Cloud Infrastructure Logs",
+      "version": "5.0.0"
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Deep-dive into OCI networking metrics including VCN VNIC traffic, connection tracking, load balancer performance, and backend health.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "VCN Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Rate of bytes received by VNICs from the network.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}}",
+          "namespace": "oci_vcn",
+          "queryText": "VnicFromNetworkBytes[$window].rate()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "VNIC Bytes In",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Rate of bytes sent by VNICs to the network.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}}",
+          "namespace": "oci_vcn",
+          "queryText": "VnicToNetworkBytes[$window].rate()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "VNIC Bytes Out",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Rate of packets received by VNICs from the network.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "pps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}}",
+          "namespace": "oci_vcn",
+          "queryText": "VnicFromNetworkPackets[$window].rate()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "VNIC Packets In",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Rate of packets sent by VNICs to the network.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "pps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}}",
+          "namespace": "oci_vcn",
+          "queryText": "VnicToNetworkPackets[$window].rate()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "VNIC Packets Out",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "VNIC connection tracking utilization percentage. High values indicate approaching connection limits.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}}",
+          "namespace": "oci_vcn",
+          "queryText": "VnicConntrackUtilPercent[$window].max()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "Conn Track Util",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Total egress packets dropped by security lists. Non-zero values indicate blocked traffic.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}}",
+          "namespace": "oci_vcn",
+          "queryText": "VnicEgressDropsSecurityList[$window].sum()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "Egress Drops",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "panels": [],
+      "title": "VCN Traffic",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Bytes received and sent by VNICs over time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Bytes In",
+          "namespace": "oci_vcn",
+          "queryText": "VnicFromNetworkBytes[$window].rate()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        },
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Bytes Out",
+          "namespace": "oci_vcn",
+          "queryText": "VnicToNetworkBytes[$window].rate()",
+          "rawQuery": true,
+          "refId": "B",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "VNIC Network Bytes In/Out",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Packets received and sent by VNICs over time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "pps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Packets In",
+          "namespace": "oci_vcn",
+          "queryText": "VnicFromNetworkPackets[$window].rate()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        },
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Packets Out",
+          "namespace": "oci_vcn",
+          "queryText": "VnicToNetworkPackets[$window].rate()",
+          "rawQuery": true,
+          "refId": "B",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "VNIC Packets In/Out",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "panels": [],
+      "title": "Connection Tracking",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "VNIC connection tracking utilization percentage over time. Thresholds at 70% (warning) and 85% (critical).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "area" }
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 9,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}}",
+          "namespace": "oci_vcn",
+          "queryText": "VnicConntrackUtilPercent[$window].max()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "Connection Tracking Utilization %",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Egress packets dropped by security lists over time. Any non-zero value warrants investigation.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 10,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}}",
+          "namespace": "oci_vcn",
+          "queryText": "VnicEgressDropsSecurityList[$window].sum()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "Security List Egress Drops",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "panels": [],
+      "title": "Load Balancer",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Load balancer accepted and currently active connections over time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 11,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Accepted",
+          "namespace": "oci_lbaas",
+          "queryText": "AcceptedConnections[$window].sum()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        },
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Active",
+          "namespace": "oci_lbaas",
+          "queryText": "ActiveConnections[$window].max()",
+          "rawQuery": true,
+          "refId": "B",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "LB Accepted & Active Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Load balancer bytes received from clients and sent to clients over time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 12,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Received",
+          "namespace": "oci_lbaas",
+          "queryText": "BytesReceived[$window].sum()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        },
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Sent",
+          "namespace": "oci_lbaas",
+          "queryText": "BytesSent[$window].sum()",
+          "rawQuery": true,
+          "refId": "B",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "LB Bytes Received/Sent",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "panels": [],
+      "title": "LB Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Load balancer response time to first byte at 95th percentile. Thresholds at 200ms (warning) and 500ms (critical).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "area" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 500 }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+      "id": 13,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}}",
+          "namespace": "oci_lbaas",
+          "queryText": "ResponseTimeFirstByte[$window].percentile(0.95)",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "LB Response Time (First Byte)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+      "description": "Total backend servers vs unhealthy backend servers. Unhealthy backends shown in red.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "A" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+      "id": 14,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Healthy",
+          "namespace": "oci_lbaas",
+          "queryText": "BackendServers[$window].max()",
+          "rawQuery": true,
+          "refId": "A",
+          "region": "$region",
+          "tenancymode": "single"
+        },
+        {
+          "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+          "compartmentOCID": "$compartment",
+          "legendFormat": "{{resourceDisplayName}} — Unhealthy",
+          "namespace": "oci_lbaas",
+          "queryText": "UnHealthyBackendServers[$window].max()",
+          "rawQuery": true,
+          "refId": "B",
+          "region": "$region",
+          "tenancymode": "single"
+        }
+      ],
+      "title": "Backend Health",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["oci", "networking", "vcn", "loadbalancer"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+        "definition": "regions()",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Region",
+        "multi": false,
+        "name": "region",
+        "options": [],
+        "query": "regions()",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+        "definition": "compartments($region)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Compartment",
+        "multi": false,
+        "name": "compartment",
+        "options": [],
+        "query": "compartments($region)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": { "selected": true, "text": "auto", "value": "auto" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Window",
+        "multi": false,
+        "name": "window",
+        "options": [
+          { "selected": true, "text": "auto", "value": "auto" },
+          { "selected": false, "text": "1m", "value": "1m" },
+          { "selected": false, "text": "5m", "value": "5m" },
+          { "selected": false, "text": "15m", "value": "15m" },
+          { "selected": false, "text": "1h", "value": "1h" },
+          { "selected": false, "text": "1d", "value": "1d" }
+        ],
+        "query": "auto,1m,5m,15m,1h,1d",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "OCI Networking \u2014 VCN, LB & Traffic Analysis",
+  "uid": "oci-networking-deep-dive",
+  "version": 1,
+  "weekStart": ""
+}

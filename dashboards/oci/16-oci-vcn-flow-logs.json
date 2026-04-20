@@ -1,0 +1,773 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_OCI_METRICS",
+      "label": "OCI Metrics",
+      "description": "OCI Metrics datasource",
+      "type": "datasource",
+      "pluginId": "oci-metrics-datasource",
+      "pluginName": "Oracle Cloud Infrastructure Metrics"
+    },
+    {
+      "name": "DS_OCI_LOGS",
+      "label": "OCI Logs",
+      "description": "OCI Logs datasource",
+      "type": "datasource",
+      "pluginId": "oci-logs-datasource",
+      "pluginName": "Oracle Cloud Infrastructure Logs"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "oci-metrics-datasource",
+      "name": "Oracle Cloud Infrastructure Metrics",
+      "version": "5.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "oci-logs-datasource",
+      "name": "Oracle Cloud Infrastructure Logs",
+      "version": "5.0.0"
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar gauge",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Network flow log analysis for OCI VCN. Shows who is talking to whom, which traffic is being blocked, and identifies top talkers. Use this to troubleshoot connectivity issues and detect suspicious network activity.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "Flow Summary",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Total number of network flow log entries. Each flow represents a connection attempt between two endpoints.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.logType = 'VCNFlowLog' or data.protocolName != '' | summarize count() as Total"
+        }
+      ],
+      "title": "Total Flows",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Flows allowed through security lists and network security groups. This is normal, expected traffic.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.action = 'ACCEPT' | summarize count() as Accepted"
+        }
+      ],
+      "title": "Accepted Flows",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Flows blocked by security lists or network security groups. High counts may indicate misconfigured rules or attack attempts.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 100 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.action = 'REJECT' | summarize count() as Rejected"
+        }
+      ],
+      "title": "Rejected Flows",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Number of distinct source IP addresses seen in flow logs. A sudden increase may indicate a scan or DDoS.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "purple", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.sourceAddress != '' | summarize dcount(data.sourceAddress) as UniqueIPs"
+        }
+      ],
+      "title": "Unique Source IPs",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "panels": [],
+      "title": "Flow Trends",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Accepted (green) vs Rejected (red) flows over time. A rising red line may indicate an active attack or a misconfigured security list blocking legitimate traffic.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Accepted" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Rejected" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.action = 'ACCEPT' | summarize count() as Accepted by rounddown(datetime, '5m')"
+        },
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "B",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.action = 'REJECT' | summarize count() as Rejected by rounddown(datetime, '5m')"
+        }
+      ],
+      "title": "Accept vs Reject Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Network flows broken down by protocol (TCP, UDP, ICMP). TCP dominates most environments. Unexpected ICMP spikes may indicate network probing.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.protocolName != '' | summarize count() by data.protocolName, rounddown(datetime, '5m')"
+        }
+      ],
+      "title": "Flows by Protocol",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "panels": [],
+      "title": "Top Talkers",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "IPs generating the most traffic. Unusual entries may indicate scanning or attacks.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 7,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | summarize count() as Flows by data.sourceAddress | sort by Flows desc | head 10"
+        }
+      ],
+      "title": "Top 10 Source IPs",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Most targeted ports. Port 443/80 = normal web, unusual ports = investigate.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "orange", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 8,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | summarize count() as Flows by data.destinationPort | sort by Flows desc | head 10"
+        }
+      ],
+      "title": "Top 10 Destination Ports",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "panels": [],
+      "title": "Rejected Traffic",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Blocked network flows. Spikes indicate either misconfigured security lists or attack attempts.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 9,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.action = 'REJECT' | summarize count() as Rejected by rounddown(datetime, '5m')"
+        }
+      ],
+      "title": "Rejected Flows Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "IPs most frequently blocked. Repeated entries from unknown IPs may need firewall rules.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 10,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.action = 'REJECT' | summarize count() as Blocked by data.sourceAddress | sort by Blocked desc | head 10"
+        }
+      ],
+      "title": "Rejected by Source IP",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "panels": [],
+      "title": "Raw Flow Logs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Most recent VCN flow log entries. Each row represents a single network connection attempt with source/destination details and whether it was accepted or rejected.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": true,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "datetime" },
+            "properties": [
+              { "id": "custom.width", "value": 200 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 33 },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": true, "enablePagination": true, "fields": "", "reducer": ["count"], "show": true },
+        "showHeader": true,
+        "sortBy": [
+          { "desc": true, "displayName": "datetime" }
+        ]
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | sort by datetime desc"
+        }
+      ],
+      "title": "Recent Flow Logs",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": false,
+            "source": "data"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "datetime": "Timestamp",
+              "data.sourceAddress": "Source IP",
+              "data.destinationAddress": "Destination IP",
+              "data.sourcePort": "Source Port",
+              "data.destinationPort": "Dest Port",
+              "data.protocolName": "Protocol",
+              "data.action": "Action",
+              "data.bytesOut": "Bytes"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["oci", "logs", "vcn", "flow-logs", "network"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+        "definition": "regions()",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Region",
+        "multi": false,
+        "name": "region",
+        "options": [],
+        "query": "regions()",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": { "type": "oci-metrics-datasource", "uid": "${DS_OCI_METRICS}" },
+        "definition": "compartments($region)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Compartment",
+        "multi": false,
+        "name": "compartment",
+        "options": [],
+        "query": "compartments($region)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": { "selected": true, "text": "auto", "value": "auto" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Window",
+        "multi": false,
+        "name": "window",
+        "options": [
+          { "selected": true, "text": "auto", "value": "auto" },
+          { "selected": false, "text": "1m", "value": "1m" },
+          { "selected": false, "text": "5m", "value": "5m" },
+          { "selected": false, "text": "15m", "value": "15m" },
+          { "selected": false, "text": "1h", "value": "1h" },
+          { "selected": false, "text": "1d", "value": "1d" }
+        ],
+        "query": "auto,1m,5m,15m,1h,1d",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "OCI Logs \u2014 VCN Flow Log Analysis",
+  "uid": "oci-vcn-flow-logs",
+  "version": 1,
+  "weekStart": ""
+}

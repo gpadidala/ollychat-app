@@ -1,0 +1,947 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_OCI_METRICS",
+      "label": "OCI Metrics",
+      "type": "datasource",
+      "pluginId": "oci-metrics-datasource"
+    },
+    {
+      "name": "DS_OCI_LOGS",
+      "label": "OCI Logs",
+      "type": "datasource",
+      "pluginId": "oci-logs-datasource"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "oci-metrics-datasource",
+      "name": "OCI Metrics",
+      "version": "1.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "oci-logs-datasource",
+      "name": "OCI Logs",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar gauge",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    }
+  ],
+  "id": null,
+  "uid": "oci-security-compliance",
+  "title": "OCI Security & Compliance \u2014 Audit Deep Dive",
+  "description": "Deep-dive into OCI audit events for security and compliance monitoring. Track IAM activity, failed authentications, policy changes, resource lifecycle events, and potential threat indicators.",
+  "tags": ["oci", "security", "compliance", "audit", "deep-dive"],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "schemaVersion": 38,
+  "version": 1,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "region",
+        "type": "query",
+        "datasource": "${DS_OCI_METRICS}",
+        "query": "regions()",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Region",
+        "hide": 0
+      },
+      {
+        "name": "compartment",
+        "type": "query",
+        "datasource": "${DS_OCI_METRICS}",
+        "query": "compartments($region)",
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Compartment",
+        "hide": 0
+      },
+      {
+        "name": "window",
+        "type": "custom",
+        "query": "auto,1m,5m,15m,1h,1d",
+        "current": {
+          "text": "auto",
+          "value": "auto"
+        },
+        "includeAll": false,
+        "multi": false,
+        "label": "Window",
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "Audit Summary",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Total number of audit events across all services in the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | summarize count() as Total"
+        }
+      ],
+      "title": "Total Audit Events",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Events related to IAM operations: user, group, and policy management.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "purple", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'User|Group|Policy' | summarize count() as IAMEvents"
+        }
+      ],
+      "title": "IAM Events",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Failed authentication attempts. Multiple failures may indicate brute-force or credential-stuffing attacks.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'AuthFailed' | summarize count() as FailedAuth"
+        }
+      ],
+      "title": "Failed Auth",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Policy, rule, and security list changes. Unauthorized policy changes are a critical compliance concern.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "orange", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'Policy|Rule|SecurityList' | summarize count() as PolicyChanges"
+        }
+      ],
+      "title": "Policy Changes",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Resource creation events across all OCI services.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'Create' | summarize count() as Creates"
+        }
+      ],
+      "title": "Resource Creates",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Resource deletion and termination events. Unexpected deletes may indicate compromised accounts or accidental destruction.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'Delete|Terminate' | summarize count() as Deletes"
+        }
+      ],
+      "title": "Resource Deletes",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "panels": [],
+      "title": "IAM Activity",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "IAM-related audit events over time: user, group, and policy operations. Spikes may indicate bulk provisioning or suspicious activity.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "purple", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'User|Group|Policy' | summarize count() as IAMEvents by rounddown(datetime, '5m')"
+        }
+      ],
+      "title": "IAM Events Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Authentication success vs failure over time. A rising failure rate may indicate brute-force attacks.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Success" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Failures" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'AuthSuccess|Login' | summarize count() as Success by rounddown(datetime, '5m')"
+        },
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "B",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'AuthFailed|LoginFailed' | summarize count() as Failures by rounddown(datetime, '5m')"
+        }
+      ],
+      "title": "Auth Success vs Failure",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "panels": [],
+      "title": "Change Tracking",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Resource create, update, and delete events stacked by type per hour. Unusual patterns may indicate unauthorized changes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Creates" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Updates" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Deletes" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "id": 9,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'Create' | summarize count() as Creates by rounddown(datetime, '1h')"
+        },
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "B",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'Update' | summarize count() as Updates by rounddown(datetime, '1h')"
+        },
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "C",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'Delete|Terminate' | summarize count() as Deletes by rounddown(datetime, '1h')"
+        }
+      ],
+      "title": "Resource Changes by Type",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Security list and policy modification events over time. These changes affect network access and authorization rules.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "orange", "mode": "fixed" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "scheme",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "orange", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "id": 10,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'SecurityList|Policy' | summarize count() as Changes by rounddown(datetime, '1h')"
+        }
+      ],
+      "title": "Policy/Security Changes",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "panels": [],
+      "title": "Threat Indicators",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Multiple failures from one IP = potential brute force. Investigate IPs with high failure counts immediately.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 11,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'AuthFailed' | summarize count() as Failures by data.sourceIPAddress | sort by Failures desc | head 10"
+        }
+      ],
+      "title": "Failed Auth by Source IP",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Top 10 least common API calls. Rare operations may indicate reconnaissance or unauthorized access attempts.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "yellow", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 12,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | summarize count() as Count by data.eventName | sort by Count asc | head 10"
+        }
+      ],
+      "title": "Unusual API Calls",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "panels": [],
+      "title": "Audit Trail",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Complete audit trail of all events sorted by time. Use filters to narrow down to specific users, operations, or resources.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": true,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "datetime" },
+            "properties": [
+              { "id": "custom.width", "value": 200 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 33 },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": true, "enablePagination": true, "fields": "", "reducer": ["count"], "show": true },
+        "showHeader": true,
+        "sortBy": [
+          { "desc": true, "displayName": "datetime" }
+        ]
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | sort by datetime desc"
+        }
+      ],
+      "title": "Full Audit Trail",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": false,
+            "source": "data"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "datetime": "Timestamp",
+              "data.eventName": "Event",
+              "data.source": "Source",
+              "data.message": "Message",
+              "data.sourceIPAddress": "Source IP"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 43 },
+      "id": 105,
+      "panels": [],
+      "title": "Security Events",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+      "description": "Filtered view of security-critical events: authentication failures, policy changes, and security list modifications.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": true,
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "datetime" },
+            "properties": [
+              { "id": "custom.width", "value": 200 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 44 },
+      "id": 14,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": true, "enablePagination": true, "fields": "", "reducer": ["count"], "show": true },
+        "showHeader": true,
+        "sortBy": [
+          { "desc": true, "displayName": "datetime" }
+        ]
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "oci-logs-datasource", "uid": "${DS_OCI_LOGS}" },
+          "maxDataPoints": 10,
+          "refId": "A",
+          "region": "$region",
+          "searchQuery": "search \"\" | where data.eventName =~ 'Auth|Policy|SecurityList|Security' | sort by datetime desc"
+        }
+      ],
+      "title": "Security-Related Events",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": false,
+            "source": "data"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "datetime": "Timestamp",
+              "data.eventName": "Event",
+              "data.source": "Source",
+              "data.message": "Message",
+              "data.sourceIPAddress": "Source IP"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "links": []
+}

@@ -1,0 +1,927 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "text",
+      "name": "Text",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Enterprise Observability Platform home page. The single starting point for all users — executives, SREs, developers, and platform engineers.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 2,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 0,
+      "title": "Header",
+      "type": "text",
+      "description": "Enterprise observability platform branding header with live status indicator.",
+      "transparent": true,
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex; align-items:center; justify-content:space-between; padding:12px 20px; background:linear-gradient(135deg, rgba(50,116,217,0.08) 0%, rgba(11,12,14,0) 100%); border-bottom:2px solid #3274D9; border-radius:4px;\">\n  <div>\n    <h1 style=\"margin:0; font-size:28px; font-weight:700; color:#E0E0E0; letter-spacing:1px;\">OBSERVABILITY PLATFORM</h1>\n    <p style=\"margin:4px 0 0; font-size:13px; color:#8E8EA0; letter-spacing:0.5px;\">Powered by Grafana &bull; Loki &bull; Tempo &bull; Mimir &bull; Pyroscope</p>\n  </div>\n  <div style=\"display:flex; gap:20px; align-items:center;\">\n    <div style=\"padding:6px 16px; border-radius:16px; background:rgba(115,191,105,0.1); border:1px solid rgba(115,191,105,0.3);\">\n      <span style=\"font-size:13px; color:#73BF69; font-weight:500;\">&#x25CF; ALL SYSTEMS OPERATIONAL</span>\n    </div>\n    <div style=\"text-align:right;\">\n      <span style=\"font-size:11px; color:#6C7080; text-transform:uppercase; letter-spacing:1px;\">LIVE</span><br/>\n      <span style=\"font-size:13px; color:#5794F2;\">Auto-Refresh 1m</span>\n    </div>\n  </div>\n</div>"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 1,
+      "title": "Search & Quick Actions",
+      "type": "text",
+      "description": "Global search bar and quick-access navigation shortcuts for common workflows.",
+      "transparent": true,
+      "gridPos": { "x": 0, "y": 3, "w": 24, "h": 4 },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"text-align:center; padding:16px 0 8px;\">\n  <div style=\"display:inline-block; background:#181b1f; border:1px solid #2a2d35; border-radius:8px; padding:12px 32px; width:60%; max-width:700px; cursor:pointer; transition:border-color 0.2s;\" onclick=\"document.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true}))\">\n    <span style=\"font-size:15px; color:#6C7080;\">&#x1F50D; Search dashboards, alerts, services... &nbsp; <kbd style='background:#2a2d35; padding:2px 8px; border-radius:3px; font-size:11px; color:#8E8EA0;'>Ctrl+K</kbd></span>\n  </div>\n  <div style=\"margin-top:16px; display:flex; justify-content:center; gap:12px; flex-wrap:wrap;\">\n    <a href=\"/alerting/list?search=&alertState=firing\" style=\"padding:8px 16px; background:#181b1f; border:1px solid #2a2d35; border-radius:6px; color:#F2495C; text-decoration:none; font-size:12px; font-weight:500;\">&#x1F6A8; Active Alerts</a>\n    <a href=\"/dashboards?starred=true\" style=\"padding:8px 16px; background:#181b1f; border:1px solid #2a2d35; border-radius:6px; color:#FADE2A; text-decoration:none; font-size:12px; font-weight:500;\">&#x2B50; My Dashboards</a>\n    <a href=\"/explore\" style=\"padding:8px 16px; background:#181b1f; border:1px solid #2a2d35; border-radius:6px; color:#5794F2; text-decoration:none; font-size:12px; font-weight:500;\">&#x1F50D; Explore</a>\n    <a href=\"/d/l0-executive-command-center\" style=\"padding:8px 16px; background:#181b1f; border:1px solid #2a2d35; border-radius:6px; color:#B877D9; text-decoration:none; font-size:12px; font-weight:500;\">&#x1F3AF; Command Center</a>\n    <a href=\"/d/user-journey-dashboard\" style=\"padding:8px 16px; background:#181b1f; border:1px solid #2a2d35; border-radius:6px; color:#73BF69; text-decoration:none; font-size:12px; font-weight:500;\">&#x1F464; User Journey</a>\n    <a href=\"/connections/datasources\" style=\"padding:8px 16px; background:#181b1f; border:1px solid #2a2d35; border-radius:6px; color:#8E8EA0; text-decoration:none; font-size:12px; font-weight:500;\">&#x2699; Data Sources</a>\n  </div>\n</div>"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "title": "Platform Health",
+      "type": "stat",
+      "description": "Composite platform availability calculated from non-5xx response ratio across all services.",
+      "gridPos": { "x": 0, "y": 7, "w": 3, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(1 - (sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$__rate_interval])) / (sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001))) * 100",
+          "legendFormat": "Availability"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#F2495C" },
+              { "value": 95, "color": "#FF9830" },
+              { "value": 99, "color": "#73BF69" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Platform KPI",
+          "url": "/d/ultimate-platform-kpi",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Active Alerts",
+      "type": "stat",
+      "description": "Count of currently firing alerts across all alerting rules.",
+      "gridPos": { "x": 3, "y": 7, "w": 3, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(ALERTS{alertstate=\"firing\", cluster=~\"$cluster\"}) OR vector(0)",
+          "legendFormat": "Firing"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#73BF69" },
+              { "value": 1, "color": "#FF9830" },
+              { "value": 5, "color": "#F2495C" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Active Alerts",
+          "url": "/alerting/list?search=&alertState=firing",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "SLO Compliance",
+      "type": "stat",
+      "description": "Average SLO compliance across services based on request success rate and latency targets.",
+      "gridPos": { "x": 6, "y": 7, "w": 3, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(\n  (\n    sum(rate(grafana_http_request_duration_seconds_bucket{le=\"0.5\", cluster=~\"$cluster\"}[$__rate_interval]))\n    / (sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001)\n  ) * 100\n)",
+          "legendFormat": "SLO %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#F2495C" },
+              { "value": 95, "color": "#FF9830" },
+              { "value": 99, "color": "#73BF69" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "SLO Error Budget Burn",
+          "url": "/d/slo-error-budget-burn",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Error Budget",
+      "type": "stat",
+      "description": "Remaining error budget as a percentage — how much failure allowance remains before SLO breach.",
+      "gridPos": { "x": 9, "y": 7, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(\n  1 - (\n    sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$__rate_interval]))\n    / (sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) * 0.001 + 0.0001)\n  )\n) * 100",
+          "legendFormat": "Budget Remaining"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#F2495C" },
+              { "value": 20, "color": "#FF9830" },
+              { "value": 50, "color": "#73BF69" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "SLA Business Impact",
+          "url": "/d/sla-business-impact-report",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Request Rate",
+      "type": "stat",
+      "description": "Total request throughput across Grafana, Mimir, and Loki services combined.",
+      "gridPos": { "x": 13, "y": 7, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(\n  sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) or vector(0)\n) + (\n  sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) or vector(0)\n) + (\n  sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) or vector(0)\n)",
+          "legendFormat": "req/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#5794F2" }
+            ]
+          },
+          "color": { "fixedColor": "#5794F2", "mode": "fixed" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Cross-Signal Volume",
+          "url": "/d/cross-signal-volume-analytics",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "P99 Latency",
+      "type": "stat",
+      "description": "Global 99th percentile request latency across all instrumented services.",
+      "gridPos": { "x": 17, "y": 7, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(grafana_http_request_duration_seconds_bucket{cluster=~\"$cluster\"}[$__rate_interval])))",
+          "legendFormat": "P99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#73BF69" },
+              { "value": 0.2, "color": "#73BF69" },
+              { "value": 0.5, "color": "#FF9830" },
+              { "value": 1, "color": "#F2495C" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Application Performance",
+          "url": "/d/l1-application-performance",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Active Users",
+      "type": "stat",
+      "description": "Number of active users currently logged into the Grafana platform.",
+      "gridPos": { "x": 21, "y": 7, "w": 3, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "grafana_stat_active_users",
+          "legendFormat": "Users"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#B877D9" }
+            ]
+          },
+          "color": { "fixedColor": "#B877D9", "mode": "fixed" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "User Activity Analytics",
+          "url": "/d/grafana-user-activity-analytics",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Grafana",
+      "type": "stat",
+      "description": "Grafana UI & API availability — percentage of requests returning non-5xx responses.",
+      "gridPos": { "x": 0, "y": 11, "w": 5, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(1 - (\n  sum(rate(grafana_http_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$__rate_interval]))\n  / (sum(rate(grafana_http_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001)\n)) * 100",
+          "legendFormat": "Grafana"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#F2495C" },
+              { "value": 95, "color": "#FF9830" },
+              { "value": 99, "color": "#73BF69" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Grafana Admin Command Center",
+          "url": "/d/grafana-admin-command-center",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Mimir (Metrics)",
+      "type": "stat",
+      "description": "Mimir metrics backend availability — percentage of requests returning non-5xx responses.",
+      "gridPos": { "x": 5, "y": 11, "w": 5, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(1 - (\n  sum(rate(cortex_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$__rate_interval]))\n  / (sum(rate(cortex_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001)\n)) * 100",
+          "legendFormat": "Mimir"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#F2495C" },
+              { "value": 95, "color": "#FF9830" },
+              { "value": 99, "color": "#73BF69" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Mimir Errors & Ops",
+          "url": "/d/mimir-admin-errors-ops",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Loki (Logs)",
+      "type": "stat",
+      "description": "Loki logs backend availability — percentage of requests returning non-5xx responses.",
+      "gridPos": { "x": 10, "y": 11, "w": 5, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(1 - (\n  sum(rate(loki_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$__rate_interval]))\n  / (sum(rate(loki_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001)\n)) * 100",
+          "legendFormat": "Loki"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#F2495C" },
+              { "value": 95, "color": "#FF9830" },
+              { "value": 99, "color": "#73BF69" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Loki Errors & Ops",
+          "url": "/d/loki-admin-errors-ops",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Tempo (Traces)",
+      "type": "stat",
+      "description": "Tempo tracing backend availability — percentage of requests returning non-5xx responses.",
+      "gridPos": { "x": 15, "y": 11, "w": 5, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(1 - (\n  sum(rate(tempo_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$__rate_interval]))\n  / (sum(rate(tempo_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001)\n)) * 100",
+          "legendFormat": "Tempo"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#F2495C" },
+              { "value": 95, "color": "#FF9830" },
+              { "value": 99, "color": "#73BF69" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Tempo Errors & Ops",
+          "url": "/d/tempo-admin-errors-ops",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Pyroscope (Profiles)",
+      "type": "stat",
+      "description": "Pyroscope profiling backend availability — percentage of requests returning non-5xx responses.",
+      "gridPos": { "x": 20, "y": 11, "w": 4, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(1 - (\n  sum(rate(pyroscope_request_duration_seconds_count{status_code=~\"5..\", cluster=~\"$cluster\"}[$__rate_interval]))\n  / (sum(rate(pyroscope_request_duration_seconds_count{cluster=~\"$cluster\"}[$__rate_interval])) + 0.001)\n)) * 100",
+          "legendFormat": "Pyroscope"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#F2495C" },
+              { "value": 95, "color": "#FF9830" },
+              { "value": 99, "color": "#73BF69" }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Pyroscope Errors & Ops",
+          "url": "/d/pyroscope-admin-errors-ops",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Dashboard Directory",
+      "type": "text",
+      "description": "Core navigation directory organized by persona and domain — the main way users discover and access dashboards.",
+      "transparent": false,
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 16 },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:8px;\">\n  <h2 style=\"margin:0 0 12px; font-size:16px; color:#E0E0E0; letter-spacing:1px;\">DASHBOARD DIRECTORY</h2>\n  <div style=\"display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;\">\n    \n    <!-- Executive -->\n    <div style=\"background:#181b1f; border:1px solid #2a2d35; border-left:3px solid #B877D9; border-radius:6px; padding:14px;\">\n      <h3 style=\"margin:0 0 10px; font-size:13px; color:#B877D9; text-transform:uppercase; letter-spacing:1px;\">&#x1F454; Executive</h3>\n      <a href=\"/d/ultimate-platform-kpi\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Platform KPI</a>\n      <a href=\"/d/ceo-platform-exec-summary\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; CEO Summary</a>\n      <a href=\"/d/sla-business-impact-report\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; SLA Report</a>\n      <a href=\"/d/risk-incident-intelligence\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Risk Intelligence</a>\n      <a href=\"/d/l0-executive-command-center\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; L0 Command Center</a>\n      <a href=\"/d/service-health-matrix\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Health Matrix</a>\n    </div>\n    \n    <!-- Infrastructure -->\n    <div style=\"background:#181b1f; border:1px solid #2a2d35; border-left:3px solid #FF9830; border-radius:6px; padding:14px;\">\n      <h3 style=\"margin:0 0 10px; font-size:13px; color:#FF9830; text-transform:uppercase; letter-spacing:1px;\">&#x1F3D7; Infrastructure</h3>\n      <a href=\"/d/lgtm-stack-health-overview\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; LGTM Stack Health</a>\n      <a href=\"/d/mimir-infrastructure\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; K8s USE Metrics</a>\n      <a href=\"/d/cross-stack-capacity-planning\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Capacity Planning</a>\n      <a href=\"/d/predictive-capacity-forecasting\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Capacity Forecast</a>\n      <a href=\"/d/l1-infrastructure-overview\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; L1 Infra Overview</a>\n      <a href=\"/d/grafana-db-perf-deep-dive\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; DB Performance</a>\n    </div>\n    \n    <!-- Applications -->\n    <div style=\"background:#181b1f; border:1px solid #2a2d35; border-left:3px solid #73BF69; border-radius:6px; padding:14px;\">\n      <h3 style=\"margin:0 0 10px; font-size:13px; color:#73BF69; text-transform:uppercase; letter-spacing:1px;\">&#x1F5A5; Applications</h3>\n      <a href=\"/d/app-overview-4signal\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; App Overview (4-Signal)</a>\n      <a href=\"/d/l2-service-golden-signals\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Service Golden Signals</a>\n      <a href=\"/d/l1-application-performance\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Application Performance</a>\n      <a href=\"/d/slo-dashboard\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; SLO / SLI Dashboard</a>\n      <a href=\"/d/user-journey-dashboard\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; User Journey</a>\n      <a href=\"/d/anomaly-detection-outliers\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Anomaly Detection</a>\n    </div>\n    \n    <!-- Observability Signals -->\n    <div style=\"background:#181b1f; border:1px solid #2a2d35; border-left:3px solid #5794F2; border-radius:6px; padding:14px;\">\n      <h3 style=\"margin:0 0 10px; font-size:13px; color:#5794F2; text-transform:uppercase; letter-spacing:1px;\">&#x1F50D; Observability Signals</h3>\n      <a href=\"/d/mimir-deep-dive-multi-stack\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Mimir (Metrics)</a>\n      <a href=\"/d/loki-deep-dive-multi-stack\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Loki (Logs)</a>\n      <a href=\"/d/tempo-deep-dive-multi-stack\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Tempo (Traces)</a>\n      <a href=\"/d/pyroscope-deep-dive-multi-stack\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Pyroscope (Profiles)</a>\n      <a href=\"/d/loki-logs-deep-dive\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; LogQL Deep Dive</a>\n      <a href=\"/d/tempo-tracing-deep-dive\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; TraceQL Deep Dive</a>\n    </div>\n    \n    <!-- Grafana Admin -->\n    <div style=\"background:#181b1f; border:1px solid #2a2d35; border-left:3px solid #FF6E4A; border-radius:6px; padding:14px;\">\n      <h3 style=\"margin:0 0 10px; font-size:13px; color:#FF6E4A; text-transform:uppercase; letter-spacing:1px;\">&#x1F6E0; Grafana Admin</h3>\n      <a href=\"/d/grafana-admin-command-center\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Command Center</a>\n      <a href=\"/d/grafana-access-security\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Access & Security</a>\n      <a href=\"/d/grafana-user-activity-analytics\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; User Activity</a>\n      <a href=\"/d/grafana-admin-errors-ops\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Errors & API Health</a>\n      <a href=\"/d/grafana-volume-analytics\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Volume & Traffic</a>\n      <a href=\"/d/pyroscope-profiling\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Profiling</a>\n    </div>\n    \n    <!-- Volume & Ingestion -->\n    <div style=\"background:#181b1f; border:1px solid #2a2d35; border-left:3px solid #33B5E5; border-radius:6px; padding:14px;\">\n      <h3 style=\"margin:0 0 10px; font-size:13px; color:#33B5E5; text-transform:uppercase; letter-spacing:1px;\">&#x1F4CA; Volume & Ingestion</h3>\n      <a href=\"/d/cross-stack-volume-summary\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Unified Volume Summary</a>\n      <a href=\"/d/cross-signal-volume-analytics\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Cross-Signal Growth</a>\n      <a href=\"/d/loki-ingestion-analytics\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Loki Ingestion</a>\n      <a href=\"/d/mimir-ingestion-analytics\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Mimir Ingestion</a>\n      <a href=\"/d/tempo-ingestion-analytics\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Tempo Ingestion</a>\n      <a href=\"/d/pyroscope-ingestion-analytics\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Pyroscope Ingestion</a>\n    </div>\n    \n    <!-- Error Operations -->\n    <div style=\"background:#181b1f; border:1px solid #2a2d35; border-left:3px solid #F2495C; border-radius:6px; padding:14px;\">\n      <h3 style=\"margin:0 0 10px; font-size:13px; color:#F2495C; text-transform:uppercase; letter-spacing:1px;\">&#x26A0; Error Operations</h3>\n      <a href=\"/d/grafana-admin-errors-ops\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Grafana Errors</a>\n      <a href=\"/d/loki-admin-errors-ops\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Loki Errors</a>\n      <a href=\"/d/mimir-admin-errors-ops\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Mimir Errors</a>\n      <a href=\"/d/tempo-admin-errors-ops\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Tempo Errors</a>\n      <a href=\"/d/pyroscope-admin-errors-ops\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Pyroscope Errors</a>\n      <a href=\"/d/slo-error-budget-burn\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; SLO Error Budget</a>\n    </div>\n    \n    <!-- SRE & On-Call -->\n    <div style=\"background:#181b1f; border:1px solid #2a2d35; border-left:3px solid #FADE2A; border-radius:6px; padding:14px;\">\n      <h3 style=\"margin:0 0 10px; font-size:13px; color:#FADE2A; text-transform:uppercase; letter-spacing:1px;\">&#x1F6A8; SRE & Reliability</h3>\n      <a href=\"/d/slo-error-budget-burn\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; SLO Burn Rate</a>\n      <a href=\"/d/slo-dashboard\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; SLO / SLI Dashboard</a>\n      <a href=\"/d/anomaly-detection-outliers\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Anomaly Detection</a>\n      <a href=\"/d/multi-tenant-analytics\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Multi-Tenant</a>\n      <a href=\"/d/risk-incident-intelligence\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Risk Intelligence</a>\n      <a href=\"/alerting/list\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; Alert Rules</a>\n    </div>\n    \n    <!-- L-Hierarchy -->\n    <div style=\"background:#181b1f; border:1px solid #2a2d35; border-left:3px solid #8AB8FF; border-radius:6px; padding:14px;\">\n      <h3 style=\"margin:0 0 10px; font-size:13px; color:#8AB8FF; text-transform:uppercase; letter-spacing:1px;\">&#x1F4C8; Dashboard Hierarchy</h3>\n      <a href=\"/d/l0-executive-command-center\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; L0 — Executive</a>\n      <a href=\"/d/l1-infrastructure-overview\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; L1 — Infrastructure</a>\n      <a href=\"/d/l1-application-performance\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; L1 — Applications</a>\n      <a href=\"/d/l1-profiling-overview\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; L1 — Profiling</a>\n      <a href=\"/d/l2-service-golden-signals\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; L2 — Service Signals</a>\n      <a href=\"/d/l3-trace-explorer\" style=\"display:block; padding:4px 0; color:#E0E0E0; text-decoration:none; font-size:12px;\">&#x25B8; L3 — Deep Dive</a>\n    </div>\n    \n  </div>\n</div>"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 15,
+      "title": "Mimir Ingestion",
+      "type": "stat",
+      "description": "Mimir metric sample ingestion rate across all distributors in the selected cluster.",
+      "gridPos": { "x": 0, "y": 32, "w": 5, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(cortex_distributor_received_samples_total{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "samples/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#73BF69" }
+            ]
+          },
+          "color": { "fixedColor": "#73BF69", "mode": "fixed" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Mimir Volume Analytics",
+          "url": "/d/mimir-volume-analytics",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Loki Ingestion",
+      "type": "stat",
+      "description": "Loki log ingestion rate in bytes per second across all distributors in the selected cluster.",
+      "gridPos": { "x": 5, "y": 32, "w": 5, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(loki_distributor_bytes_received_total{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "bytes/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#5794F2" }
+            ]
+          },
+          "color": { "fixedColor": "#5794F2", "mode": "fixed" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Loki Volume Analytics",
+          "url": "/d/loki-volume-analytics",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Tempo Ingestion",
+      "type": "stat",
+      "description": "Tempo span ingestion rate across all distributors in the selected cluster.",
+      "gridPos": { "x": 10, "y": 32, "w": 5, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(tempo_distributor_spans_received_total{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "spans/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#FF9830" }
+            ]
+          },
+          "color": { "fixedColor": "#FF9830", "mode": "fixed" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Tempo Volume Analytics",
+          "url": "/d/tempo-volume-analytics",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Pyroscope Ingestion",
+      "type": "stat",
+      "description": "Pyroscope profile sample ingestion rate across all distributors in the selected cluster.",
+      "gridPos": { "x": 15, "y": 32, "w": 5, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(pyroscope_distributor_received_samples_total{cluster=~\"$cluster\"}[$__rate_interval]))",
+          "legendFormat": "profiles/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#B877D9" }
+            ]
+          },
+          "color": { "fixedColor": "#B877D9", "mode": "fixed" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "Pyroscope Volume Analytics",
+          "url": "/d/pyroscope-volume-analytics",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "Total Dashboards",
+      "type": "stat",
+      "description": "Total number of dashboards provisioned in this Grafana instance.",
+      "gridPos": { "x": 20, "y": 32, "w": 4, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "grafana_stat_total_dashboards",
+          "legendFormat": "Dashboards"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "#3274D9" }
+            ]
+          },
+          "color": { "fixedColor": "#3274D9", "mode": "fixed" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "links": [
+        {
+          "title": "All Dashboards",
+          "url": "/dashboards",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "title": "Footer",
+      "type": "text",
+      "description": "Platform branding footer with version and stack information.",
+      "transparent": true,
+      "gridPos": { "x": 0, "y": 36, "w": 24, "h": 2 },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex; justify-content:space-between; align-items:center; padding:8px 20px; border-top:1px solid #2a2d35;\">\n  <span style=\"font-size:11px; color:#6C7080;\">Platform Engineering &bull; Observability Infrastructure</span>\n  <div style=\"display:flex; gap:20px;\">\n    <span style=\"font-size:11px; color:#6C7080;\">52 Dashboards &bull; Full LGTM+ Stack &bull; Grafana 11.6.4</span>\n  </div>\n</div>"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "home",
+    "portal",
+    "executive",
+    "navigation",
+    "premium",
+    "enterprise"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "name": "datasource",
+        "label": "Data Source",
+        "type": "datasource",
+        "query": "prometheus",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false
+      },
+      {
+        "current": {},
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "definition": "label_values(up, cluster)",
+        "name": "cluster",
+        "label": "Cluster",
+        "type": "query",
+        "query": "label_values(up, cluster)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Observability Platform \u2014 Home",
+  "uid": "enterprise-home-page",
+  "version": 1
+}

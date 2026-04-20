@@ -1,0 +1,1013 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_AZURE_MONITOR",
+      "label": "Azure Monitor",
+      "type": "datasource",
+      "pluginId": "grafana-azure-monitor-datasource"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-azure-monitor-datasource",
+      "name": "Azure Monitor",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "id": null,
+  "uid": "azure-cost-capacity",
+  "title": "Azure — Cost & Capacity Planning",
+  "description": "Long-range capacity planning dashboard for Azure services including compute utilization patterns, database capacity, storage growth, and cache trends over 30-day windows to identify rightsizing and optimization opportunities.",
+  "tags": ["azure", "cost", "capacity", "planning", "optimization"],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "schemaVersion": 38,
+  "version": 1,
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "refresh": "5m",
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "subscription",
+        "type": "query",
+        "datasource": "${DS_AZURE_MONITOR}",
+        "query": {
+          "queryType": "Azure Subscriptions",
+          "refId": "sub"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "label": "Subscription",
+        "hide": 0
+      },
+      {
+        "name": "resourceGroup",
+        "type": "query",
+        "datasource": "${DS_AZURE_MONITOR}",
+        "query": {
+          "queryType": "Azure Resource Groups",
+          "subscription": "$subscription",
+          "refId": "rg"
+        },
+        "refresh": 1,
+        "sort": 1,
+        "includeAll": true,
+        "multi": true,
+        "label": "Resource Group",
+        "hide": 0
+      },
+      {
+        "name": "timeGrain",
+        "type": "custom",
+        "query": "auto,PT1M,PT5M,PT15M,PT30M,PT1H,PT6H,PT12H,P1D",
+        "current": {
+          "text": "PT1H",
+          "value": "PT1H"
+        },
+        "includeAll": false,
+        "multi": false,
+        "label": "Time Grain",
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Current Capacity Summary",
+      "type": "row"
+    },
+    {
+      "id": 1,
+      "title": "Avg VM CPU %",
+      "description": "Average VM CPU utilization over the selected period. Sustained values below 20% indicate overprovisioned instances — consider downsizing VM SKU to reduce cost.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.compute/virtualmachines",
+            "metricNamespace": "microsoft.compute/virtualmachines",
+            "metricName": "Percentage CPU",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 20 },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["mean"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Avg SQL DTU %",
+      "description": "Average SQL Database DTU consumption. Sustained values below 20% suggest over-provisioned tier — consider downgrading. Above 80% suggests upgrade needed.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.sql/servers/databases",
+            "metricNamespace": "microsoft.sql/servers/databases",
+            "metricName": "dtu_consumption_percent",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 20 },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["mean"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Total Storage Used",
+      "description": "Total Azure Storage account used capacity across all accounts. Monitor growth rate to forecast when additional capacity or tiering adjustments are needed.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.storage/storageaccounts",
+            "metricNamespace": "microsoft.storage/storageaccounts",
+            "metricName": "UsedCapacity",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Cosmos RU Consumption",
+      "description": "Average normalized RU consumption for Cosmos DB. Values above 70% indicate approaching provisioned throughput limits — consider scaling RU/s or enabling autoscale.",
+      "type": "stat",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.documentdb/databaseaccounts",
+            "metricNamespace": "microsoft.documentdb/databaseaccounts",
+            "metricName": "NormalizedRUConsumption",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["mean"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "VM Compute Trends (Rightsizing)",
+      "type": "row"
+    },
+    {
+      "id": 5,
+      "title": "VM CPU Utilization — 30d Trend",
+      "description": "30-day VM CPU utilization pattern. Look for consistently low utilization (< 20%) indicating overprovisioned VMs that can be downsized. Identify peak periods to determine if reserved instances would be cost-effective.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.compute/virtualmachines",
+            "metricNamespace": "microsoft.compute/virtualmachines",
+            "metricName": "Percentage CPU",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "min"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "VM Memory Utilization — 30d Trend",
+      "description": "30-day VM available memory trend. Consistently high available memory (low utilization) suggests VMs can be downsized to a smaller SKU. Decreasing trends may indicate a memory leak.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.compute/virtualmachines",
+            "metricNamespace": "microsoft.compute/virtualmachines",
+            "metricName": "Available Memory Bytes",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 1073741824 },
+              { "color": "green", "value": 4294967296 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "min", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "title": "SQL Database Capacity (Tier Optimization)",
+      "type": "row"
+    },
+    {
+      "id": 7,
+      "title": "SQL DTU Consumption — 30d Trend",
+      "description": "30-day DTU consumption pattern. If consistently below 25%, consider downgrading the service tier (e.g., S3 to S1). If spiking above 80%, consider upgrading or switching to elastic pool.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.sql/servers/databases",
+            "metricNamespace": "microsoft.sql/servers/databases",
+            "metricName": "dtu_consumption_percent",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 20 },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "min"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "SQL CPU % — 30d Trend",
+      "description": "30-day SQL CPU utilization. Compare against DTU consumption to isolate whether CPU, I/O, or memory is the limiting factor. Helps determine if vCore model would be more cost-effective.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.sql/servers/databases",
+            "metricNamespace": "microsoft.sql/servers/databases",
+            "metricName": "cpu_percent",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "min"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "id": 103,
+      "title": "Storage & Cosmos Growth Trends",
+      "type": "row"
+    },
+    {
+      "id": 9,
+      "title": "Storage Used Capacity — 30d Growth",
+      "description": "30-day storage growth trend. Calculate monthly growth rate to forecast when storage limits will be reached. Consider implementing lifecycle management policies or moving cold data to archive tier.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.storage/storageaccounts",
+            "metricNamespace": "microsoft.storage/storageaccounts",
+            "metricName": "UsedCapacity",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "off" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull", "diff"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Cosmos RU Consumption — 30d Trend",
+      "description": "30-day Cosmos DB normalized RU consumption. Consistently above 70% means provisioned throughput is near capacity — enable autoscale or increase RU/s. Below 30% means overpaying for unused throughput.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.documentdb/databaseaccounts",
+            "metricNamespace": "microsoft.documentdb/databaseaccounts",
+            "metricName": "NormalizedRUConsumption",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 20 },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "min"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 104,
+      "title": "AKS & Cache Capacity Trends",
+      "type": "row"
+    },
+    {
+      "id": 11,
+      "title": "AKS Node CPU — 30d Trend",
+      "description": "30-day AKS node CPU utilization. Consistently below 30% indicates over-provisioned node pools — consider reducing node count or switching to smaller VM SKUs. Use cluster autoscaler for dynamic workloads.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 33 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.containerservice/managedclusters",
+            "metricNamespace": "microsoft.containerservice/managedclusters",
+            "metricName": "node_cpu_usage_percentage",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 20 },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "min"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "AKS Node Memory — 30d Trend",
+      "description": "30-day AKS node memory utilization. Memory-bound workloads may benefit from memory-optimized VM SKUs (E-series). Consistently high memory with low CPU suggests rebalancing workload placement.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 33 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.containerservice/managedclusters",
+            "metricNamespace": "microsoft.containerservice/managedclusters",
+            "metricName": "node_memory_working_set_percentage",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 20 },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "min"],
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Redis Memory — 30d Trend",
+      "description": "30-day Redis cache memory usage trend. If steadily climbing, plan for tier upgrade before hitting eviction thresholds. Consider implementing TTL policies on keys to control growth.",
+      "type": "timeseries",
+      "datasource": "${DS_AZURE_MONITOR}",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 33 },
+      "targets": [
+        {
+          "datasource": "${DS_AZURE_MONITOR}",
+          "queryType": "Azure Monitor",
+          "azureMonitor": {
+            "resourceGroup": "$resourceGroup",
+            "metricDefinition": "microsoft.cache/redis",
+            "metricNamespace": "microsoft.cache/redis",
+            "metricName": "usedmemorypercentage",
+            "aggregation": "Average",
+            "timeGrain": "$timeGrain"
+          },
+          "subscription": "$subscription",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "scheme",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth",
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "thresholdsStyle": { "mode": "line" }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["mean", "max", "lastNotNull"],
+          "showLegend": true
+        }
+      }
+    }
+  ]
+}
