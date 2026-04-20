@@ -162,12 +162,59 @@ Two paths — pick one. Full step-by-step is in **[docs/INSTALLATION.md](docs/IN
 ```bash
 git clone https://github.com/gpadidala/ollychat-app.git
 cd ollychat-app
-cp .env.example .env
-docker compose up -d
+make up
 ```
 
-Brings up Grafana on `http://localhost:3002` with the plugin already mounted
-and a bundled LGTM stack. Zero SA tokens needed for the demo.
+**One command.** Brings up 10 services on a clean docker network:
+Grafana (port 3002, with 113 provisioned dashboards + the plugin + the widget),
+the orchestrator, the self-owned MCP server, Ollama, Prometheus/Mimir/Loki/Tempo,
+and the OTEL collector. Auto-mints three service-account tokens on first boot and
+writes them back into `.env`. Auto-registers the MCP with the orchestrator — no
+manual curl. When it finishes, open `http://localhost:3002` and click the orange
+bubble bottom-right.
+
+Also supported in this mode:
+- **Corporate laptop** — add `HTTPS_PROXY`, `PIP_INDEX_URL`, or `CA_CERT_PATH=corp-ca.crt` to `.env` and both Dockerfiles pick it up at build time.
+- **Make targets** — `make up` · `make down` · `make restart` · `make rebuild` · `make reset` (drop volumes) · `make logs` · `make status` · `make test`.
+
+### Option A+ — Source-of-truth workflow (canonical repos stay canonical)
+
+If you also maintain the **[Grafana-Dashbords](https://github.com/gpadidala/Grafana-Dashbords)**
+and **[Bifrost](https://github.com/gpadidala/Bifrost)** repos as the master copies
+and just want `ollychat-app` to stay in sync with them:
+
+```
+parent-folder/
+├── Grafana-Dashbords/     ← canonical dashboard master (you edit here)
+├── Bifrost/               ← canonical MCP master (you maintain here)
+└── ollychat-app/          ← deploys everything, keeps working copies
+    └── make up            ← auto-syncs from ../Grafana-Dashbords/ every boot
+```
+
+Your workflow:
+- Edit dashboards in `../Grafana-Dashbords/` as you always have.
+- `cd ollychat-app && make up` — bundled copies refresh automatically before Grafana boots.
+- On-demand: `make sync` — one-way pull from `../Grafana-Dashbords/` into `./dashboards/`.
+
+**If you prefer live mounts** (edit a dashboard in `../Grafana-Dashbords/` and see it update in the running Grafana without re-syncing), use the override compose file:
+
+```bash
+make up-external
+```
+
+That command:
+- mounts `../Grafana-Dashbords/` directly into the bundled Grafana container
+- skips booting `ollychat-mcp` (expects Bifrost running on host `:8765`)
+- points the orchestrator at `host.docker.internal:8765` for MCP tool calls
+
+**When to pick which:**
+
+| | `make up` (default) | `make up-external` |
+|---|---|---|
+| Canonical repos required? | optional — uses bundled if absent | required: `../Grafana-Dashbords/` + host Bifrost |
+| Every boot re-syncs from source? | yes, automatically | no — live bind mount |
+| Works with no sibling repos? | yes | no |
+| Best for | demos, CI, single-laptop deploys, airgapped | dashboard authors actively editing |
 
 Open Grafana → click the orange bubble bottom-right → ask **`list all dashboards`**.
 
