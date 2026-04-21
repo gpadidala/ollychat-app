@@ -113,6 +113,43 @@
 
   function uuid() { return "s" + Date.now() + "-" + Math.random().toString(36).slice(2, 8); }
 
+  // Navigate the top Grafana page to a dashboard so it renders BEHIND the
+  // floating widget. Same tab — the widget rehydrates from localStorage
+  // after the SPA transition, so the conversation keeps its thread.
+  //
+  // Safe-guards:
+  //   - skips if we're already on that board (prevents reload loops)
+  //   - 800ms sessionStorage lock so rapid messages can't double-navigate
+  //   - works via Grafana's history API when available (soft nav, no flash)
+  //     and falls back to location.assign() if the router isn't exposed
+  function autoNavigate(dashUrl) {
+    if (!dashUrl) return;
+    if (sessionStorage.getItem("ob-autoopen-lock")) return;
+    sessionStorage.setItem("ob-autoopen-lock", "1");
+    setTimeout(function() { sessionStorage.removeItem("ob-autoopen-lock"); }, 800);
+    var basePath = dashUrl.split("?")[0];
+    if (location.pathname.indexOf(basePath) === 0) return;  // already there
+    var qs = "?kiosk=tv&theme=dark&from=now-6h&to=now";
+    var target = basePath + qs;
+    try {
+      // Grafana 10+ exposes a history on the root. If push works, no reload.
+      if (window.history && window.history.pushState) {
+        window.history.pushState({}, "", target);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      } else {
+        location.assign(target);
+      }
+      // Fallback: if after 400ms the URL didn't change, force a hard nav
+      setTimeout(function() {
+        if (location.pathname.indexOf(basePath) !== 0) {
+          location.assign(target);
+        }
+      }, 400);
+    } catch (_e) {
+      try { location.assign(target); } catch (_e2) {}
+    }
+  }
+
   function getActiveSession() {
     if (!state.activeSessionId) return null;
     return state.sessions.find(function(s) { return s.id === state.activeSessionId; }) || null;
@@ -432,8 +469,13 @@
   function fmtMd(s) {
     if (!s) return "";
     s = esc(s);
-    // Links
-    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    // Links — dashboard links open SAME-TAB (so the board appears behind
+    // the widget on this page, not as a new tab); everything else keeps
+    // target="_blank" so external docs / explore links don't steal focus.
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(_m, label, href) {
+      var sameTab = /^(?:\/d\/|\/dashboard\/|\/explore)/.test(href);
+      return '<a href="' + href + '"' + (sameTab ? '' : ' target="_blank"') + '>' + label + '</a>';
+    });
     // Code blocks
     s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, function(_,l,c) { return "<pre><code>" + c.trim() + "</code></pre>"; });
     s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
@@ -1541,8 +1583,9 @@
                   if (currentBotBubble && !acc) {
                     currentBotBubble.innerHTML = '<div class="ob-tool-running">✓ <code>' + esc(botMsg.lastTool || "tool") + '</code> done · formatting…</div>';
                   }
-                  // If a dashboard-creating / -opening tool succeeded, capture the URL
-                  // so finish() can auto-navigate — chat-in-front, dashboard-behind.
+                  // Dashboard URL? Open it BEHIND the chat immediately
+                  // (don't wait for the text stream to finish — the user
+                  // wants to see the board materialize live).
                   try {
                     var r = (ev.result && (ev.result.result || ev.result)) || {};
                     var url = r.url || (r.dashboard && r.dashboard.url) || null;
@@ -1551,6 +1594,7 @@
                                           && !/delete|remove/.test(tool);
                     if (shouldOpen) {
                       botMsg.autoOpenUrl = url;
+                      autoNavigate(url);
                     }
                   } catch (_e) { /* best-effort */ }
                   scrollToBottom();
@@ -1593,24 +1637,11 @@
         currentBotBubble.innerHTML = fmtMd(fallback);
       }
 
-      // Auto-open the created/updated dashboard in the main Grafana window so
-      // the chatbot sits in front and the board is visible behind it.
-      // Priority: explicit url from tool_result → first /d/<uid>/… link in text.
-      var openUrl = botMsg.autoOpenUrl || null;
-      if (!openUrl && botMsg.content) {
+      // Fallback: tool_result didn't carry a URL field but the text does
+      // (e.g. the LLM formatted a /d/<uid>/... link into the bubble).
+      if (!botMsg.autoOpenUrl && botMsg.content) {
         var m = botMsg.content.match(/\/d\/[A-Za-z0-9_-]{6,}\/[^\s"'<>)]+/);
-        if (m) openUrl = m[0];
-      }
-      if (openUrl && !sessionStorage.getItem("ob-autoopen-lock")) {
-        // Avoid tight loops if user re-submits quickly
-        sessionStorage.setItem("ob-autoopen-lock", "1");
-        setTimeout(function() { sessionStorage.removeItem("ob-autoopen-lock"); }, 1500);
-        var target = openUrl.split("?")[0] + "?kiosk=tv&theme=dark&from=now-6h&to=now";
-        var cur = (location.pathname + location.search);
-        if (cur.indexOf(openUrl.split("?")[0]) === -1) {
-          // Small delay so the user sees the confirmation land before we navigate
-          setTimeout(function() { try { location.assign(target); } catch(_e){} }, 600);
-        }
+        if (m) autoNavigate(m[0]);
       }
 
       saveState();
