@@ -1522,18 +1522,32 @@ def _extract_dashboard_title(body: str) -> str:
     """Clean the body of a 'create ... dashboard' request down to a usable title.
 
     Strips articles, dashboard-indicator words, typos, and quote chars.
+    Also trims the tail after a natural-language qualifier — so
+    "userlist dashbord like i want number of users who login grafana"
+    becomes "Userlist".
+
     Returns a Title-Cased string or '' if nothing meaningful remains.
     """
-    # Drop surrounding quotes
     cleaned = re.sub(r"[\"']", "", body).strip()
+
+    # Trim at the first natural-language qualifier — the user's real intent
+    # for the title is what comes before words like "like", "with", "that",
+    # "so", "which", "where", "because", "i want", etc.
+    cleaned = re.sub(
+        r"\b(like|so\s+that|such\s+that|with|which|that|where|because|but|and\s+i\s+want|i\s+want|i\s+need|to\s+show|to\s+see|showing)\b.*$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    ).strip()
+
     # Drop dashboard indicators + common glue words
     cleaned = re.sub(
-        r"\b(dash\w*|boards?|panels?|a|an|the|some|any|new|called|named|titled|for|me|please)\b",
+        r"\b(dash\w*|boards?|panels?|a|an|the|some|any|new|called|named|titled|for|of|me|please)\b",
         "",
         cleaned,
         flags=re.IGNORECASE,
     )
-    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -·—:,")
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -·—:,?!")
     if not cleaned:
         return ""
     # Preserve existing uppercase tokens (acronyms like "AKS", "KPI", "SLO")
@@ -1604,13 +1618,32 @@ def _match_mutation_intent(user_message: str, has_dashboard_keyword: bool) -> di
             "desc": f"Smart-create dashboard (explicit DS): {title}",
         }
 
-    # Create dashboard — shortcut "…now" / "…auto" → skip the wizard
-    shortcut = re.match(
-        r"^\s*(?:create|make|build|new|add)\s+(.*?)\s*(now|auto|auto[-\s]?pick|defaults)\s*$",
+    # Create dashboard — opt-in to the wizard with "wizard"/"options"/"help" keywords
+    wizard_req = re.match(
+        r"^\s*(?:create|make|build|new|add)\s+(.*?)\s+(wizard|options|help(?:\s+me)?|choose|pick)\s*\??\s*$",
         msg, re.IGNORECASE,
     )
-    if shortcut and has_dashboard_keyword:
-        title = _extract_dashboard_title(shortcut.group(1))
+    if wizard_req and has_dashboard_keyword:
+        title = _extract_dashboard_title(wizard_req.group(1))
+        topic = title.lower() if title else ""
+        return {
+            "server": "bifrost-grafana",
+            "tool": "dashboard_wizard",
+            "arguments": {"topic": topic},
+            "formatter": fmt_dashboard_wizard,
+            "desc": f"Dashboard wizard for topic: {topic or '(none)'}",
+        }
+
+    # Create dashboard — DEFAULT is just create with smart auto-discovered
+    # metrics. No wizard, no "now" suffix required. Say
+    # "create X dashboard wizard" if you want the picker.
+    cm = re.match(r"^\s*(?:create|make|build|new|add)\s+(.*?)\s*$", msg, re.IGNORECASE)
+    if cm and has_dashboard_keyword:
+        # Also strip the "now/auto/defaults" suffix if the user still types it
+        # (muscle memory from earlier versions — keep it working).
+        body = re.sub(r"\s+(now|auto|auto[-\s]?pick|defaults)\s*$", "", cm.group(1),
+                      flags=re.IGNORECASE)
+        title = _extract_dashboard_title(body)
         if title:
             topic = title.lower()
             return {
@@ -1623,19 +1656,6 @@ def _match_mutation_intent(user_message: str, has_dashboard_keyword: bool) -> di
                 "formatter": fmt_mutation,
                 "desc": f"Smart-create dashboard (auto): {title}",
             }
-
-    # Create dashboard — under-specified → run the wizard (asks which DS + folder)
-    cm = re.match(r"^\s*(?:create|make|build|new|add)\s+(.*?)\s*$", msg, re.IGNORECASE)
-    if cm and has_dashboard_keyword:
-        title = _extract_dashboard_title(cm.group(1))
-        topic = title.lower() if title else ""
-        return {
-            "server": "bifrost-grafana",
-            "tool": "dashboard_wizard",
-            "arguments": {"topic": topic},
-            "formatter": fmt_dashboard_wizard,
-            "desc": f"Dashboard wizard for topic: {topic or '(none)'}",
-        }
     return None
 
 
