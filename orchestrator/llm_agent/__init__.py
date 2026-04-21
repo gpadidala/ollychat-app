@@ -56,6 +56,22 @@ SYSTEM_PROMPT = (
 )
 
 
+def openai_tools_from_mcp() -> list[dict[str, Any]]:
+    """OpenAI-compatible schema (also what Ollama's /v1 expects)."""
+    anth = anthropic_tools_from_mcp()
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": t["name"],
+                "description": t["description"],
+                "parameters": t["input_schema"],
+            },
+        }
+        for t in anth
+    ]
+
+
 def anthropic_tools_from_mcp() -> list[dict[str, Any]]:
     """Convert MCP tool list → Anthropic `tools` schema.
 
@@ -104,19 +120,102 @@ def _is_anthropic_available(settings) -> bool:
     return bool(getattr(settings, "anthropic_api_key", "") or os.environ.get("ANTHROPIC_API_KEY"))
 
 
-def _pick_best_anthropic_model(requested: str) -> str:
-    """Default to Sonnet 4.6 when the user didn't pick anything meaningful.
+def _is_openai_available(settings) -> bool:
+    return bool(getattr(settings, "openai_api_key", "") or os.environ.get("OPENAI_API_KEY"))
 
-    The ollama 0.5b default is hardcoded in compose; upgrade it here rather
-    than forcing the user to edit config when they do have an API key.
+
+def _ollama_base(settings) -> str:
+    return (
+        os.environ.get("OLLYCHAT_OLLAMA_BASE_URL")
+        or getattr(settings, "ollama_base_url", "")
+        or "http://ollama:11434"
+    ).rstrip("/")
+
+
+def _pick_provider(settings) -> str:
+    """anthropic | openai | ollama — priority order reflects quality.
+
+    Users who dropped in a cloud key get cloud Sonnet/GPT-4 automatically.
+    Everyone else stays local via Ollama's OpenAI-compatible /v1 endpoint
+    with whichever tool-capable model they have pulled.
     """
-    if not requested or requested.startswith("qwen") or ":" in requested:
+    if _is_anthropic_available(settings):
+        return "anthropic"
+    if _is_openai_available(settings):
+        return "openai"
+    return "ollama"
+
+
+# Ollama model families that support tool calling (per Ollama's own
+# support matrix). Everything else — notably Gemma, Phi, and the 0.5b
+# Qwen — will 400 when you hand it a `tools` array, so we steer around
+# them and tell the user clearly.
+_OLLAMA_TOOL_FAMILIES = (
+    "llama3.1", "llama3.2", "llama3.3",
+    "qwen2.5", "qwen2.5-coder",
+    "mistral", "mistral-nemo", "mistral-small",
+    "command-r", "command-r-plus",
+    "hermes3", "firefunction",
+)
+
+# Preferred tool-capable models in descending quality order, used when
+# the configured default doesn't support tools and we need to pick a
+# working alternative that's already pulled.
+_OLLAMA_TOOL_PREFERRED = [
+    "qwen2.5:7b", "qwen2.5:3b", "llama3.1:8b",
+    "llama3.2", "llama3.2:3b", "mistral-nemo",
+]
+
+
+def _model_supports_tools(name: str) -> bool:
+    low = (name or "").lower()
+    # Reject the 0.5b qwen — tiny, unreliable at structured output.
+    if low.startswith("qwen2.5:0.5b"):
+        return False
+    return any(low.startswith(f) for f in _OLLAMA_TOOL_FAMILIES)
+
+
+async def _first_pulled_tool_model(base_url: str) -> str | None:
+    """Ask Ollama what's pulled, return the best tool-capable match."""
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=5) as c:
+            r = await c.get(f"{base_url}/api/tags")
+            if r.status_code != 200:
+                return None
+            pulled = [m.get("name", "") for m in (r.json().get("models") or [])]
+    except Exception:
+        return None
+    # First any preferred model that's present
+    for want in _OLLAMA_TOOL_PREFERRED:
+        for have in pulled:
+            if have == want or have.startswith(want + ":"):
+                return have
+    # Otherwise any pulled model whose family supports tools
+    for have in pulled:
+        if _model_supports_tools(have):
+            return have
+    return None
+
+
+def _pick_model(provider: str, requested: str) -> str:
+    """Auto-upgrade the sad demo default to a real model for whichever
+    provider we're using. Respects any explicit model the user picked.
+    """
+    if provider == "anthropic":
+        if not requested or requested.startswith("qwen") or requested.startswith("llama") or ":" in requested:
+            return "claude-sonnet-4-6"
+        if requested.startswith(("claude", "sonnet")):
+            return requested
         return "claude-sonnet-4-6"
-    if requested.startswith("claude") or requested.startswith("sonnet"):
+    if provider == "openai":
+        if not requested or requested.startswith(("qwen", "llama", "claude")) or ":" in requested:
+            return "gpt-4o"
         return requested
-    # Everything else (e.g. gpt-*) passes through; the caller already
-    # validated that Anthropic is selected.
-    return requested
+    # ollama
+    if requested and requested != "qwen2.5:0.5b":
+        return requested
+    return "llama3.2"  # verified present on the demo stack; swap in compose
 
 
 async def run_agent(
@@ -131,27 +230,77 @@ async def run_agent(
 ) -> AsyncIterator[dict[str, Any]]:
     """Stream SSE events for a full agentic turn.
 
-    Yields dicts shaped like the v1 SSE events so the existing widget
-    keeps rendering without changes:
-      {"type": "tool_start", "name": ..., "input": {...}}
-      {"type": "tool_result", "result": {...}, "durationMs": ...}
-      {"type": "text", "delta": "..."}
-      {"type": "usage", "usage": {...}, "costUsd": 0}
-      {"type": "done"}
-      {"type": "error", "message": "..."}
+    Dispatches to the best available provider:
+      - Anthropic Claude when ANTHROPIC_API_KEY is set
+      - OpenAI GPT when OPENAI_API_KEY is set
+      - Local Ollama otherwise (OpenAI-compatible /v1 endpoint)
+
+    All three paths emit the same widget-rendered events:
+      {"type": "tool_start"|"tool_result"|"text"|"usage"|"done"|"error", ...}
     """
-    if not _is_anthropic_available(settings):
-        yield {
-            "type": "error",
-            "message": (
-                "LLM agent requested but no ANTHROPIC_API_KEY is set. "
-                "Add it to .env and restart the orchestrator, or disable "
-                "OLLYBOT_LLM_AGENT to stay on the regex fast-path."
-            ),
-        }
-        yield {"type": "done"}
+    provider = _pick_provider(settings)
+    chosen = _pick_model(provider, model)
+
+    if provider == "ollama":
+        # Gemma / Phi / tiny-qwen don't support tool calling — swap for
+        # the best pulled tool-capable model so the agent still works.
+        base = _ollama_base(settings)
+        if not _model_supports_tools(chosen):
+            alt = await _first_pulled_tool_model(base)
+            if alt:
+                yield {
+                    "type": "text",
+                    "delta": (
+                        f"_Note: `{chosen}` doesn't support tool calling in "
+                        f"Ollama, so I'm using `{alt}` instead. Set "
+                        f"OLLYCHAT_DEFAULT_MODEL to a tool-capable model "
+                        f"(llama3.1 / llama3.2 / qwen2.5 / mistral-nemo) to "
+                        f"silence this notice._\n\n"
+                    ),
+                }
+                chosen = alt
+            else:
+                yield {
+                    "type": "error",
+                    "message": (
+                        f"{chosen} doesn't support tool calling and no "
+                        f"tool-capable model is pulled locally. Run: "
+                        f"`docker exec ollychat-ollama ollama pull "
+                        f"llama3.2` (or qwen2.5:7b) and try again."
+                    ),
+                }
+                yield {"type": "done"}
+                return
+        async for ev in _run_openai_compat(
+            base_url=f"{base}/v1",
+            api_key="ollama",  # Ollama ignores the key but the SDK requires a non-empty string
+            model=chosen,
+            user_message=user_message,
+            history=history,
+            grafana_user=grafana_user,
+            grafana_org=grafana_org,
+            bifrost_role=bifrost_role,
+            label="ollama",
+        ):
+            yield ev
         return
 
+    if provider == "openai":
+        async for ev in _run_openai_compat(
+            base_url="https://api.openai.com/v1",
+            api_key=settings.openai_api_key or os.environ.get("OPENAI_API_KEY", ""),
+            model=chosen,
+            user_message=user_message,
+            history=history,
+            grafana_user=grafana_user,
+            grafana_org=grafana_org,
+            bifrost_role=bifrost_role,
+            label="openai",
+        ):
+            yield ev
+        return
+
+    # provider == "anthropic"
     try:
         from anthropic import AsyncAnthropic
     except ImportError:
@@ -162,7 +311,6 @@ async def run_agent(
     client = AsyncAnthropic(
         api_key=settings.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY", ""),
     )
-    chosen = _pick_best_anthropic_model(model)
     tools = anthropic_tools_from_mcp()
 
     # Build running message list. Prior memory turns become short system
@@ -322,3 +470,181 @@ async def run_agent(
 
 def agent_enabled() -> bool:
     return os.environ.get("OLLYBOT_LLM_AGENT", "").lower() in ("true", "1", "yes", "on")
+
+
+async def _run_openai_compat(
+    *,
+    base_url: str,
+    api_key: str,
+    model: str,
+    user_message: str,
+    history: list[dict[str, str]],
+    grafana_user: str,
+    grafana_org: str,
+    bifrost_role: str,
+    label: str,
+) -> AsyncIterator[dict[str, Any]]:
+    """OpenAI-shaped tool-calling loop. Works with:
+      - OpenAI (api.openai.com/v1)
+      - Ollama (http://ollama:11434/v1) — tool calling requires a capable
+        model (llama3.1:8b / llama3.2 / qwen2.5:7b / mistral-nemo …).
+        Small models like qwen2.5:0.5b will return text-only.
+    """
+    try:
+        from openai import AsyncOpenAI
+    except ImportError:
+        yield {"type": "error", "message": "openai SDK not installed"}
+        yield {"type": "done"}
+        return
+
+    client = AsyncOpenAI(api_key=api_key or "local", base_url=base_url)
+    tools = openai_tools_from_mcp()
+
+    prior = await get_memory().get_history(grafana_user, grafana_org)
+    memory_blurb = ""
+    if prior:
+        last = prior[-1]
+        memory_blurb = (
+            f"\n\nRecent context: the user last ran `{last.get('tool')}` "
+            f"and it {'succeeded' if last.get('ok') else 'failed'}. "
+            f"Result summary: {json.dumps((last.get('result') or {}))[:300]}"
+        )
+
+    messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM_PROMPT + memory_blurb}]
+    for h in history[-12:]:
+        role = h.get("role")
+        content = h.get("content")
+        if role in ("user", "assistant") and isinstance(content, str) and content.strip():
+            messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": user_message})
+
+    mgr = get_mcp_manager()
+    total_in = total_out = 0
+
+    for step in range(MAX_AGENT_ITERATIONS):
+        try:
+            resp = await client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto",
+                max_tokens=2048,
+                temperature=0.1,
+            )
+        except Exception as e:
+            logger.error("llm_agent.call_failed", error=str(e), model=model, provider=label)
+            hint = ""
+            if label == "ollama":
+                hint = (
+                    f" — is the model pulled? Try: "
+                    f"`docker exec ollychat-ollama ollama pull {model}`"
+                )
+            yield {"type": "error", "message": f"LLM call failed via {label}: {e}{hint}"}
+            yield {"type": "done"}
+            return
+
+        usage = getattr(resp, "usage", None)
+        if usage:
+            total_in += getattr(usage, "prompt_tokens", 0) or 0
+            total_out += getattr(usage, "completion_tokens", 0) or 0
+
+        choice = resp.choices[0] if resp.choices else None
+        if not choice:
+            break
+        msg = choice.message
+        text = msg.content or ""
+        tool_calls = msg.tool_calls or []
+
+        if text:
+            for i in range(0, len(text), 40):
+                yield {"type": "text", "delta": text[i:i + 40]}
+
+        if not tool_calls:
+            break
+
+        # Record assistant turn with tool_calls
+        messages.append(
+            {
+                "role": "assistant",
+                "content": text or None,
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in tool_calls
+                ],
+            }
+        )
+
+        for tc in tool_calls:
+            tname = tc.function.name
+            try:
+                targs = json.loads(tc.function.arguments or "{}")
+            except Exception:
+                targs = {}
+
+            if tname in _DESTRUCTIVE and bifrost_role != "admin":
+                err = f"refused: {tname} requires admin role (user is {bifrost_role})"
+                yield {"type": "tool_result", "id": tc.id, "error": err, "durationMs": 0}
+                messages.append({"role": "tool", "tool_call_id": tc.id, "content": err})
+                continue
+
+            resolved = _resolve_qualified_tool(tname)
+            if not resolved:
+                err = f"unknown tool: {tname}"
+                yield {"type": "tool_result", "id": tc.id, "error": err, "durationMs": 0}
+                messages.append({"role": "tool", "tool_call_id": tc.id, "content": err})
+                continue
+            server_name, qname = resolved
+
+            yield {"type": "tool_start", "id": tc.id, "name": tname, "input": targs}
+
+            t0 = time.perf_counter()
+            try:
+                raw = await mgr.call_tool(server_name, qname, targs, role=bifrost_role)
+                ok = bool(raw.get("ok"))
+                data = raw.get("data") or raw
+            except Exception as e:
+                ok = False
+                data = {"error": str(e)}
+            ms = int((time.perf_counter() - t0) * 1000)
+
+            try:
+                await get_memory().record_turn(
+                    grafana_user, grafana_org,
+                    tool=tname, args=targs,
+                    result=data if isinstance(data, dict) else {"value": data},
+                    ok=ok,
+                )
+            except Exception as e:
+                logger.warning("llm_agent.memory.write_failed", error=str(e))
+
+            result_payload = {"ok": ok, **(data if isinstance(data, dict) else {"value": data})}
+            yield {"type": "tool_result", "id": tc.id, "result": result_payload, "durationMs": ms}
+
+            tool_out = json.dumps(data)[:4000] if isinstance(data, (dict, list)) else str(data)[:4000]
+            messages.append({"role": "tool", "tool_call_id": tc.id, "content": tool_out})
+
+        if choice.finish_reason and choice.finish_reason != "tool_calls":
+            break
+    else:
+        yield {
+            "type": "text",
+            "delta": f"\n\n(stopped after {MAX_AGENT_ITERATIONS} tool calls — agent may be stuck in a loop)",
+        }
+
+    yield {
+        "type": "usage",
+        "usage": {
+            "promptTokens": total_in,
+            "completionTokens": total_out,
+            "totalTokens": total_in + total_out,
+        },
+        "costUsd": 0,
+    }
+    yield {"type": "done"}

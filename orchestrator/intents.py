@@ -1305,21 +1305,27 @@ INTENTS = [
 async def match_intent(
     user_message: str,
     prior_turns: list[dict] | None = None,
+    strict_only: bool = False,
 ) -> dict | None:
     """Try to match user message to an intent. Returns intent or None.
 
-    `prior_turns` is an optional list of the last completed tool calls for
-    this conversation (newest last). When present, we can resolve
-    otherwise-ambiguous messages like "check and fix" / "it has no data"
-    against the most recent dashboard-creating call, instead of falling
-    back to nonsense service-name extraction.
+    `prior_turns` gives access to recent tool calls so follow-ups like
+    "check and fix" resolve against the last dashboard instead of falling
+    through to nonsense service-name extraction.
+
+    `strict_only` skips the greedy fuzzy tiers (service extraction,
+    category-only fallback, wild fuzzy). Callers that have an LLM agent
+    downstream set this so phrases like "how many boards do I have?"
+    reach the LLM instead of being mis-routed to
+    `search_dashboards(query="boards")`.
 
     Priority (FIRST match wins):
-      0. Follow-up on prior turn (context-aware, e.g., "no data, fix it")
-      1. Service-specific dashboard search (e.g., "payment-service dashboards")
-      2. Category-filtered dashboards (e.g., "list AKS dashboards")
-      3. Exact intent patterns (e.g., "list datasources")
-      4. Category-only fallback (e.g., "show me AKS stuff")
+      0.  Follow-up on prior turn (context-aware)
+      0.5 Mutation intents (create/delete — directive)
+      1.  Service-specific dashboard search   ← skipped when strict_only
+      2.  Category-filtered dashboards        ← skipped when strict_only
+      3.  Exact intent patterns
+      4.  Category-only fallback              ← skipped when strict_only
     """
     if not user_message:
         return None
@@ -1365,22 +1371,24 @@ async def match_intent(
         return mutation_intent
 
     # ── 1. Service-specific search — HIGH priority ──
-    svc = extract_service_name(user_message)
-    if svc and has_dashboard_keyword:
-        return {
-            "server": "bifrost-grafana",
-            "tool": "search_dashboards",
-            "arguments": {"query": svc},
-            "formatter": lambda data: fmt_dashboards_filtered(data, service_name=svc),
-            "desc": f"Search dashboards for service: {svc}",
-            "service": svc,
-            "judge": True,  # fuzzy service match → rerank by relevance
-        }
+    # Skipped when a downstream LLM agent will handle fuzzy/conversational
+    # queries — otherwise "how many dashboards are there" routes to
+    # search_dashboards(query="are there") which produces nonsense.
+    if not strict_only:
+        svc = extract_service_name(user_message)
+        if svc and has_dashboard_keyword:
+            return {
+                "server": "bifrost-grafana",
+                "tool": "search_dashboards",
+                "arguments": {"query": svc},
+                "formatter": lambda data: fmt_dashboards_filtered(data, service_name=svc),
+                "desc": f"Search dashboards for service: {svc}",
+                "service": svc,
+                "judge": True,  # fuzzy service match → rerank by relevance
+            }
 
     # ── 2. Category-filtered dashboards (single-keyword queries only) ──
-    # For multi-keyword queries like "oracle kpi dashboards", skip this
-    # and go to Phase 5 local fuzzy search so ALL keywords must hit.
-    if has_dashboard_keyword:
+    if not strict_only and has_dashboard_keyword:
         keyword_count = len(_extract_keyword_list(user_message))
         if keyword_count <= 1:
             cat = find_category(user_message)
@@ -1411,9 +1419,7 @@ async def match_intent(
             }
 
     # ── 4. Category-only query (no explicit "dashboard" word) ──
-    # e.g. "show me AKS stuff", "view kubernetes", "Oracle", "what's in AKS"
-    # Skip when 2+ meaningful keywords — prefer Phase 5 local fuzzy (all must hit).
-    if len(_extract_keyword_list(user_message)) <= 1 and (cat := find_category(user_message)):
+    if not strict_only and len(_extract_keyword_list(user_message)) <= 1 and (cat := find_category(user_message)):
         # Be generous: if message is short OR has an action word, treat as category query
         word_count = len(msg_lower.split())
         has_trigger = any(trigger in msg_lower for trigger in [
@@ -1432,10 +1438,7 @@ async def match_intent(
             }
 
     # ── 5. Dashboard fallthrough — local fuzzy search over every dashboard ──
-    # We fetch the full dashboard list and score by how many user keywords
-    # appear in (title + tags + folder). This catches typos and random
-    # keyword combos that Bifrost's literal search would miss.
-    if has_dashboard_keyword:
+    if not strict_only and has_dashboard_keyword:
         keywords = _extract_keyword_list(user_message)
         if keywords:
             query_label = " ".join(keywords[:4])

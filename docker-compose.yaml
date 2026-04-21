@@ -97,7 +97,7 @@ services:
       OLLYCHAT_GRAFANA_URL:            "${GRAFANA_URL:-http://grafana:3000}"
       OLLYCHAT_BIFROST_URL:            "http://ollychat-mcp:8765"
       OLLYCHAT_OLLAMA_BASE_URL:        "http://ollama:11434"
-      OLLYCHAT_DEFAULT_MODEL:          "${OLLYCHAT_DEFAULT_MODEL:-qwen2.5:0.5b}"
+      OLLYCHAT_DEFAULT_MODEL:          "${OLLYCHAT_DEFAULT_MODEL:-qwen2.5:1.5b}"
       OLLYCHAT_MIMIR_URL:              "http://mimir:9009"
       OLLYCHAT_LOKI_URL:               "http://loki:3100"
       OLLYCHAT_TEMPO_URL:              "http://tempo:3200"

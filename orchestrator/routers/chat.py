@@ -110,7 +110,14 @@ async def chat(request: Request, body: ChatRequest):
                 except Exception as e:
                     logger.warning("convo.memory.read.failed", error=str(e))
 
-            intent = await match_intent(last_user_msg, prior_turns=prior_turns) if last_user_msg else None
+            # When the LLM agent is available, skip greedy fuzzy tiers so
+            # conversational queries reach the agent instead of being
+            # mis-routed to search_dashboards(query="boards") etc.
+            intent = await match_intent(
+                last_user_msg,
+                prior_turns=prior_turns,
+                strict_only=agent_enabled(),
+            ) if last_user_msg else None
 
             # Build conversation history (exclude current message, keep recent)
             history = [
