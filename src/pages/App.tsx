@@ -21,8 +21,8 @@ export function App(props: AppRootProps) {
       <Route path={`${basename}/skills`} component={SkillsPage} />
       <Route path={`${basename}/rules`} component={RulesPage} />
       <Route path={`${basename}/chat`} component={ChatPage} />
-      {/* Default route */}
-      <Route component={ChatPage} />
+      {/* Default route — unified OllyBot experience: chat + live Grafana */}
+      <Route component={CanvasPage} />
     </Switch>
   );
 }

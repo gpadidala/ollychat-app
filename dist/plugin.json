@@ -21,8 +21,8 @@
   "includes": [
     {
       "type": "page",
-      "name": "Chat",
-      "path": "/a/gopal-ollychat-app/chat",
+      "name": "OllyBot",
+      "path": "/a/gopal-ollychat-app/canvas",
       "role": "Viewer",
       "addToNav": true,
       "defaultNav": true,
@@ -30,18 +30,18 @@
     },
     {
       "type": "page",
-      "name": "Canvas",
-      "path": "/a/gopal-ollychat-app/canvas",
+      "name": "Chat (legacy)",
+      "path": "/a/gopal-ollychat-app/chat",
       "role": "Viewer",
-      "addToNav": true,
-      "icon": "brain"
+      "addToNav": false,
+      "icon": "comment-alt"
     },
     {
       "type": "page",
       "name": "Investigate",
       "path": "/a/gopal-ollychat-app/investigate",
       "role": "Viewer",
-      "addToNav": true,
+      "addToNav": false,
       "icon": "search"
     },
     {
@@ -49,7 +49,7 @@
       "name": "Skills",
       "path": "/a/gopal-ollychat-app/skills",
       "role": "Editor",
-      "addToNav": true,
+      "addToNav": false,
       "icon": "book"
     },
     {
@@ -57,7 +57,7 @@
       "name": "MCP Servers",
       "path": "/a/gopal-ollychat-app/mcp",
       "role": "Admin",
-      "addToNav": true,
+      "addToNav": false,
       "icon": "plug"
     },
     {
@@ -65,7 +65,7 @@
       "name": "Rules",
       "path": "/a/gopal-ollychat-app/rules",
       "role": "Editor",
-      "addToNav": true,
+      "addToNav": false,
       "icon": "shield"
     },
     {
@@ -73,7 +73,7 @@
       "name": "Configuration",
       "path": "/a/gopal-ollychat-app/config",
       "role": "Admin",
-      "addToNav": true,
+      "addToNav": false,
       "icon": "cog"
     }
   ],

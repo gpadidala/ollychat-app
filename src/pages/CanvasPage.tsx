@@ -2,7 +2,36 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
 import { config } from '@grafana/runtime';
-import { useStyles2 } from '@grafana/ui';
+import { IconButton, useStyles2 } from '@grafana/ui';
+import { InvestigatePage } from './InvestigatePage';
+import { SkillsPage } from './SkillsPage';
+import { MCPConfigPage } from './MCPConfigPage';
+import { RulesPage } from './RulesPage';
+import { ConfigPage } from './ConfigPage';
+
+type RightView = 'canvas' | 'investigate' | 'skills' | 'mcp' | 'rules' | 'settings';
+
+interface ToolTab {
+  id: RightView;
+  label: string;
+  icon: string;
+  role: 'Viewer' | 'Editor' | 'Admin';
+}
+
+const TOOL_TABS: ToolTab[] = [
+  { id: 'canvas', label: 'Canvas', icon: 'apps', role: 'Viewer' },
+  { id: 'investigate', label: 'Investigate', icon: 'search', role: 'Viewer' },
+  { id: 'skills', label: 'Skills', icon: 'book', role: 'Editor' },
+  { id: 'mcp', label: 'MCP', icon: 'plug', role: 'Admin' },
+  { id: 'rules', label: 'Rules', icon: 'shield', role: 'Editor' },
+  { id: 'settings', label: 'Settings', icon: 'cog', role: 'Admin' },
+];
+
+const ROLE_RANK: Record<string, number> = { Viewer: 1, Editor: 2, Admin: 3 };
+
+function canSeeTab(userRole: string, required: string): boolean {
+  return (ROLE_RANK[userRole] ?? 1) >= (ROLE_RANK[required] ?? 3);
+}
 
 type EventKind =
   | 'intent_classified'
@@ -56,10 +85,16 @@ export function CanvasPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [cards, setCards] = useState<CardItem[]>([]);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const [iframeJustUpdated, setIframeJustUpdated] = useState(false);
   const [input, setInput] = useState('');
+  const [rightView, setRightView] = useState<RightView>('canvas');
+
+  const visibleTabs = useMemo(() => TOOL_TABS.filter((t) => canSeeTab(role, t.role)), [role]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
+  const currentDashUrlRef = useRef<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const url = `${orchestratorWsUrl()}?user=${encodeURIComponent(user)}&role=${encodeURIComponent(role)}`;
@@ -83,8 +118,17 @@ export function CanvasPage() {
           setSessionId((prev) => prev || ev.session_id);
           setCards((prev) => [...prev, { ...ev, localId: `${ev.seq}-${ev.trace_id ?? ''}` }]);
           if (ev.event === 'action_committed' && ev.payload?.result?.url) {
-            const full = `${grafanaOriginForDashboard()}${ev.payload.result.url}?kiosk&theme=dark`;
+            const path = ev.payload.result.url as string;
+            const isSameDash = currentDashUrlRef.current === path;
+            const bust = Date.now();
+            const full = `${grafanaOriginForDashboard()}${path}?kiosk&theme=dark&_=${bust}`;
+            currentDashUrlRef.current = path;
             setIframeUrl(full);
+            setRightView('canvas');
+            if (isSameDash) {
+              setIframeJustUpdated(true);
+              window.setTimeout(() => setIframeJustUpdated(false), 1500);
+            }
           }
         } catch {
           /* ignore malformed frames */
@@ -258,16 +302,57 @@ export function CanvasPage() {
       </div>
 
       <div className={styles.right}>
-        {iframeUrl ? (
-          <iframe className={styles.iframe} src={iframeUrl} title="Grafana canvas" />
-        ) : (
-          <div className={styles.rightEmpty}>
-            <div>
-              <h2>Grafana canvas</h2>
-              <p>Ask me to create a dashboard and it will render here once you approve.</p>
-            </div>
-          </div>
-        )}
+        <div className={styles.rightTabs}>
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`${styles.tabBtn} ${rightView === tab.id ? styles.tabBtnActive : ''}`}
+              onClick={() => setRightView(tab.id)}
+              title={tab.label}
+            >
+              <IconButton name={tab.icon as any} size="md" aria-label={tab.label} tooltip={tab.label} />
+              <span className={styles.tabLabel}>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className={styles.rightBody}>
+          {rightView === 'canvas' &&
+            (iframeUrl ? (
+              <>
+                <iframe
+                  ref={iframeRef}
+                  className={styles.iframe}
+                  src={iframeUrl}
+                  title="Grafana canvas"
+                />
+                {iframeJustUpdated && <div className={styles.updateFlash}>✓ updated</div>}
+              </>
+            ) : (
+              <div className={styles.rightEmpty}>
+                <div>
+                  <h2>Live Grafana canvas</h2>
+                  <p>Ask OllyBot to build, edit, or explore dashboards — they render here as you iterate.</p>
+                  <ul className={styles.welcomeTips}>
+                    <li>
+                      Try: <em>&ldquo;create a latency dashboard for payment-service&rdquo;</em>
+                    </li>
+                    <li>
+                      Then: <em>&ldquo;add error-rate and p99 panels&rdquo;</em>
+                    </li>
+                    <li>
+                      Or: <em>&ldquo;list firing alerts&rdquo;</em> /{' '}
+                      <em>&ldquo;show Loki logs for checkout&rdquo;</em>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            ))}
+          {rightView === 'investigate' && <InvestigatePage />}
+          {rightView === 'skills' && <SkillsPage />}
+          {rightView === 'mcp' && <MCPConfigPage />}
+          {rightView === 'rules' && <RulesPage />}
+          {rightView === 'settings' && <ConfigPage />}
+        </div>
       </div>
     </div>
   );
@@ -472,6 +557,47 @@ const getStyles = (theme: GrafanaTheme2) => ({
     background: ${theme.colors.background.canvas};
     position: relative;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+  `,
+  rightTabs: css`
+    display: flex;
+    gap: 2px;
+    padding: ${theme.spacing(0.5, 1, 0, 1)};
+    background: ${theme.colors.background.secondary};
+    border-bottom: 1px solid ${theme.colors.border.weak};
+    overflow-x: auto;
+  `,
+  tabBtn: css`
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: ${theme.spacing(0.75, 1.25)};
+    background: transparent;
+    border: 0;
+    color: ${theme.colors.text.secondary};
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    &:hover {
+      color: ${theme.colors.text.primary};
+      background: ${theme.colors.background.primary};
+    }
+  `,
+  tabBtnActive: css`
+    color: ${theme.colors.text.primary};
+    border-bottom-color: ${theme.colors.primary.main};
+    background: ${theme.colors.background.primary};
+  `,
+  tabLabel: css`
+    display: inline-block;
+  `,
+  rightBody: css`
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    min-height: 0;
   `,
   rightEmpty: css`
     display: flex;
@@ -488,10 +614,49 @@ const getStyles = (theme: GrafanaTheme2) => ({
       font-size: 18px;
     }
   `,
+  welcomeTips: css`
+    list-style: none;
+    padding: 0;
+    margin: ${theme.spacing(2, 0, 0, 0)};
+    text-align: left;
+    display: inline-block;
+    li {
+      padding: ${theme.spacing(0.75, 0)};
+      font-size: 13px;
+      color: ${theme.colors.text.secondary};
+      em {
+        font-style: normal;
+        color: ${theme.colors.text.primary};
+        background: ${theme.colors.background.secondary};
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: ${theme.typography.fontFamilyMonospace};
+        font-size: 12px;
+      }
+    }
+  `,
   iframe: css`
     width: 100%;
     height: 100%;
     border: 0;
     background: ${theme.colors.background.canvas};
+  `,
+  updateFlash: css`
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: #22c55e;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+    animation: fade 1.5s ease;
+    pointer-events: none;
+    @keyframes fade {
+      0%, 70% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-4px); }
+    }
   `,
 });
