@@ -14,6 +14,7 @@ WRITE_TOOLS: frozenset[str] = frozenset({
     "create_smart_dashboard",
     "update_dashboard",
     "delete_dashboard",
+    "fix_dashboard_queries",
     # Alerts
     "create_alert_rule",
     "update_alert_rule",

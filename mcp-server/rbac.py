@@ -18,6 +18,8 @@ TOOL_MINIMUM_ROLE: dict[str, str] = {
     "create_smart_dashboard": "editor",
     "update_dashboard": "editor",
     "delete_dashboard": "admin",
+    "diagnose_dashboard": "viewer",
+    "fix_dashboard_queries": "editor",
     # ── Alerts ──────────────────────────────────────────────
     "list_alert_rules": "viewer",
     "get_alert_rule": "viewer",

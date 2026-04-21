@@ -23,6 +23,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from config import get_settings
 from intents import execute_intent, match_intent
+from memory import get_memory
 from prompts import build_messages, classify_query, get_generation_config
 from routers.models import SUPPORTED_MODELS
 
@@ -99,7 +100,16 @@ async def chat(request: Request, body: ChatRequest):
                     last_user_msg = m.content
                     break
 
-            intent = await match_intent(last_user_msg) if last_user_msg else None
+            # Pull the last few completed turns so match_intent can resolve
+            # follow-ups like "check and fix" against the prior dashboard.
+            prior_turns: list[dict] = []
+            if last_user_msg:
+                try:
+                    prior_turns = await get_memory().get_history(grafana_user, grafana_org)
+                except Exception as e:
+                    logger.warning("convo.memory.read.failed", error=str(e))
+
+            intent = await match_intent(last_user_msg, prior_turns=prior_turns) if last_user_msg else None
 
             # Build conversation history (exclude current message, keep recent)
             history = [
@@ -121,11 +131,23 @@ async def chat(request: Request, body: ChatRequest):
                 # Execute the intent with Grafana RBAC enforcement
                 result = await execute_intent(intent, role=bifrost_role)
 
+                # Persist the turn so the next message can be context-aware.
+                try:
+                    await get_memory().record_turn(
+                        grafana_user, grafana_org,
+                        tool=intent["tool"],
+                        args=intent.get("arguments", {}) or {},
+                        result=(result.get("raw_data") or result) if isinstance(result.get("raw_data"), dict) else result,
+                        ok=bool(result.get("ok")),
+                    )
+                except Exception as e:
+                    logger.warning("convo.memory.write.failed", error=str(e))
+
                 if result["ok"]:
                     yield {"data": json.dumps({
                         "type": "tool_result",
                         "id": request_id,
-                        "result": {"ok": True},
+                        "result": {"ok": True, **(result.get("raw_data") if isinstance(result.get("raw_data"), dict) else {})},
                         "durationMs": result["duration_ms"],
                     })}
 

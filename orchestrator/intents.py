@@ -1302,10 +1302,20 @@ INTENTS = [
 ]
 
 
-async def match_intent(user_message: str) -> dict | None:
+async def match_intent(
+    user_message: str,
+    prior_turns: list[dict] | None = None,
+) -> dict | None:
     """Try to match user message to an intent. Returns intent or None.
 
+    `prior_turns` is an optional list of the last completed tool calls for
+    this conversation (newest last). When present, we can resolve
+    otherwise-ambiguous messages like "check and fix" / "it has no data"
+    against the most recent dashboard-creating call, instead of falling
+    back to nonsense service-name extraction.
+
     Priority (FIRST match wins):
+      0. Follow-up on prior turn (context-aware, e.g., "no data, fix it")
       1. Service-specific dashboard search (e.g., "payment-service dashboards")
       2. Category-filtered dashboards (e.g., "list AKS dashboards")
       3. Exact intent patterns (e.g., "list datasources")
@@ -1313,6 +1323,11 @@ async def match_intent(user_message: str) -> dict | None:
     """
     if not user_message:
         return None
+
+    # ── 0. Context-aware follow-up on the prior turn ──
+    followup = _match_followup_intent(user_message, prior_turns or [])
+    if followup:
+        return followup
 
     msg_lower = user_message.lower()
     # Typo-tolerant dashboard keyword matcher
@@ -1554,6 +1569,107 @@ def _extract_dashboard_title(body: str) -> str:
     parts = cleaned.split()
     title_parts = [p if p.isupper() else p.capitalize() for p in parts]
     return " ".join(title_parts)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Context-aware follow-up matching
+# ═══════════════════════════════════════════════════════════════════════
+
+# Phrases that indicate the user is commenting on the previous result
+# rather than starting a brand-new query. Intentionally loose.
+_FOLLOWUP_VERBS = re.compile(
+    r"\b(fix|check|update|improve|edit|repair|refresh|debug|diagnose|"
+    r"redo|rewrite|adjust|change|tweak)\b",
+    re.I,
+)
+_FOLLOWUP_NODATA = re.compile(
+    r"\b(no ?data|empty|blank|nothing|not ?working|broken|missing|stale|"
+    r"zero|0 (rows|series))\b",
+    re.I,
+)
+_FOLLOWUP_PRONOUNS = re.compile(
+    r"\b(it|this|that|the (dash\w*|board|one)|just (created|made))\b",
+    re.I,
+)
+
+
+def _is_followup_message(msg: str) -> bool:
+    """Heuristic: does this message plausibly reference the prior turn?"""
+    m = msg.strip()
+    if not m:
+        return False
+    # Short messages ("fix it", "no data") almost always refer to prior.
+    if len(m) <= 60 and (_FOLLOWUP_VERBS.search(m) or _FOLLOWUP_NODATA.search(m)):
+        return True
+    # Longer messages need a pronoun OR (verb AND no-data signal).
+    if _FOLLOWUP_PRONOUNS.search(m):
+        return True
+    if _FOLLOWUP_VERBS.search(m) and _FOLLOWUP_NODATA.search(m):
+        return True
+    return False
+
+
+def _last_dashboard_turn(prior_turns: list[dict]) -> dict | None:
+    """Return the most recent turn that produced a dashboard we can act on."""
+    producing_tools = {
+        "create_smart_dashboard",
+        "create_dashboard",
+        "create_slo_dashboard",
+        "update_dashboard",
+        "diagnose_dashboard",
+        "fix_dashboard_queries",
+    }
+    for turn in reversed(prior_turns):
+        if not turn.get("ok"):
+            continue
+        if turn.get("tool") not in producing_tools:
+            continue
+        uid = (turn.get("result") or {}).get("uid")
+        if uid:
+            return turn
+    return None
+
+
+def _match_followup_intent(user_message: str, prior_turns: list[dict]) -> dict | None:
+    """If the user is following up on a prior dashboard turn, route to a
+    fix/diagnose tool with the prior dashboard's UID pre-filled.
+
+    Returns None for anything else so normal matching can proceed.
+    """
+    if not prior_turns:
+        return None
+    if not _is_followup_message(user_message):
+        return None
+
+    dash_turn = _last_dashboard_turn(prior_turns)
+    if not dash_turn:
+        return None
+
+    uid = (dash_turn.get("result") or {}).get("uid")
+    title = (dash_turn.get("result") or {}).get("title") or (dash_turn.get("args") or {}).get("title") or "dashboard"
+
+    # "fix", "no data", "update it" → fix_dashboard_queries (writes)
+    # pure "check" / "diagnose" → diagnose_dashboard (read-only)
+    pure_diag = bool(re.search(r"\b(diagnose|check|inspect|audit)\b", user_message, re.I)) and not re.search(
+        r"\b(fix|repair|rewrite|update|change)\b", user_message, re.I
+    )
+
+    if pure_diag:
+        return {
+            "server": "bifrost-grafana",
+            "tool": "diagnose_dashboard",
+            "arguments": {"uid": uid},
+            "formatter": fmt_generic,
+            "desc": f"Diagnose panels on '{title}' (the dashboard we just worked on)",
+        }
+
+    return {
+        "server": "bifrost-grafana",
+        "tool": "fix_dashboard_queries",
+        "arguments": {"uid": uid},
+        "formatter": fmt_generic,
+        "desc": f"Fix no-data panels on '{title}' by probing real metrics",
+    }
 
 
 def _match_mutation_intent(user_message: str, has_dashboard_keyword: bool) -> dict | None:
