@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<title>O11yBot v2 — Reasoning Canvas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+         color: #e5e9f0; background: #0b0c10; height: 100vh; overflow: hidden; }
+  .app { display: grid; grid-template-columns: 38% 62%; height: 100vh; }
+
+  /* ── Left pane: chat + reasoning ── */
+  .left { background: #111218; border-right: 1px solid #1e2230; display: flex; flex-direction: column; }
+  .hdr { padding: 14px 18px; border-bottom: 1px solid #1e2230; background: rgba(244,104,0,.06);
+         display: flex; justify-content: space-between; align-items: center; }
+  .hdr h1 { font-size: 16px; color: #fff; font-weight: 700; letter-spacing: .5px; }
+  .hdr .sid { font-family: JetBrains Mono, ui-monospace, monospace; font-size: 11px; color: #8b93a6; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #86efac; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
+         box-shadow: 0 0 6px rgba(34,197,94,.6); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: .45 } 50% { opacity: 1 } }
+
+  .feed { flex: 1; overflow-y: auto; padding: 14px 18px; }
+  .feed::-webkit-scrollbar { width: 8px; }
+  .feed::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 4px; }
+
+  .card { margin-bottom: 10px; padding: 12px 14px; border-radius: 10px;
+          background: #181b23; border: 1px solid #1e2230; }
+  .card.intent_classified  { border-left: 3px solid #a78bfa; }
+  .card.plan_proposed      { border-left: 3px solid #06b6d4; }
+  .card.awaiting_approval  { border-left: 3px solid #f59e0b;
+                             background: linear-gradient(135deg, #1a1410, #181b23); }
+  .card.action_committed   { border-left: 3px solid #22c55e; }
+  .card.error              { border-left: 3px solid #ef4444; }
+  .card.info               { border-left: 3px solid #64748b; }
+  .card.user_message       { border-left: 3px solid #f46800;
+                             background: linear-gradient(135deg, #1a1410, #181b23); }
+
+  .card-hdr { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .card-title { font-weight: 700; color: #fff; font-size: 13.5px; }
+  .card-meta { font-size: 10px; color: #64748b; font-family: JetBrains Mono, monospace; letter-spacing: .3px; }
+  .card-event-type { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px;
+                     background: rgba(255,255,255,.05); color: #8b93a6; text-transform: uppercase;
+                     letter-spacing: .8px; font-weight: 600; margin-right: 8px; }
+  .card-body { font-size: 13px; color: #cbd5e1; white-space: pre-wrap; word-wrap: break-word; }
+  .card-body code { background: #0d0e14; padding: 1px 5px; border-radius: 3px;
+                    font-family: JetBrains Mono, monospace; font-size: 12px; color: #fcb968; }
+  .card-body pre { background: #0a0b12; border: 1px solid #1e2230; padding: 10px 12px;
+                   border-radius: 6px; margin-top: 8px; overflow-x: auto; font-size: 12px;
+                   font-family: JetBrains Mono, monospace; color: #e5e9f0; }
+
+  .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 12px; font-weight: 700;
+         cursor: pointer; font-family: inherit; transition: all .15s; }
+  .btn-apply { background: linear-gradient(135deg,#22c55e,#15803d); color: #fff; }
+  .btn-apply:hover { filter: brightness(1.1); }
+  .btn-discard { background: #1e2230; color: #e5e9f0; border: 1px solid #2a2a3e; }
+  .btn-discard:hover { background: #2a2a3e; }
+
+  /* ── Composer ── */
+  .composer { padding: 14px 18px; border-top: 1px solid #1e2230; background: #0d0e14; }
+  .composer form { display: flex; gap: 8px; }
+  .composer input { flex: 1; padding: 10px 14px; background: #181b23; border: 1px solid #2a2a3e;
+                    border-radius: 8px; color: #e5e9f0; font-family: inherit; font-size: 13px; outline: none; }
+  .composer input:focus { border-color: #f46800; box-shadow: 0 0 0 2px rgba(244,104,0,.2); }
+  .composer button { padding: 10px 18px; background: linear-gradient(135deg,#f46800,#ec4899);
+                     color: #fff; border: none; border-radius: 8px; font-weight: 700;
+                     cursor: pointer; font-family: inherit; }
+  .composer-hint { font-size: 11px; color: #64748b; margin-top: 6px; }
+
+  /* ── Right pane: Grafana canvas ── */
+  .right { background: #0d0e14; position: relative; }
+  .right iframe { width: 100%; height: 100%; border: 0; background: #0b0c10; }
+  .right-empty { display: flex; align-items: center; justify-content: center; height: 100%;
+                 color: #64748b; font-size: 14px; }
+  .right-empty div { text-align: center; }
+  .right-empty h2 { color: #cbd5e1; margin-bottom: 8px; font-weight: 700; font-size: 18px; }
+</style></head>
+<body>
+<div class="app">
+
+  <!-- LEFT: chat + reasoning -->
+  <div class="left">
+    <div class="hdr">
+      <div>
+        <h1>🤖 O11yBot v2 <span style="color:#8b93a6;font-weight:400">— Reasoning Canvas (MVP)</span></h1>
+        <div class="sid" id="sid">session: connecting…</div>
+      </div>
+      <div class="status"><span class="dot" id="conn-dot"></span><span id="conn-lbl">connecting</span></div>
+    </div>
+
+    <div class="feed" id="feed"></div>
+
+    <div class="composer">
+      <form id="form">
+        <input id="input" placeholder="Ask anything… e.g. create a grafana latency dashboard" autofocus autocomplete="off"/>
+        <button type="submit">Send</button>
+      </form>
+      <div class="composer-hint">
+        <strong style="color:#f59e0b">Writes require your approval.</strong>
+        Read-only queries execute immediately. <kbd>Esc</kbd> to cancel pending.
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Grafana iframe -->
+  <div class="right">
+    <div class="right-empty" id="right-empty">
+      <div>
+        <h2>🎨 Grafana canvas</h2>
+        <p>Ask me to create a dashboard and it'll render here as I build it.</p>
+        <p style="margin-top:12px;font-size:12px">Or <a href="http://localhost:3002" target="_blank" style="color:#f46800">open Grafana in a new tab ↗</a></p>
+      </div>
+    </div>
+    <iframe id="right-frame" style="display:none"></iframe>
+  </div>
+</div>
+
+<script>
+(function() {
+  "use strict";
+  var user = new URLSearchParams(location.search).get("user") || "demo";
+  var role = new URLSearchParams(location.search).get("role") || "Admin";
+  var wsProto = location.protocol === "https:" ? "wss:" : "ws:";
+  var wsUrl = wsProto + "//" + location.host + "/api/v2/stream?user=" + encodeURIComponent(user) + "&role=" + encodeURIComponent(role);
+
+  var ws, sessionId = null;
+  var feed = document.getElementById("feed");
+  var form = document.getElementById("form");
+  var input = document.getElementById("input");
+  var connDot = document.getElementById("conn-dot");
+  var connLbl = document.getElementById("conn-lbl");
+  var sid = document.getElementById("sid");
+  var rightFrame = document.getElementById("right-frame");
+  var rightEmpty = document.getElementById("right-empty");
+
+  function fmtTime(ts) {
+    try { return new Date(ts).toLocaleTimeString(); } catch(e) { return ""; }
+  }
+  function esc(s) {
+    return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  // Very light markdown → HTML (safe subset: code blocks, inline code, bold)
+  function md(s) {
+    s = esc(s);
+    s = s.replace(/```([\s\S]*?)```/g, function(_, code) { return "<pre>" + code + "</pre>"; });
+    s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\n/g, "<br/>");
+    return s;
+  }
+
+  function addCard(ev) {
+    var c = document.createElement("div");
+    c.className = "card " + (ev.event || "");
+    c.dataset.seq = ev.seq;
+
+    var hdr = '<div class="card-hdr"><div><span class="card-event-type">' + esc(ev.event) + '</span>' +
+              '<span class="card-title">' + esc(ev.title || "") + '</span></div>' +
+              '<span class="card-meta">seq #' + ev.seq + ' · ' + fmtTime(ev.ts) +
+              (ev.duration_ms != null ? ' · ' + ev.duration_ms + 'ms' : '') + '</span></div>';
+    c.innerHTML = hdr + (ev.summary ? '<div class="card-body">' + md(ev.summary) + '</div>' : '');
+
+    if (ev.requires_user_action) {
+      var act = document.createElement("div");
+      act.className = "actions";
+      (ev.human_action_options || ["apply","discard"]).forEach(function(verb) {
+        var b = document.createElement("button");
+        b.className = "btn btn-" + verb;
+        b.textContent = verb === "apply" ? "✓ Apply" : "✗ Discard";
+        b.onclick = function() { sendAction(verb, ev.seq); b.disabled = true; };
+        act.appendChild(b);
+      });
+      c.appendChild(act);
+    }
+    feed.appendChild(c);
+    feed.scrollTop = feed.scrollHeight;
+
+    // Show the draft dashboard in the right pane when an apply succeeds + returns a URL
+    if (ev.event === "action_committed" && ev.payload && ev.payload.result) {
+      var url = ev.payload.result.url;
+      if (url) {
+        var full = "http://localhost:3002" + url + "?kiosk&theme=dark";
+        rightFrame.src = full;
+        rightFrame.style.display = "block";
+        rightEmpty.style.display = "none";
+      }
+    }
+  }
+
+  function addUser(content) {
+    var c = document.createElement("div");
+    c.className = "card user_message";
+    c.innerHTML = '<div class="card-hdr"><div><span class="card-event-type">YOU</span></div>' +
+                  '<span class="card-meta">' + fmtTime(Date.now()) + '</span></div>' +
+                  '<div class="card-body">' + md(content) + '</div>';
+    feed.appendChild(c);
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  function sendAction(verb, targetSeq) {
+    if (!ws || !sessionId) return;
+    ws.send(JSON.stringify({
+      type: "user_action", session_id: sessionId, verb: verb, target_seq: targetSeq
+    }));
+  }
+
+  function connect() {
+    ws = new WebSocket(wsUrl);
+    ws.onopen = function() {
+      connDot.style.background = "#22c55e";
+      connLbl.textContent = "connected";
+    };
+    ws.onmessage = function(e) {
+      var ev;
+      try { ev = JSON.parse(e.data); } catch(err) { return; }
+      if (ev.type !== "reasoning_event") return;
+      if (!sessionId && ev.session_id) {
+        sessionId = ev.session_id;
+        sid.textContent = "session: " + sessionId.substring(0,12) + "…";
+      }
+      addCard(ev);
+    };
+    ws.onclose = function() {
+      connDot.style.background = "#ef4444";
+      connLbl.textContent = "disconnected — retrying in 3s";
+      setTimeout(connect, 3000);
+    };
+    ws.onerror = function() { /* onclose will handle retry */ };
+  }
+
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text || !sessionId) return;
+    addUser(text);
+    ws.send(JSON.stringify({type: "user_message", session_id: sessionId, content: text, role: role}));
+    input.value = "";
+  });
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && sessionId) {
+      sendAction("discard");
+    }
+  });
+
+  connect();
+})();
+</script>
+</body></html>

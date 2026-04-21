@@ -106,6 +106,33 @@ app.include_router(skills.router, prefix="/api/v1", tags=["skills"])
 app.include_router(rules.router, prefix="/api/v1", tags=["rules"])
 app.include_router(guardrails_router, prefix="/api/v1", tags=["guardrails"])
 
+# --- v2 Interactive Reasoning Canvas (feature-flagged) ---
+# Gated behind OLLYBOT_INTERACTIVE_MODE. v1 surfaces above are untouched.
+from v2 import interactive_mode_enabled
+if interactive_mode_enabled():
+    from pathlib import Path
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
+
+    from v2 import stream as v2_stream
+
+    app.include_router(v2_stream.router, prefix="/api", tags=["v2"])
+
+    _STATIC = Path(__file__).parent / "static"
+    if _STATIC.exists():
+        app.mount("/api/v2/static", StaticFiles(directory=str(_STATIC)), name="v2-static")
+
+        @app.get("/api/v2/canvas", tags=["v2"])
+        async def v2_canvas_page() -> FileResponse:
+            """Minimal HTML demo canvas (ADR-0002). Debug / QA surface."""
+            return FileResponse(str(_STATIC / "canvas.html"))
+
+    logger.info("v2.interactive_mode.enabled",
+                endpoints=["/api/v2/stream (WS)", "/api/v2/canvas"])
+else:
+    logger.info("v2.interactive_mode.disabled",
+                hint="Set OLLYBOT_INTERACTIVE_MODE=true to enable /api/v2/*")
+
 
 @app.get("/api/v1/health")
 async def health():

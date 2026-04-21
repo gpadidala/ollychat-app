@@ -101,10 +101,24 @@ services:
       OLLYCHAT_MIMIR_URL:              "http://mimir:9009"
       OLLYCHAT_LOKI_URL:               "http://loki:3100"
       OLLYCHAT_TEMPO_URL:              "http://tempo:3200"
+      # v2 — interactive reasoning canvas (default off, v1 SSE keeps working)
+      OLLYBOT_INTERACTIVE_MODE:        "${OLLYBOT_INTERACTIVE_MODE:-false}"
+      OLLYCHAT_REDIS_URL:              "${OLLYCHAT_REDIS_URL:-redis://redis:6379/0}"
     depends_on:
       otel-collector: { condition: service_started }
       ollama:         { condition: service_started }
       ollychat-mcp:   { condition: service_healthy }
+      redis:          { condition: service_started }
+    networks: [ ollychat ]
+    restart: unless-stopped
+
+  # ─── Redis — v2 session + snapshot store ──────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: ollychat-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ollychat-redis-data:/data
     networks: [ ollychat ]
     restart: unless-stopped
 
@@ -209,6 +223,7 @@ volumes:
   ollychat-mimir-data:
   ollychat-loki-data:
   ollychat-ollama-data:
+  ollychat-redis-data:
 
 networks:
   ollychat:
