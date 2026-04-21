@@ -351,7 +351,7 @@ curl -X POST http://localhost:8000/api/v1/mcp/servers \
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/api/v1/mcp/tools` | List all 16 tools from all servers |
+| `GET` | `/api/v1/mcp/tools` | List all 53 tools from all servers |
 | `POST` | `/api/v1/mcp/tools/call` | Execute a tool directly |
 
 Call a tool:

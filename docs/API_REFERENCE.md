@@ -299,46 +299,143 @@ Scan text for PII patterns.
 
 ## Intent Matcher Patterns
 
-The orchestrator intercepts natural-language queries matching these patterns and routes to MCP tools. Unmatched queries fall through to the LLM.
+The orchestrator intercepts natural-language queries matching 60+ regex patterns and
+routes them to MCP tools. Unmatched queries fall through to the LLM. Defined in
+[`orchestrator/intents.py`](../orchestrator/intents.py).
 
-| Query pattern | Tool called | Tool server |
-|---|---|---|
-| `list/show/all dashboards` | `list_dashboards` | ollychat-mcp-grafana |
-| `search dashboards <query>` | `search_dashboards` | ollychat-mcp-grafana |
-| `list/show datasources` | `list_datasources` | ollychat-mcp-grafana |
-| `check datasource health` | `list_datasources` | ollychat-mcp-grafana |
-| `list alerts` | `list_alert_rules` | ollychat-mcp-grafana |
-| `firing/active alerts` | `list_alert_instances` | ollychat-mcp-grafana |
-| `list folders` | `list_folders` | ollychat-mcp-grafana |
-| `list users` | `list_users` | ollychat-mcp-grafana (admin) |
-| `grafana health/status/version` | `health_check` | ollychat-mcp-grafana |
-| `health check` / `ping` | `health_check` | ollychat-mcp-grafana |
-| `mcp/ollychat-mcp info` | `get_server_info` | ollychat-mcp-grafana |
+Representative examples — see [USE_CASES.md](USE_CASES.md) for the full matrix:
 
-Defined in: `orchestrator/intents.py`.
+| Query pattern | Tool called |
+|---|---|
+| `list/show/all dashboards`                              | `list_dashboards` |
+| `list AKS / Azure / Loki dashboards`                    | `list_dashboards` with tag filter |
+| `search dashboards <query>`                             | `search_dashboards` |
+| `<random words> dashboards`                             | `list_dashboards` + local fuzzy + LLM-as-judge rerank |
+| `show/describe/summarize dashboard <uid>`               | `get_dashboard` |
+| `create dashboard "X"` / `create payment-service dashboard now` | `create_smart_dashboard` (auto metric discovery) |
+| `create dashboard "X" on datasource <uid> in folder <uid>` | `create_smart_dashboard` (explicit args) |
+| `create dashboard` (under-specified)                    | `dashboard_wizard` (asks DS + folder) |
+| `delete dashboard <uid>`                                | `delete_dashboard` (admin) |
+| `list alert rules` / `firing alerts`                    | `list_alert_rules` · `list_alert_instances` |
+| `explain alert <uid>` / `investigate alert <uid>`       | `get_alert_rule` · `investigate_alert` workflow |
+| `create alert for X`                                    | `alert_wizard` (asks DS + folder + metric) |
+| `silence alert <uid>`                                   | `silence_alert` (editor) |
+| `list contact points / policies / silences`             | `list_contact_points` · `list_notification_policies` · `list_silences` |
+| `list datasources` / `get datasource <uid>`             | `list_datasources` · `get_datasource` |
+| `run promql <expr>` / `search logs for <svc>` / `find slow traces` | `query_datasource` · `query_loki` · `query_tempo` |
+| `list metric names` / `list metrics matching <rx>`      | `list_metric_names` |
+| `list folders / create folder "X"`                      | `list_folders` · `create_folder` |
+| `list teams / create team "X"`                          | `list_teams` · `create_team` (admin) |
+| `list plugins` / `list datasource plugins`              | `list_plugins` |
+| `list library panels` · `list annotations`              | `list_library_panels` · `list_annotations` |
+| `correlate service <svc>`                               | `correlate_signals` (metrics + logs + traces) |
+| `create slo for <svc>`                                  | `create_slo_dashboard` |
+| `which dashboards use metric <name>`                    | `find_dashboards_using_metric` |
+| `promql / logql / traceql / slo cookbook`               | static cookbook (no tool call) |
+| `where do I find <feature>` / `decode error: <msg>`     | static navigation / error-decoder help |
+| `list users / list service accounts`                    | `list_users` · `list_service_accounts` (admin) |
+| `grafana health/status/version` / `ping`                | `health_check` |
+| `mcp server info`                                       | `get_server_info` |
 
 ---
 
-## MCP Tools (16 total from O11yBot MCP)
+## MCP Tools (53 total, bundled with the repo)
 
-| Tool | Min Role | Description |
+The MCP server lives in [`mcp-server/`](../mcp-server/) and is auto-registered with
+the orchestrator on startup. Roles are enforced at the MCP layer via per-role
+service-account tokens — the caller's Grafana role is passed in the tool-call
+arguments.
+
+### Dashboards (8)
+
+| Tool | Role | Description |
 |---|---|---|
-| `list_dashboards` | viewer | List dashboards filtered by folder/tags |
-| `search_dashboards` | viewer | Full-text dashboard search |
-| `get_dashboard` | viewer | Full dashboard JSON by UID |
-| `get_dashboard_panels` | viewer | Panels of a dashboard |
-| `list_datasources` | viewer | All configured datasources |
-| `get_datasource` | viewer | Datasource details by UID |
-| `query_datasource` | viewer | Run a query against a datasource |
-| `list_folders` | viewer | Dashboard folders |
-| `list_alert_rules` | viewer | Unified alerting rules |
-| `get_alert_rule` | viewer | Alert rule by UID |
-| `list_alert_instances` | viewer | Firing/pending alert instances |
-| `silence_alert` | editor | Create alertmanager silence |
-| `list_users` | admin | Organization users |
-| `list_service_accounts` | admin | Service accounts |
-| `health_check` | viewer | Ping Grafana |
-| `get_server_info` | viewer | O11yBot MCP metadata |
+| `list_dashboards`        | viewer | List dashboards filtered by folder UID / tags |
+| `search_dashboards`      | viewer | Full-text dashboard search |
+| `get_dashboard`          | viewer | Full dashboard JSON by UID |
+| `get_dashboard_panels`   | viewer | Panel list for a dashboard |
+| `create_dashboard`       | editor | Create an empty dashboard with title + tags + folder |
+| `create_smart_dashboard` | editor | Auto-discover metrics + build 14–22 typed panels |
+| `update_dashboard`       | editor | In-place patch of title / tags / panels / description |
+| `delete_dashboard`       | admin  | Remove a dashboard by UID |
+
+### Alerts (11)
+
+| Tool | Role | Description |
+|---|---|---|
+| `list_alert_rules`            | viewer | All unified alerting rules |
+| `get_alert_rule`              | viewer | Single rule detail by UID |
+| `list_alert_instances`        | viewer | Currently firing / pending instances |
+| `silence_alert`               | editor | Create an Alertmanager silence by alert UID |
+| `list_silences`               | viewer | All active silences |
+| `delete_silence`              | editor | Unmute by silence ID |
+| `create_alert_rule`           | editor | Provision a Grafana-managed alert rule |
+| `update_alert_rule`           | editor | Patch title / expr / threshold / for / severity |
+| `delete_alert_rule`           | admin  | Remove rule by UID |
+| `list_contact_points`         | viewer | Alert notification contact points |
+| `list_notification_policies`  | viewer | Notification policy routing tree |
+| `list_mute_timings`           | viewer | Alert mute timings |
+
+### Datasources & queries (8)
+
+| Tool | Role | Description |
+|---|---|---|
+| `list_datasources`    | viewer | All configured datasources |
+| `get_datasource`      | viewer | One datasource detail by UID |
+| `query_datasource`    | viewer | Run any query (PromQL / LogQL / TraceQL / SQL) |
+| `query_loki`          | viewer | LogQL range query with line limit |
+| `query_tempo`         | viewer | TraceQL query returning trace summaries |
+| `list_metric_names`   | viewer | Prometheus metric-name discovery with regex filter |
+| `list_label_values`   | viewer | Label value discovery |
+
+### Folders (5)
+
+| Tool | Role | Description |
+|---|---|---|
+| `list_folders`   | viewer | All dashboard folders |
+| `get_folder`     | viewer | Folder metadata by UID |
+| `create_folder`  | editor | New folder with optional parent |
+| `update_folder`  | editor | Rename folder |
+| `delete_folder`  | admin  | Remove folder (force-deletes rules inside) |
+
+### Annotations (3) · Library panels (2) · Plugins (2) · Teams (4) · Users (2)
+
+| Tool | Role | Description |
+|---|---|---|
+| `list_annotations`        | viewer | Recent annotations (time-range / tags / dashboard UID) |
+| `create_annotation`       | editor | Deploy marker / incident annotation |
+| `delete_annotation`       | editor | Remove by annotation ID |
+| `list_library_panels`     | viewer | Reusable library panels |
+| `get_library_panel`       | viewer | One library panel's full model |
+| `list_plugins`            | viewer | All installed plugins (type filter optional) |
+| `get_plugin`              | viewer | Plugin settings + metadata |
+| `list_teams`              | viewer | Teams in the active org |
+| `create_team`             | admin  | Create a new team |
+| `list_team_members`       | viewer | Team roster |
+| `add_team_member`         | admin  | Add user to a team |
+| `list_users`              | admin  | Org users |
+| `list_service_accounts`   | admin  | Service accounts |
+
+### Workflow tools (6) — compound, multi-step orchestrations
+
+| Tool | Role | What it does |
+|---|---|---|
+| `investigate_alert`            | viewer | Rule + firing instances + related dashboards + next-step suggestions |
+| `correlate_signals`            | viewer | Prometheus + Loki + Tempo for one service in a single call |
+| `create_slo_dashboard`         | editor | 8-panel SLO: SLI, error-budget consumed, fast + slow burn rate |
+| `find_dashboards_using_metric` | viewer | Impact analysis — every dashboard that references a metric |
+| `alert_wizard`                 | viewer | Returns datasources + folders + metric suggestions to fill in an alert |
+| `dashboard_wizard`             | viewer | Same flow for dashboard creation |
+
+### Utility (2)
+
+| Tool | Role | Description |
+|---|---|---|
+| `health_check`     | viewer | Grafana version + database status |
+| `get_server_info`  | viewer | MCP server metadata (tool count, grafana_url, transport) |
+
+Total: **53 tools · 4 internal cookbooks** (promql / logql / traceql / slo —
+served without a tool call by [`prompts.py`](../orchestrator/prompts.py)).
 
 ---
 

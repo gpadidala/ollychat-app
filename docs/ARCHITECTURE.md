@@ -89,7 +89,7 @@
 3. Orchestrator receives, extracts last user message
    └── intent.match_intent("list all Grafana dashboards")
        └── Pattern (list|show|all).*(dashboard) MATCHES
-           └── returns {server:"ollychat-mcp-grafana", tool:"list_dashboards", args:{}}
+           └── returns {server:"bifrost-grafana", tool:"list_dashboards", args:{}}
                          │
 4. Orchestrator emits SSE: {type:"tool_start", name:"list_dashboards"}
                          │

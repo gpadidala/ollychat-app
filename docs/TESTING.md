@@ -1,6 +1,6 @@
 # O11yBot Testing Guide
 
-Complete testing documentation — **147 automated tests across 7 suites**.
+Complete testing documentation — **160 automated tests across 8 suites**.
 
 ## Quick Start
 
@@ -8,7 +8,7 @@ Complete testing documentation — **147 automated tests across 7 suites**.
 cd /Volumes/Gopalmac/Gopal-aiops/ollychat-app/tests
 
 ./preflight.sh            # verify all services are up (required)
-./run-all-tests.sh        # run all 147 tests
+./run-all-tests.sh        # run all 160 tests
 
 # Run individual suites:
 ./suite1-api.sh           # 17 tests — API endpoints
@@ -29,7 +29,7 @@ Suite 4 Results: 18 passed, 0 failed   (Integration / E2E)
 Suite 5 Results: 22 passed, 0 failed   (Negative / Errors)
 Suite 6 Results: 18 passed, 0 failed   (Prompt Engineering)
 Suite 7 Results: 31 passed, 0 failed   (Category Intents)
-TOTAL:          147 passed, 0 failed
+TOTAL:          160 passed, 0 failed
 ```
 
 ---
@@ -107,7 +107,7 @@ Validates REST endpoints respond correctly.
 | T3 | Models list | `GET /api/v1/models` | ≥1 model |
 | T4 | MCP O11yBot MCP connected | `GET /api/v1/mcp/servers` | `status=connected` |
 | T5 | 16 MCP tools | `GET /api/v1/mcp/servers` | `toolCount=16` |
-| T6 | Tools endpoint | `GET /api/v1/mcp/tools` | 16 tools |
+| T6 | Tools endpoint | `GET /api/v1/mcp/tools` | 53 tools |
 | T7 | Skills list | `GET /api/v1/skills` | 3 default skills |
 | T8 | Rules list | `GET /api/v1/rules` | 3 default rules |
 | T9 | PII scan detects | `POST /api/v1/guardrails/scan` | `has_pii=true` |
@@ -117,7 +117,7 @@ Validates REST endpoints respond correctly.
 | T13 | Grafana healthy | `GET :3200/api/health` | HTTP 200 |
 | T14 | Widget JS served | `GET /public/plugins/.../widget.js` | HTTP 200 |
 | T15 | Plugin enabled | `GET /api/plugins/.../settings` | `enabled=true` |
-| T16 | O11yBot MCP direct | `GET :8765/api/tools` | 16 tools |
+| T16 | O11yBot MCP direct | `GET :8765/api/tools` | 53 tools |
 | T17 | HTML has widget | `GET :3200/ (auth)` | script tag present |
 
 ### Manual validation
@@ -227,7 +227,7 @@ End-to-end tests covering the full request chain.
 | T1 | Chat → tool → dashboards | HTTP 200 + real dashboard data |
 | T2 | User identity propagation | `X-Grafana-User` reaches logs |
 | T3 | MCP → Grafana chain | Real v11.6.4, DB ok, 42ms |
-| T4 | All tools have `minRole` | 16/16 tools tagged |
+| T4 | All tools have `minRole` | 16/53 tools tagged |
 | T5 | Admin-only tools | ≥2 (list_users, list_service_accounts) |
 | T6 | Plugin enabled | Returns `enabled=true` |
 | T7 | Plugin name | "OllyChat" |
@@ -517,7 +517,7 @@ Suite 4 Results: 18 passed, 0 failed   (Integration / E2E)
 Suite 5 Results: 22 passed, 0 failed   (Negative / Errors)
 Suite 6 Results: 18 passed, 0 failed   (Prompt Engineering)
 Suite 7 Results: 31 passed, 0 failed   (Category Intents)
-TOTAL:          147 passed, 0 failed
+TOTAL:          160 passed, 0 failed
 ```
 
 See also: **[docs/VALIDATION.md](VALIDATION.md)** — end-to-end validation scenarios with expected outputs.

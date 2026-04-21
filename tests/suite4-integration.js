@@ -44,7 +44,7 @@ async function run() {
   const r1 = await post(8000, '/api/v1/chat', {
     messages: [{ role: 'user', content: 'list all dashboards' }],
     stream: true
-  }, { Origin: 'http://localhost:3200', 'X-Grafana-User': 'admin' });
+  }, { Origin: 'http://localhost:3002', 'X-Grafana-User': 'admin' });
   check(r1.status === 200, 'Chat endpoint returns 200');
   check(r1.body.includes('tool_start'), 'Tool was invoked');
   check(r1.body.includes('dashboard'), 'Dashboard data returned');
@@ -80,7 +80,7 @@ async function run() {
 
   // T5: Plugin registration
   console.log('\nT5: Grafana plugin registration');
-  const r5 = await get(3200, '/api/plugins/gopal-ollychat-app/settings', {
+  const r5 = await get(3002, '/api/plugins/gopal-ollychat-app/settings', {
     Authorization: 'Basic ' + Buffer.from('admin:admin').toString('base64')
   });
   const settings = JSON.parse(r5.body);
@@ -106,7 +106,7 @@ async function run() {
     server_name: 'bifrost-grafana', tool_name: 'list_dashboards', arguments: { limit: 200 }
   });
   const dashList = JSON.parse(r7a.body);
-  const r7b = await get(3200, '/api/search?type=dash-db', {
+  const r7b = await get(3002, '/api/search?type=dash-db', {
     Authorization: 'Basic ' + Buffer.from('admin:admin').toString('base64')
   });
   const grafanaDashes = JSON.parse(r7b.body);

@@ -61,11 +61,14 @@ Restart Grafana.
 ### 4. Boot the backend stack
 
 ```bash
-docker compose up -d
+make up
 ```
 
-Brings up orchestrator, MCP server, Ollama, OTEL collector, Tempo/Mimir/Loki.
-Point the plugin's widget at `http://localhost:8000` (the orchestrator).
+Brings up all 10 services (Grafana + orchestrator + MCP + Ollama + Prometheus +
+Tempo + Mimir + Loki + OTEL collector + image renderer), auto-mints the SA
+tokens in the bundled Grafana (if you haven't set your own), and auto-registers
+the MCP with the orchestrator. Point the plugin's widget at `http://localhost:8000`
+(the orchestrator).
 
 ## Role-based access in practice
 

@@ -7,23 +7,33 @@ with its purpose so new contributors can orient themselves in a single scroll.
 
 ```
 ollychat-app/
+├── Makefile                    One-command stack — make up / down / restart / test
+├── docker-compose.yaml         The ONLY compose file — 10 services wired
+├── .env.example                Every env var documented (copy to .env)
+├── README.md                   Entry point
+│
 ├── plugin.json                 Grafana App plugin manifest (v3 schema)
-├── dist/                       Built plugin assets Grafana loads
+├── dist/                       Built plugin assets Grafana loads (widget + Go bin)
 ├── src/                        React/TypeScript sources for the plugin shell
-├── o11ybot-widget.js           Self-contained vanilla-JS floating widget
+├── o11ybot-widget.js           Self-contained vanilla-JS floating widget (source)
 ├── grafana-index.html          Custom Grafana index.html that injects the widget
 │
-├── mcp-server/                 O11yBot's own MCP server (Python / FastAPI)
+├── mcp-server/                 O11yBot's own MCP server (Python / FastAPI, 53 tools)
 ├── orchestrator/               Chat + LLM orchestrator (Python / FastAPI)
-├── provisioning/               Datasource + dashboard + alerting provisioning
 ├── pkg/                        Go backend plugin resources (proxy shim)
 │
-├── docker-compose.yaml         Full local stack — Grafana, orchestrator, MCP, LGTM
-├── .env.example                Every env var documented (copy to .env)
+├── dashboards/                 113 provisioned Grafana dashboards across 14 folders
+├── provisioning/               Datasource + dashboard-provider + Prometheus config
+├── scripts/                    Bootstrap + maintenance shell scripts
+│   └── bootstrap-tokens.sh     Idempotent SA-token minting (auto-runs on `make up`)
+│
+├── otel-collector-config.yaml  Telemetry pipeline
+├── tempo-config.yaml           Traces
+├── mimir-config.yaml           Metrics
+├── loki-config.yaml            Logs
 │
 ├── tests/                      Eight test suites — 160 tests
-├── docs/                       All documentation (this file included)
-└── README.md                   Entry point
+└── docs/                       All documentation (this file included)
 ```
 
 ## `mcp-server/` — the MCP tool layer
@@ -157,15 +167,48 @@ pkg/
 Role: forwards the Grafana user session to the orchestrator so the browser
 doesn't speak CORS directly to `:8000`.
 
-## `provisioning/`
+## `dashboards/` — 113 provisioned Grafana dashboards
 
-Drop-in provisioning configs Grafana picks up at boot.
+Every dashboard JSON lives here, organised by Grafana folder. Grafana loads
+them on boot via the providers config in `provisioning/dashboards/`.
+
+```
+dashboards/
+├── L0-executive/            (1) — L0 command center
+├── L1-domain/               (3) — infra · apps · profiling overview
+├── L2-service/              (1) — service golden signals
+├── L3-deepdive/             (4) — trace · log · profile · k8s debug
+├── azure/                  (24) — compute · storage · db · AKS …
+├── grafana/                (10) — grafana self-monitoring
+├── loki/                    (5) — log dashboards
+├── mimir/                   (5) — metric dashboards
+├── tempo/                   (3) — trace dashboards
+├── pyroscope/               (3) — profile dashboards
+├── observability-kpi/       (7) — SLO · error budget · business KPIs
+├── oci/                    (22) — Oracle Cloud Infrastructure
+├── platform/               (17) — home page + executive command center
+└── volume/                  (6) — cross-stack capacity planning
+```
+
+## `provisioning/` — Grafana auto-provisioning
+
+Grafana picks these up on boot.
 
 ```
 provisioning/
-├── datasources/datasources.yaml      Pre-configured LGTM datasources
-├── dashboards/dashboards.yaml        Auto-import directory
-└── alerting/                         Alerting provisioning
+├── datasources/datasources.yaml   Pre-configured Prometheus/Mimir datasource
+├── dashboards/dashboards.yaml     14 providers, one per dashboards/ folder
+└── prometheus.yml                 Prometheus stub config (served by the bundled prometheus)
+```
+
+## `scripts/` — operational helpers
+
+```
+scripts/
+└── bootstrap-tokens.sh    Mint viewer/editor/admin SA tokens in the bundled
+                           Grafana on first `make up`, write them to .env,
+                           restart the MCP so it picks them up. Idempotent —
+                           skips when valid tokens already exist.
 ```
 
 ## `tests/`

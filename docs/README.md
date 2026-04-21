@@ -17,40 +17,43 @@
 
 ## Quick Links
 
-### Services
-- **Main Grafana**: http://localhost:3200 (admin/admin) — 113 dashboards
+### Services (after `make up`)
+- **Grafana**: http://localhost:3002 (admin / admin) — 113 dashboards provisioned
 - **Orchestrator API**: http://localhost:8000
 - **O11yBot MCP**: http://localhost:8765
 - **Ollama LLM**: http://localhost:11434
 
 ### Run tests
 ```bash
+make test                   # full 160-test suite
+
+# or individually:
 cd tests
 ./preflight.sh              # service health check
-./run-all-tests.sh          # full 147-test suite
+./run-all-tests.sh          # all 8 suites
 
-# Individual suites:
-./suite1-api.sh             # 17 tests — API
-./suite2-intents.sh         # 19 tests — intent matcher
+./suite1-api.sh             # 17 tests — API + CORS + tool catalog
+./suite2-intents.sh         # 19 tests — intent matcher coverage
 node suite3-widget.js       # 22 tests — SSE parser
-node suite4-integration.js  # 18 tests — E2E integration
+node suite4-integration.js  # 18 tests — E2E chat → tool → response
 node suite5-negative.js     # 22 tests — errors + edge cases
 node suite6-prompts.js      # 18 tests — prompt engineering
-./suite7-categories.sh      # 31 tests — category intents
+./suite7-categories.sh      # 31 tests — category routing
+./suite8-rbac.sh            # 13 tests — role enforcement
 ```
 
 ### Manual validation
-See [VALIDATION.md](VALIDATION.md) for 20 step-by-step scenarios covering:
+See [VALIDATION.md](VALIDATION.md) for a 9-command post-deploy smoke test plus
+20 end-to-end scenarios covering:
 - Basic chat flow
-- Category filters (AKS, Azure, OCI, etc.)
-- Service-specific searches
-- Window modes (normal/max/fullscreen)
+- Category filters (AKS, Azure, OCI, …)
+- Service-specific searches (fuzzy + LLM-as-judge)
+- Dashboard + alert creation wizards
+- Window modes (normal / max / fullscreen)
 - Per-user history isolation
 - RBAC enforcement
-- LLM fallback
-- Incident analysis prompt
-- Concurrent + stress
-- Unicode handling
+- LLM fallback + incident analysis
+- Concurrent + stress + Unicode
 
 ### Widget features
 - Floating orange bubble, bottom-right corner (draggable)

@@ -72,26 +72,26 @@ check "True" "$OK" "Tool call succeeded"
 echo ""
 echo "T9: CORS preflight"
 CORS=$(curl -s -I -X OPTIONS http://localhost:8000/api/v1/chat \
-  -H "Origin: http://localhost:3200" \
+  -H "Origin: http://localhost:3002" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: Content-Type" 2>&1 \
   | grep -i "access-control-allow-origin" | tr -d '\r' | cut -d' ' -f2)
-check "http://localhost:3200" "$CORS" "CORS allows Grafana origin"
+check "http://localhost:3002" "$CORS" "CORS allows Grafana origin"
 
 # T10: Grafana health
 echo ""
-echo "T10: GET :3200/api/health"
-check "200" "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3200/api/health)" "Grafana healthy"
+echo "T10: GET :3002/api/health"
+check "200" "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3002/api/health)" "Grafana healthy"
 
 # T11: Widget JS served
 echo ""
 echo "T11: Widget JS served"
-check "200" "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3200/public/plugins/gopal-ollychat-app/o11ybot-widget.js)" "Widget JS accessible"
+check "200" "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3002/public/plugins/gopal-ollychat-app/o11ybot-widget.js)" "Widget JS accessible"
 
 # T12: Plugin enabled
 echo ""
 echo "T12: OllyChat plugin enabled"
-ENABLED=$(curl -s http://admin:admin@localhost:3200/api/plugins/gopal-ollychat-app/settings | python3 -c "import sys,json;print(json.loads(sys.stdin.read(),strict=False).get('enabled'))")
+ENABLED=$(curl -s http://admin:admin@localhost:3002/api/plugins/gopal-ollychat-app/settings | python3 -c "import sys,json;print(json.loads(sys.stdin.read(),strict=False).get('enabled'))")
 check "True" "$ENABLED" "Plugin enabled"
 
 # T13: O11yBot direct
@@ -104,10 +104,10 @@ check "53" "$BIFROST" "O11yBot returns 53 tools"
 echo ""
 echo "T14: Widget injected in HTML"
 rm -f /tmp/gcookies.txt
-curl -s -c /tmp/gcookies.txt -X POST http://localhost:3200/login \
+curl -s -c /tmp/gcookies.txt -X POST http://localhost:3002/login \
   -H "Content-Type: application/json" \
   -d '{"user":"admin","password":"admin"}' > /dev/null
-COUNT=$(curl -s -b /tmp/gcookies.txt http://localhost:3200/ | grep -c "o11ybot-widget")
+COUNT=$(curl -s -b /tmp/gcookies.txt http://localhost:3002/ | grep -c "o11ybot-widget")
 check "1" "$COUNT" "Widget script injected in HTML"
 
 echo ""
