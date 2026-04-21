@@ -158,12 +158,19 @@ _OLLAMA_TOOL_FAMILIES = (
     "hermes3", "firefunction",
 )
 
-# Preferred tool-capable models in descending quality order, used when
-# the configured default doesn't support tools and we need to pick a
-# working alternative that's already pulled.
+# Preferred tool-capable models in (size-adjusted) quality order. For
+# typical Docker-Desktop dev stacks (3-4 GB VM), the 1-2 GB models are
+# the only ones that actually load without OOM — so they go first even
+# though a bigger model would answer better. Override by explicitly
+# setting OLLYCHAT_DEFAULT_MODEL on a host with more RAM.
 _OLLAMA_TOOL_PREFERRED = [
-    "qwen2.5:7b", "qwen2.5:3b", "llama3.1:8b",
-    "llama3.2", "llama3.2:3b", "mistral-nemo",
+    "qwen2.5:1.5b",   # ~1 GB — current baseline, verified working
+    "qwen2.5:3b",     # ~2 GB — upgrade if RAM allows
+    "llama3.2:3b",    # ~2 GB — alt
+    "llama3.2",       # ~2 GB — older label, alt
+    "qwen2.5:7b",     # ~5 GB — best quality, needs headroom
+    "llama3.1:8b",    # ~5 GB
+    "mistral-nemo",   # ~7 GB
 ]
 
 
