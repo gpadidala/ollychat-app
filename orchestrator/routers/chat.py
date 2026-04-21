@@ -23,6 +23,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from config import get_settings
 from intents import execute_intent, match_intent
+from llm_agent import agent_enabled, run_agent
 from memory import get_memory
 from prompts import build_messages, classify_query, get_generation_config
 from routers.models import SUPPORTED_MODELS
@@ -220,8 +221,22 @@ async def chat(request: Request, body: ChatRequest):
                     return
 
             # ═══════════════════════════════════════════════
-            # No intent matched — use LLM with prompt engineering
+            # No intent matched — LLM agent (if enabled) OR plain prompt LLM
             # ═══════════════════════════════════════════════
+            if agent_enabled():
+                logger.info("agent.invoked", user_msg=last_user_msg[:100])
+                async for event in run_agent(
+                    user_message=last_user_msg,
+                    history=history,
+                    grafana_user=grafana_user,
+                    grafana_org=grafana_org,
+                    bifrost_role=bifrost_role,
+                    model=model,
+                    settings=settings,
+                ):
+                    yield {"data": json.dumps(event)}
+                return
+
             query_type = classify_query(last_user_msg)
             logger.info("query.classified", type=query_type, user_msg=last_user_msg[:100])
 

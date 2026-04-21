@@ -104,6 +104,13 @@ services:
       # v2 — interactive reasoning canvas (default off, v1 SSE keeps working)
       OLLYBOT_INTERACTIVE_MODE:        "${OLLYBOT_INTERACTIVE_MODE:-false}"
       OLLYCHAT_REDIS_URL:              "${OLLYCHAT_REDIS_URL:-redis://redis:6379/0}"
+      # LLM agent — natural-language tool calling (regex stays fast-path)
+      # Requires ANTHROPIC_API_KEY (or OPENAI_API_KEY). Off by default so
+      # the stack boots with no external dependencies.
+      OLLYBOT_LLM_AGENT:               "${OLLYBOT_LLM_AGENT:-false}"
+      OLLYBOT_AGENT_MAX_ITERS:         "${OLLYBOT_AGENT_MAX_ITERS:-8}"
+      ANTHROPIC_API_KEY:               "${ANTHROPIC_API_KEY:-}"
+      OPENAI_API_KEY:                  "${OPENAI_API_KEY:-}"
     depends_on:
       otel-collector: { condition: service_started }
       ollama:         { condition: service_started }
