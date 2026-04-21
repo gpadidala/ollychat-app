@@ -1,14 +1,18 @@
 import type { Configuration } from 'webpack';
 import { merge } from 'webpack-merge';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
+
+const __esm_filename = fileURLToPath(import.meta.url);
+const __esm_dirname = path.dirname(__esm_filename);
 
 const config = async (env: Record<string, unknown>): Promise<Configuration> => {
   const baseConfig: Configuration = {
-    context: path.resolve(__dirname, '../..'),
+    context: path.resolve(__esm_dirname, '../..'),
     entry: './src/module.ts',
     output: {
-      path: path.resolve(__dirname, '../../dist'),
+      path: path.resolve(__esm_dirname, '../../dist'),
       filename: 'module.js',
       library: { type: 'amd' },
       publicPath: '/',

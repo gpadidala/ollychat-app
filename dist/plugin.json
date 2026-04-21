@@ -30,6 +30,14 @@
     },
     {
       "type": "page",
+      "name": "Canvas",
+      "path": "/a/gopal-ollychat-app/canvas",
+      "role": "Viewer",
+      "addToNav": true,
+      "icon": "brain"
+    },
+    {
+      "type": "page",
       "name": "Investigate",
       "path": "/a/gopal-ollychat-app/investigate",
       "role": "Viewer",

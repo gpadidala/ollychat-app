@@ -37,3 +37,5 @@ loki-data/
 coverage/
 .nyc_output/
 htmlcov/
+dist/module.js.LICENSE.txt
+dist/module.js.map

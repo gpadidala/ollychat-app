@@ -7,12 +7,14 @@ import { MCPConfigPage } from './MCPConfigPage';
 import { InvestigatePage } from './InvestigatePage';
 import { SkillsPage } from './SkillsPage';
 import { RulesPage } from './RulesPage';
+import { CanvasPage } from './CanvasPage';
 
 export function App(props: AppRootProps) {
   const { basename } = props;
 
   return (
     <Switch>
+      <Route path={`${basename}/canvas`} component={CanvasPage} />
       <Route path={`${basename}/config`} component={ConfigPage} />
       <Route path={`${basename}/mcp`} component={MCPConfigPage} />
       <Route path={`${basename}/investigate`} component={InvestigatePage} />
