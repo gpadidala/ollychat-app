@@ -1541,6 +1541,18 @@
                   if (currentBotBubble && !acc) {
                     currentBotBubble.innerHTML = '<div class="ob-tool-running">✓ <code>' + esc(botMsg.lastTool || "tool") + '</code> done · formatting…</div>';
                   }
+                  // If a dashboard-creating / -opening tool succeeded, capture the URL
+                  // so finish() can auto-navigate — chat-in-front, dashboard-behind.
+                  try {
+                    var r = (ev.result && (ev.result.result || ev.result)) || {};
+                    var url = r.url || (r.dashboard && r.dashboard.url) || null;
+                    var tool = (botMsg.lastTool || "").toLowerCase();
+                    var shouldOpen = url && /dashboard|slo|panel|board/.test(tool)
+                                          && !/delete|remove/.test(tool);
+                    if (shouldOpen) {
+                      botMsg.autoOpenUrl = url;
+                    }
+                  } catch (_e) { /* best-effort */ }
                   scrollToBottom();
                 } else if (ev.type === "usage") {
                   botMsg.cost = ev.costUsd || 0;
@@ -1580,6 +1592,27 @@
         botMsg.content = fallback;
         currentBotBubble.innerHTML = fmtMd(fallback);
       }
+
+      // Auto-open the created/updated dashboard in the main Grafana window so
+      // the chatbot sits in front and the board is visible behind it.
+      // Priority: explicit url from tool_result → first /d/<uid>/… link in text.
+      var openUrl = botMsg.autoOpenUrl || null;
+      if (!openUrl && botMsg.content) {
+        var m = botMsg.content.match(/\/d\/[A-Za-z0-9_-]{6,}\/[^\s"'<>)]+/);
+        if (m) openUrl = m[0];
+      }
+      if (openUrl && !sessionStorage.getItem("ob-autoopen-lock")) {
+        // Avoid tight loops if user re-submits quickly
+        sessionStorage.setItem("ob-autoopen-lock", "1");
+        setTimeout(function() { sessionStorage.removeItem("ob-autoopen-lock"); }, 1500);
+        var target = openUrl.split("?")[0] + "?kiosk=tv&theme=dark&from=now-6h&to=now";
+        var cur = (location.pathname + location.search);
+        if (cur.indexOf(openUrl.split("?")[0]) === -1) {
+          // Small delay so the user sees the confirmation land before we navigate
+          setTimeout(function() { try { location.assign(target); } catch(_e){} }, 600);
+        }
+      }
+
       saveState();
       // Update footer (msg count)
       var footer = root.querySelector(".ob-footer");
