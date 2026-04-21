@@ -1672,13 +1672,42 @@ def _match_followup_intent(user_message: str, prior_turns: list[dict]) -> dict |
     }
 
 
+_POLITE_PREFIX = re.compile(
+    r"^\s*(?:"
+    r"can\s+you\s+|could\s+you\s+|would\s+you\s+|will\s+you\s+|"
+    r"please\s+|pls\s+|plz\s+|kindly\s+|"
+    r"i(?:'d| would)?\s+(?:like|want)\s+(?:you\s+)?(?:to\s+)?|"
+    r"let'?s\s+|lets\s+|"
+    r"hey[,!]?\s+|hi[,!]?\s+|hello[,!]?\s+|ok[,!]?\s+|okay[,!]?\s+|now[,!]?\s+|"
+    r"go\s+ahead\s+and\s+|go\s+ahead\s+"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _strip_polite_prefix(msg: str) -> str:
+    """Drop "can you / please / I'd like you to" prefixes so the intent
+    regexes that anchor at ^ still match when users talk naturally.
+    Applied iteratively — "hey please can you create…" peels cleanly.
+    """
+    prev = None
+    out = msg.strip()
+    while out != prev:
+        prev = out
+        m = _POLITE_PREFIX.match(out)
+        if m:
+            out = out[m.end():].lstrip()
+    return out
+
+
 def _match_mutation_intent(user_message: str, has_dashboard_keyword: bool) -> dict | None:
     """Detect create/delete/update dashboard requests.
 
     Runs before fuzzy search so `create the grafana admin dashboard` doesn't
-    accidentally list dashboards.
+    accidentally list dashboards. Polite prefixes ("can you", "please",
+    "I'd like you to") are stripped first so natural phrasing still routes.
     """
-    msg = user_message.strip()
+    msg = _strip_polite_prefix(user_message.strip())
 
     # Delete: "delete dashboard <uid>"
     dm = re.match(r"^\s*(delete|remove|drop)\s+(?:the\s+)?dash\w*\s+([a-zA-Z0-9_-]{6,})", msg, re.IGNORECASE)
